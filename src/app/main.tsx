@@ -196,9 +196,9 @@ function Shell() {
       <TopNav />
       <EdgeBack />
       {/* The bottom keeps clear of the floating dock (the tab bar on phones); a sideways phone's rail is at the left
-          instead. The top starts below the status bar; artwork at the top of a page pulls back up under it
-          (-mt-(--inset-top)). The page is the scene the nav's bubbles bend in Firefox. */}
-      <BubliScene className="pt-(--inset-top) pb-[calc(84px+var(--dock-bottom))] pl-(--rail-pad,0px) md:pb-24 short:pb-8">
+          instead, and the right keeps clear of its far edge. The top starts below the status bar; artwork at the top
+          of a page pulls back up under it (-mt-(--inset-top)) and out to the right edge (-mr-(--inset-right)). The page is the scene the nav's bubbles bend in Firefox. */}
+      <BubliScene className="pt-(--inset-top) pb-[calc(84px+var(--dock-bottom))] pr-(--inset-right) pl-(--rail-pad,0px) md:pb-24 short:pb-8">
         <Pages />
       </BubliScene>
       <PartyDock />

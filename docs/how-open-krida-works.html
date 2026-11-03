@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>How open Krida works</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f7f6f3;
+  --surface: #efede8;
+  --text: #1c1a17;
+  --muted: #5b5750;
+  --line: #d9d5cc;
+  --accent: #1f5f8b;
+  --good: #1d6b3a;
+  --mixed: #8a5a00;
+  --bad: #a3261d;
+  --code-bg: #e9e6df;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151310;
+    --surface: #1f1c18;
+    --text: #ece8e1;
+    --muted: #b0aa9f;
+    --line: #3a352e;
+    --accent: #7db8e0;
+    --good: #7cc995;
+    --mixed: #e2b45c;
+    --bad: #f08a80;
+    --code-bg: #2a2621;
+  }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color: var(--text); }
+body {
+  margin: 0;
+  background: var(--bg);
+  font: 1.0625rem/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1rem 5rem; }
+h1 { font-size: 2.1rem; line-height: 1.15; margin: 0 0 0.75rem; font-weight: 650; text-wrap: balance; }
+h2 { font-size: 1.45rem; line-height: 1.25; margin: 3.5rem 0 0.75rem; font-weight: 650; text-wrap: balance; }
+h3 { font-size: 1.1rem; margin: 2rem 0 0.5rem; font-weight: 650; }
+p, li { max-width: 55ch; text-wrap: pretty; }
+p { margin: 0 0 0.9rem; }
+ul, ol { padding-left: 1.3rem; margin: 0 0 1rem; }
+li { margin-bottom: 0.4rem; }
+.lede { font-size: 1.2rem; line-height: 1.5; color: var(--text); margin-bottom: 1.5rem; }
+.muted, figcaption, caption, .small { color: var(--muted); }
+.small { font-size: 0.9375rem; }
+a { color: var(--accent); }
+code, pre { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.875em; }
+code { background: var(--code-bg); padding: 0.05em 0.3em; border-radius: 4px; overflow-wrap: anywhere; }
+pre {
+  background: var(--code-bg);
+  padding: 0.9rem 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+pre code { background: none; padding: 0; }
+figure { margin: 1.5rem 0 2rem; }
+figure svg { display: block; width: 100%; height: auto; max-width: 560px; }
+figcaption { font-size: 0.9375rem; margin-top: 0.6rem; max-width: 58ch; }
+.scroll { overflow-x: auto; margin: 0 0 1.25rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9375rem; }
+caption { text-align: left; font-size: 0.9375rem; padding-bottom: 0.4rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.5rem 0.6rem 0.5rem 0; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.pick td { font-weight: 600; }
+.good { color: var(--good); font-weight: 600; }
+.mixed { color: var(--mixed); font-weight: 600; }
+.bad { color: var(--bad); font-weight: 600; }
+details { border-top: 1px solid var(--line); margin: 0.5rem 0 1.25rem; }
+details:last-of-type { border-bottom: 1px solid var(--line); }
+summary { cursor: pointer; padding: 0.75rem 0; min-height: 44px; font-weight: 600; color: var(--text); }
+details > *:not(summary) { margin-left: 0; }
+details[open] > summary { margin-bottom: 0.25rem; }
+.formula { background: var(--surface); border-radius: 6px; padding: 0.9rem 1rem; margin: 0 0 1rem; overflow-x: auto; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.875rem; line-height: 1.7; white-space: pre; }
+dl.terms { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; margin: 0 0 1.25rem; }
+dl.terms dt { font-weight: 600; }
+dl.terms dd { margin: 0; max-width: 52ch; }
+@media (max-width: 40rem) {
+  h1 { font-size: 1.75rem; }
+  dl.terms { grid-template-columns: 1fr; }
+  dl.terms dd { margin-bottom: 0.5rem; }
+}
+svg text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--text); }
+svg .sub { fill: var(--muted); }
+svg .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+svg .theirs { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .arrow { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+svg .head { fill: var(--muted); }
+::selection { background: var(--accent); color: var(--bg); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media print {
+  :root { color-scheme: light; --bg: #fff; --surface: #f3f2ef; --text: #111; --muted: #444; --line: #ccc; --code-bg: #f0eee9; }
+  figure, table, pre { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+}
+</style>
+</head>
+<body>
+<main data-type="teach">
+
+<h1>Every account brings its own keys</h1>
+<p class="lede">Open Krida stores no video and holds no provider keys of its own. A Clerk sign-in makes an account, the account pastes a TMDB key and a debrid key, each profile installs Stremio addons, and three services move the rest: Convex syncs, Vercel serves public data, and the user's debrid service sends the picture.</p>
+
+<figure>
+<svg viewBox="0 0 360 470" role="img" aria-labelledby="ov-t ov-d">
+  <title id="ov-t">How the parts of open Krida connect</title>
+  <desc id="ov-d">The app on a device talks to Clerk for sign-in, Convex for accounts, keys, rooms and Play, and Vercel for public data. Convex asks stream addons and the debrid service. The browser reads addon catalogs itself and loads video segments straight from TorBox.</desc>
+  <defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L8,4 L0,8 z"/></marker></defs>
+  <rect class="box" x="40" y="8" width="280" height="62" rx="8"/>
+  <text x="180" y="33" text-anchor="middle" font-size="14" font-weight="600">Your device</text>
+  <text class="sub" x="180" y="54" text-anchor="middle" font-size="12">web, PWA, Android, Mac: all load the live site</text>
+  <path class="arrow" d="M70,70 L48,148" marker-end="url(#ah)"/>
+  <path class="arrow" d="M180,70 L180,148" marker-end="url(#ah)"/>
+  <path class="arrow" d="M290,70 L312,148" marker-end="url(#ah)"/>
+  <text class="sub" x="40" y="110" font-size="12">sign-in</text>
+  <text class="sub" x="186" y="110" font-size="12">token</text>
+  <text class="sub" x="276" y="110" font-size="12" text-anchor="end">session</text>
+  <rect class="box" x="4" y="150" width="104" height="96" rx="8"/>
+  <text x="56" y="176" text-anchor="middle" font-size="14" font-weight="600">Clerk</text>
+  <text class="sub" x="56" y="197" text-anchor="middle" font-size="12">Google or</text>
+  <text class="sub" x="56" y="213" text-anchor="middle" font-size="12">email code</text>
+  <rect class="box" x="122" y="150" width="116" height="96" rx="8"/>
+  <text x="180" y="176" text-anchor="middle" font-size="14" font-weight="600">Convex</text>
+  <text class="sub" x="180" y="197" text-anchor="middle" font-size="12">profiles, keys,</text>
+  <text class="sub" x="180" y="213" text-anchor="middle" font-size="12">addons, rooms,</text>
+  <text class="sub" x="180" y="229" text-anchor="middle" font-size="12">Play, HLS list</text>
+  <rect class="box" x="252" y="150" width="104" height="96" rx="8"/>
+  <text x="304" y="176" text-anchor="middle" font-size="14" font-weight="600">Vercel /api</text>
+  <text class="sub" x="304" y="197" text-anchor="middle" font-size="12">12 functions:</text>
+  <text class="sub" x="304" y="213" text-anchor="middle" font-size="12">rows, search,</text>
+  <text class="sub" x="304" y="229" text-anchor="middle" font-size="12">recs, proxy</text>
+  <path class="arrow" d="M150,246 L70,328" marker-end="url(#ah)"/>
+  <path class="arrow" d="M210,246 L210,328" marker-end="url(#ah)"/>
+  <path class="arrow" d="M304,246 L304,328" marker-end="url(#ah)"/>
+  <text class="sub" x="80" y="292" font-size="12">streams</text>
+  <text class="sub" x="216" y="292" font-size="12">user's key</text>
+  <text class="sub" x="298" y="292" font-size="12" text-anchor="end">user's keys</text>
+  <rect class="theirs" x="4" y="330" width="104" height="80" rx="8"/>
+  <text x="56" y="356" text-anchor="middle" font-size="14" font-weight="600">Addons</text>
+  <text class="sub" x="56" y="376" text-anchor="middle" font-size="12">Torrentio, Comet,</text>
+  <text class="sub" x="56" y="392" text-anchor="middle" font-size="12">any Stremio link</text>
+  <rect class="theirs" x="122" y="330" width="116" height="80" rx="8"/>
+  <text x="180" y="356" text-anchor="middle" font-size="14" font-weight="600">Debrid</text>
+  <text class="sub" x="180" y="376" text-anchor="middle" font-size="12">TorBox, Real-Debrid</text>
+  <text class="sub" x="180" y="392" text-anchor="middle" font-size="12">and 5 others</text>
+  <rect class="theirs" x="252" y="330" width="104" height="80" rx="8"/>
+  <text x="304" y="356" text-anchor="middle" font-size="14" font-weight="600">TMDB</text>
+  <text class="sub" x="304" y="376" text-anchor="middle" font-size="12">MDBList,</text>
+  <text class="sub" x="304" y="392" text-anchor="middle" font-size="12">Cinemeta</text>
+  <rect class="box" x="4" y="428" width="22" height="14" rx="3"/>
+  <text class="sub" x="32" y="440" font-size="12">owner's, free plans</text>
+  <rect class="theirs" x="180" y="428" width="22" height="14" rx="3"/>
+  <text class="sub" x="208" y="440" font-size="12">user's own accounts</text>
+</svg>
+<figcaption>Solid boxes are services the owner runs; dashed ones are accounts each user brings. Two paths skip the middle row: the browser reads addon catalogs directly, and video segments come from TorBox's CDN without a key.</figcaption>
+</figure>
+
+<ol>
+  <li><strong>Sync runs on Convex.</strong> Clerk only says who signed in; picking a profile mints the session token every other call takes.</li>
+  <li><strong>Public data runs on Vercel</strong>, asked with the caller's own TMDB and MDBList keys, and cached for everyone.</li>
+  <li><strong>Play runs on Convex.</strong> It asks the profile's stream addons at once, ranks the answers, and plays through TorBox's HLS or straight from another service's file link.</li>
+  <li><strong>Every app shows krida-open.vercel.app</strong>, so a push to <code>main</code> reaches all of them. Only native code needs a release.</li>
+</ol>
+<p class="small">Read from the code at commit <code>b40b95f</code>, which is what <code>/version.json</code> serves live today (3 Nov 2026). References are <code>file:line</code> in <code>~/dev/krida-open</code>.</p>
+
+<h2>Six things look wrong</h2>
+<p>Found while reading. None was exploited or reproduced; the first two are certain from the code, the rest need a test to confirm.</p>
+<div class="scroll">
+<table>
+  <colgroup><col style="width:45%"><col></colgroup>
+  <thead><tr><th scope="col">What</th><th scope="col">Effect</th></tr></thead>
+  <tbody>
+    <tr><td><span class="bad">Broken.</span> The HLS playlist checks only that the token is a session<br><span class="small"><code>convex/http.ts:27-39</code></span></td><td>Anyone signed in who holds a stream id (a kicked party member, or a guest inside its 24 hours) keeps playing from that account's TorBox. <code>desktop.fileLink</code> does check the account (<code>convex/desktop.ts:21-22</code>).</td></tr>
+    <tr><td><span class="bad">Broken.</span> Torrentio and Comet keep the debrid key they were built with<br><span class="small"><code>convex/accounts.ts:102-111</code>, <code>convex/addons.ts:131</code></span></td><td>Changing the key or the service leaves those addons searching with the old one. Nothing rebuilds the suggestion links.</td></tr>
+    <tr><td><span class="mixed">Likely.</span> The addon proxy follows redirects after its private-host check<br><span class="small"><code>server/addonProxy.ts:25,32</code></span></td><td>A public https link that redirects to a private address gets fetched. Hostnames aren't resolved either. Installing (<code>convex/addons.ts:77</code>) has the same gap.</td></tr>
+    <tr><td><span class="mixed">Likely.</span> CDN-cached answers skip the session check<br><span class="small"><code>server/http.ts:43-47</code>, <code>api/frame.ts:15-20</code></span></td><td>No <code>Vary</code> on the session header, so a cache hit on <code>/api/frame</code> or <code>/api/rows?addon=</code> is served to anyone with the URL. Low harm, but "signed-in only" holds only on a miss.</td></tr>
+    <tr><td><span class="mixed">By design.</span> Keys are stored as plain text and readable by the account's sessions<br><span class="small"><code>convex/lib/accounts.ts:104-113</code>, <code>convex/accounts.ts:31-39</code></span></td><td>A script injected into the site could read the TMDB and debrid keys through the public <code>accounts.keys</code> query.</td></tr>
+    <tr><td><span class="mixed">Stale.</span> Docs lag the code<br><span class="small">see the fold</span></td><td>An agent reading them would set env keys that no longer exist.</td></tr>
+  </tbody>
+</table>
+</div>
+<details><summary>The stale docs, 5 places</summary>
+<ul>
+  <li><code>docs/ops.md</code>, "Secrets": still names <code>TORBOX_API_KEY</code>, <code>TMDB_API_KEY</code> and <code>MDBLIST_API_KEY</code> as Convex and Vercel env. The code reads every key from the account (<code>server/session.ts:53-64</code>).</li>
+  <li><code>docs/models/README.md:4</code>: "the code does not exist yet for most of it". It does, with tests.</li>
+  <li><code>docs/models/Onboarding.tla:38</code>: its screens have no extras step; the app has one (<code>src/features/onboarding/route.ts:31</code>).</li>
+  <li><code>docs/recommendations.md</code>: "Because you watched (×2)". The code makes up to 3 (<code>server/recs.ts:309</code>).</li>
+  <li><code>convex/lib/rank.ts:192</code>: "Your AIOStreams sort order still counts". It is now the merged addon order.</li>
+</ul>
+</details>
+
+<h2>Onboarding asks four things, one required</h2>
+<p>One pure function decides the screen (<code>src/features/onboarding/route.ts:24-33</code>). Signed out gives the landing page, no profile gives the picker, then the first step still needed, then Home.</p>
+<div class="scroll">
+<table>
+  <caption>Steps after Clerk sign-in, in order</caption>
+  <thead><tr><th scope="col">Step</th><th scope="col">Checked how</th><th scope="col">Skip?</th><th scope="col">Kept on</th></tr></thead>
+  <tbody>
+    <tr><td>Profile</td><td>Name 1 to 24 characters, unique in the account; at most 8; optional 4-digit PIN (<code>convex/profiles.ts:143-164</code>)</td><td>No</td><td>profile</td></tr>
+    <tr><td>TMDB key</td><td><code>GET /3/configuration</code> must answer 200; a pasted read token (<code>eyJ…</code>) is refused with a hint (<code>convex/lib/keyCheck.ts:29,75</code>)</td><td><span class="bad">No</span>: Home needs it</td><td>account</td></tr>
+    <tr><td>Debrid</td><td>Each service's "who am I" call (<code>keyCheck.ts:31-46</code>)</td><td>Yes (<code>convex/onboarding.ts:65-66</code>)</td><td>account</td></tr>
+    <tr><td>Addons</td><td>Convex fetches and parses each manifest</td><td>Yes (<code>onboarding.ts:69-71</code>)</td><td>profile</td></tr>
+    <tr><td>Extras</td><td>MDBList <code>GET /user</code>; Simkl shows only when <code>SIMKL_CLIENT_ID</code> is set</td><td>Yes</td><td>account</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Because keys live on the account and addons on the profile, a second profile in the same account skips TMDB and debrid and lands straight on its own addons step. Progress is server-side, so it resumes on another device.</p>
+<p>A provider that is down or busy gets "try again", never "wrong key" (<code>keyCheck.ts:58-70</code>). On open, and at most every 6 hours, <code>onboarding.recheck</code> asks again; if TMDB now refuses, the next screen is "Your TMDB key stopped working" (<code>onboarding.ts:78-103</code>, <code>src/features/onboarding/Onboarding.tsx:245</code>).</p>
+<h3>Skipping debrid, or picking another service</h3>
+<ul>
+  <li><strong>No debrid:</strong> Home, search and title pages work. Play refuses before any job starts with <code>NEEDS_DEBRID</code> (<code>convex/rooms.ts:28</code>, <code>convex/lib/accounts.ts:53-55</code>); parties refuse with <code>NEEDS_TORBOX</code> (<code>rooms.ts:51</code>); the addon suggestions list is empty (<code>convex/addons.ts:57</code>).</li>
+  <li><strong>Not TorBox:</strong> saved like any key. The step then shows the note that parties and previews need TorBox and that the browser plays only MP4 and WebM (<code>Onboarding.tsx:421-429</code>).</li>
+</ul>
+<details><summary>Sign-in: which Clerk methods, and what is unconfirmed</summary>
+<p>The sign-in screen is Clerk's own <code>&lt;SignIn&gt;</code> component (<code>src/features/settings/ProfileGate.tsx:57</code>), so Google and email code are whatever the Clerk dashboard turns on; the code can't show that. The first sign-in makes the <code>accounts</code> row (<code>convex/lib/accounts.ts:23-28</code>). In the desktop app, Google opens in the computer's own browser and returns to a loopback page on 127.0.0.1, since Google refuses embedded web views (<code>desktop/src-tauri/src/signin.rs:1-5</code>).</p>
+</details>
+
+<h2>Accounts wall off everything but parties</h2>
+<dl class="terms">
+  <dt>Account</dt><dd>One Clerk user: up to 8 profiles and one <code>accountKeys</code> row (<code>convex/lib/accounts.ts:7-12</code>).</dd>
+  <dt>Session</dt><dd>32 random bytes, stored as a SHA-256 hash, minted by <code>profiles.choose</code> (<code>convex/profiles.ts:183-200</code>). A token Clerk made is refused under a different Clerk user (<code>convex/lib/auth.ts:60-63</code>); callers with no Clerk identity, like <code>/api</code>, are trusted with the token alone.</dd>
+  <dt>PIN</dt><dd>4 digits, PBKDF2-SHA256 at 100,000 rounds with its own salt. Five wrong tries lock the profile for 5 minutes; setting a PIN signs out the profile's other devices (<code>convex/lib/profiles.ts:6-39</code>, <code>profiles.ts:243-245</code>).</dd>
+</dl>
+<p>No public function takes an account id. Each read finds the account from the session, so another account's data can't be named, let alone fetched.</p>
+<div class="scroll">
+<table>
+  <caption>Who sees what</caption>
+  <thead><tr><th scope="col">Data</th><th scope="col">Visible to</th><th scope="col">Code</th></tr></thead>
+  <tbody>
+    <tr><td>Profile picker</td><td>The signed-in Clerk user's account</td><td><code>profiles.ts:104-113</code></td></tr>
+    <tr><td>Keys</td><td>Any session of the account</td><td><code>accounts.ts:31-63</code></td></tr>
+    <tr><td>Addons (their links can hold keys)</td><td>That profile's sessions</td><td><code>addons.ts:35-42</code></td></tr>
+    <tr><td>"For you and X", "X has been watching"</td><td>Profiles of the same account</td><td><code>lib/accounts.ts:76-81</code></td></tr>
+    <tr><td>Parties on now</td><td>Rooms your account hosts, plus ones you were invited to or were in; other accounts' people stay hidden until you join</td><td><code>rooms.ts:841-895</code></td></tr>
+    <tr><td>A room, its chat and people</td><td>Members who weren't kicked</td><td><code>lib/rooms.ts:63-68</code></td></tr>
+  </tbody>
+</table>
+</div>
+<h3>Crossing accounts takes the link</h3>
+<p>Joining is allowed when one of these holds (<code>convex/lib/rooms.ts:77-88</code>): you were in it before, your account is the host's, you hold the link code, or you have an invite or an accepted knock. Kicked is out for good, link or not.</p>
+<ul>
+  <li><strong>Invite in the app</strong>: only to your own account's profiles, or someone who was in it before (<code>convex/invites.ts:21</code>).</li>
+  <li><strong>Party link</strong>: 16 random bytes, made by any member who isn't a guest (<code>rooms.ts:917-931</code>). Anyone signed in, of any account, joins with it.</li>
+  <li><strong>Guest link</strong>: host only, one use, 24 hours, at most 8 per party; makes a temporary profile with no account and no keys (<code>profiles.ts:23-87</code>).</li>
+</ul>
+<p>Everyone in a party watches the host's stream, found by the host's addons and played from the host's TorBox (<code>convex/engine.ts:26-31</code>). A link shared widely spends the host's TorBox.</p>
+<h3>The host hand-off rule</h3>
+<p>When the host leaves and others remain (<code>convex/lib/rooms.ts:184-197</code>):</p>
+<ol>
+  <li>Take the remaining members by join time, leaving out guests and the kicked.</li>
+  <li>Keep those whose account has a TorBox key TorBox still accepts.</li>
+  <li>Pick the first one from the old host's account; failing that, the first of any account.</li>
+  <li>Nobody left: the party ends for everyone.</li>
+</ol>
+<p>The room's <code>hostAccountId</code> moves with the host, so after a hand-off to account B, A's other profiles need the link or an invite unless they were already in.</p>
+<details><summary>Check yourself: a hand-off across accounts</summary>
+<p>Profile A1 hosts on account A's TorBox. B1, from account B, joins by link; then A2, A's other profile, joins. A1 leaves. Who hosts? <strong>A2</strong>: step 3 prefers the old host's account, though B1 joined first. Had TorBox refused A's key since, B1 would host if B has TorBox, and otherwise the party would end.</p>
+</details>
+<details><summary>Proof: 3 TLA+ models and the tests behind them</summary>
+<p><code>docs/models/</code> holds AccountIsolation (343,644 states), PartyInvites (156,257) and Onboarding (1,114), each with seeded bugs <code>check.sh</code> must catch. Their invariants map to <code>tests/accounts.test.ts</code>, <code>tests/partyInvites.test.ts</code> and <code>tests/onboarding.test.ts</code> (22, 16 and 11 <code>test(</code> calls). I did not run TLC or the tests for this page.</p>
+</details>
+
+<h2>Addons are Stremio links per profile</h2>
+<p>An addon is a base URL plus the manifest Convex fetched from it. Each profile keeps up to 50, in its own order, each on or off (<code>convex/lib/addons.ts:11</code>, <code>convex/schema.ts:227-237</code>).</p>
+<div class="scroll">
+<table>
+  <caption>The four Stremio resources, and who asks for each</caption>
+  <thead><tr><th scope="col">Resource</th><th scope="col">Path under the base</th><th scope="col">Asked by</th></tr></thead>
+  <tbody>
+    <tr><td>manifest</td><td><code>/manifest.json</code></td><td>Convex, on install and reload (<code>addons.ts:73-91</code>)</td></tr>
+    <tr><td>catalog</td><td><code>/catalog/{type}/{id}[/{extra}].json</code></td><td>The browser, proxy as fallback (<code>src/data/addons.ts:79-88</code>)</td></tr>
+    <tr><td>meta, subtitles</td><td><code>/meta/…</code>, <code>/subtitles/…</code></td><td>The browser; Vercel reads Cinemeta and Kitsu meta itself (<code>server/meta.ts:85-91</code>)</td></tr>
+    <tr><td>stream</td><td><code>/stream/{type}/{videoId}.json</code></td><td>Convex only, never the browser (<code>convex/lib/providers.ts:75-88</code>)</td></tr>
+  </tbody>
+</table>
+</div>
+<h3>Three ways to install</h3>
+<ul>
+  <li><strong>Paste a link</strong>: a manifest link, a <code>stremio://</code> link or the bare base (<code>shared/stremio.ts:42-57</code>). Https only, no private hosts, and an addon that says it needs setup is refused with its configure page (<code>addons.ts:63-89</code>).</li>
+  <li><strong>Stremio import</strong>: the browser signs in to <code>api.strem.io</code> and calls <code>addonCollectionGet</code> (<code>src/features/settings/stremioImport.ts:8,32</code>). Only the addon URLs reach Convex; the Stremio password never does (<code>addons.ts:140-172</code>).</li>
+  <li><strong>Suggestions</strong>, built on the server from the account's debrid key: Torrentio as <code>torrentio.strem.fun/{service}={key}</code>, Comet with its settings as base64 JSON (<code>shared/stremio.ts:189-211</code>). TorBox's own addon isn't offered: <code>stremio.torbox.app</code> no longer resolves (<code>stremio.ts:187</code>), unlike what the spec says.</li>
+</ul>
+<p>A profile can also copy another same-account profile's addons (<code>addons.ts:233-254</code>).</p>
+
+<h3>Play asks every stream addon at once</h3>
+<ol>
+  <li>The source list comes from enabled addons that list a stream resource, in the profile's order (<code>convex/lib/addons.ts:50-56</code>). Lists are kept 20 minutes per account, addon set and title (<code>convex/sources.ts:15,136</code>).</li>
+  <li>Convex asks each addon whose manifest serves that type and id prefix, all in parallel: 20 s timeout, first 150 streams each. One failing addon costs only its own sources (<code>providers.ts:63-108</code>).</li>
+  <li>Each stream is normalised: a <code>[TB+]</code> or <code>[RD⚡]</code> mark becomes a <code>⚡</code> cached mark, a bare info hash becomes a magnet link, YouTube and external links are dropped (<code>shared/stremio.ts:234-257</code>).</li>
+  <li>Lists are joined in addon order, repeated URLs dropped, 300 kept (<code>stremio.ts:260-270</code>).</li>
+  <li>Copies of one file (same cleaned file name, size within 1%) fold into one option with the cached copy first, then each option is scored (<code>convex/lib/rank.ts:227-295</code>).</li>
+  <li>Up to 4 candidates are tried, 15 s each except the last (<code>convex/engine.ts:41,54</code>). TorBox: follow redirects to a torrent and file id, or add a cached hash, then <code>createstream</code>. Another service: follow the addon's redirect to the file, rejecting the "downloading" placeholder clips (<code>providers.ts:140-375</code>).</li>
+</ol>
+<p>The score adds points for picture and subtracts for risk (<code>convex/lib/rank.ts:175-221</code>). For the browser:</p>
+<div class="formula">score = R(res) + Q(quality)
+  + 6 × min(bitrate, cap) / cap
+  + 4 × (1 − position / options)
+  − 20 if not cached
+  − 25 buffer, − 6 slow, − 8 unknown
+  − 10 upscaled, − 40 wrong episode
+  − 14 HDR on SDR, + 3 HDR on HDR
+  − 6 Dolby Vision only
+  + 3 your audio, − 20 other audio
+  + 2 your subtitles</div>
+<details><summary>The tables behind R, Q, cap and speed</summary>
+<ul>
+  <li><strong>R</strong>: 2160p 30, 1440p 27, 1080p 24, 720p 14, SD 4, unknown 12.</li>
+  <li><strong>Q</strong>: Remux 8, BluRay 6, WEB-DL 5, WEB 4, WEBRip 3, HDRip 2, HDTV 1, DVD 0, CAM −30, unknown 2.</li>
+  <li><strong>cap</strong> (Mbps): 2160p 30, 1440p 35, 1080p 40, 720p 15, SD 6; in the desktop app 4K's cap is 60.</li>
+  <li><strong>Speed</strong> (<code>rank.ts:100-113</code>): in the browser a 4K file over 45 Mbps buffers and over 30 is slow, anything else over 90 buffers; with no bitrate, a 4K file over 40 GB buffers. In the app, over 60 Mbps or 60 GB buffers.</li>
+  <li><strong>Language</strong>: the −20 applies only when the listing names languages and none is Multi, Dual Audio or Dubbed.</li>
+  <li><strong>App</strong> (<code>screen = "app"</code>): HDR +4, Dolby Vision +2, lossless audio +3, and no HDR penalties, because mpv plays the original file.</li>
+</ul>
+</details>
+<div class="scroll">
+<table>
+  <caption>Worked example: Chrome on an SDR laptop, audio English, 10 options after folding</caption>
+  <thead><tr><th scope="col">Copy</th><th scope="col">Terms</th><th scope="col" class="num">Score</th></tr></thead>
+  <tbody>
+    <tr><td>A: 4K Remux, 60 Mbps, HDR10, cached, 1st</td><td>30 + 8 + 6 + 4 − 25 buffer − 14 HDR on SDR + 3</td><td class="num">12.0</td></tr>
+    <tr class="pick"><td>B: 1080p WEB-DL, 8 Mbps, cached, 4th</td><td>24 + 5 + 1.2 + 2.8 + 3</td><td class="num">36.0</td></tr>
+    <tr><td>C: 1080p BluRay, 12 GB, not cached, 2nd</td><td>24 + 6 + 0 + 3.6 − 20 + 3</td><td class="num">16.6</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Krida plays B: the pick is the best-scoring option that is smooth, cached, not upscaled and the right episode, else the best right episode (<code>rank.ts:291-293</code>).</p>
+<p>With another debrid service in the browser, MP4 and WebM copies are tried first (<code>engine.ts:93-117,191</code>).</p>
+
+<h3>Catalogs become Home rows</h3>
+<p>A catalog of type movie, series or anime that needs nothing but paging is a row (<code>shared/stremio.ts:150-155</code>), keyed <code>addon:{manifestId}:{type}:{id}</code> so a reinstall keeps its place (<code>stremio.ts:163</code>). The browser fetches the first page and shares it for 30 minutes; only IMDb and Kitsu ids are kept, since other ids have no title page (<code>src/data/addons.ts:48-99</code>).</p>
+<p>When the browser can't read an addon (no CORS), it remembers the host and goes through <code>/api/rows?addon=</code>. The proxy allows only manifest, catalog, meta and subtitle paths, https, public hosts, 4 MB, signed in (<code>server/addonProxy.ts:11-44</code>, <code>api/rows.ts:12-15</code>).</p>
+<p>The row editor sorts by one number (<code>src/features/home/homeRows.ts:46-55</code>):</p>
+<div class="formula">score = ( 0.4 × fans
+        + 0.3 × min(1, 2.2 × alike)
+        + 0.2 × quality
+        + 0.1 × popularity ) × fit
+        − penalty</div>
+<p>Default ranks put Continue watching at 10 and picks at 20; addon catalogs fill slots 35, 55, 70, 85, 95, 110, 115, 140, 150, 170, 180, 190, 200, then every 30 (<code>homeRows.ts:7-41</code>). Rename, hide, pin, the type suffix and the banner row are profile prefs (<code>convex/schema.ts:31-36</code>).</p>
+
+<h2>Picks are four signals times fit</h2>
+<p>The browser builds the taste from the profile's synced tables, sends it to <code>POST /api/recs</code>, and saves the rows it gets back (<code>docs/recommendations.md</code>). The server never reads anyone's history from Convex for this.</p>
+<h3>Seeds: what each signal is worth</h3>
+<div class="scroll">
+<table>
+  <caption>Seed weight by source (<code>shared/taste.ts:46-141</code>); d is days ago</caption>
+  <thead><tr><th scope="col">Source</th><th scope="col">Weight</th></tr></thead>
+  <tbody>
+    <tr><td>Played in Krida</td><td>engagement × 0.5<sup>d/30</sup>; engagement 1 if finished, else 1.5 × watched share, kept between 0.25 and 1</td></tr>
+    <tr><td>Plan to watch</td><td>0.5 × 0.5<sup>d/30</sup></td></tr>
+    <tr><td>Rated in Krida, 5 to 10</td><td>(0.25 + 0.85 × (score − 5) / 5) × max(0.5, 0.5<sup>d/180</sup>); 9 or more is "loved"</td></tr>
+    <tr><td>Rated 4 or lower, or dropped</td><td>never a seed; goes on the disliked list</td></tr>
+    <tr><td>Simkl library</td><td>0.8 × base × max(0.3, 0.5<sup>d/365</sup>); base from the rating, else completed 0.5, watching 0.55, plan 0.3, on hold 0.25, abandoned 0.12</td></tr>
+  </tbody>
+</table>
+</div>
+<p>A title keeps its strongest signal, and the top 30 become seeds.</p>
+<h3>Scoring a candidate for Top picks</h3>
+<p>Candidates are Krida's built-in rows, well-voted titles in each language the profile watches, TMDB's recommendations for the top 20 seeds, and up to 150 titles from the profile's first 8 addon catalogs (<code>server/recs.ts:136-167</code>, <code>src/features/home/recsRefresh.ts:15-16</code>).</p>
+<div class="formula">pinned rows:  pin index
+moved rows:   100 + position
+other rows:   1100 + default rank</div>
+<dl class="terms">
+  <dt>fans</dt><dd>Sum over seeds of weight × (1 − rank / 25) × trust, where rank is the title's place in TMDB's recommendations for that seed; then divided by the highest sum (<code>server/recs.ts:170-189</code>). Trust is 0.4 for titles voted under 6, and ×0.25 when a non-English seed points at another language, Indian languages counting as one (<code>server/score.ts:110-114</code>).</dd>
+  <dt>alike</dt><dd>Seed-weighted mean of 0.5 × genre Jaccard + 0.25 cast + 0.15 director + 0.1 writer overlap, each overlap min(1, shared / 2), and ×0.4 when one is animated and the other isn't (<code>score.ts:42-51</code>).</dd>
+  <dt>quality</dt><dd>(MDBList score − 50) / 40, else (IMDb rating − 5) / 4, else 0.45, kept in 0 to 1 (<code>score.ts:68-74</code>).</dd>
+  <dt>popularity</dt><dd>log(1 + TMDB popularity) over the pool's highest.</dd>
+  <dt>fit</dt><dd>language × era. Language is 0.3 + 0.7 × min(1, 1.5 × the seed weight in that title's world / the top world's); worlds are anime, Indian cinema, or the original language. Era is 1, or 1 − 0.03 per year older than (floor year − 3), at least 0.4, where 15% of seed weight is older than the floor year (<code>server/recs.ts:81-109</code>).</dd>
+  <dt>penalty</dt><dd>0.3 × the closest disliked title's similarity, when that's over 0.35 (<code>recs.ts:196-200</code>).</dd>
+</dl>
+<p>Titles rated under 6.5 never make Top picks (6 for other rows). The row keeps one title per franchise, skips franchises already watched, and is chosen by maximal marginal relevance: value = 0.75 × score − 0.25 × the highest genre overlap with what's picked, with each format capped near its share of seed weight (<code>recs.ts:255-275</code>, <code>score.ts:85-104</code>).</p>
+<div class="scroll">
+<table>
+  <caption>Worked example: one candidate, two release years</caption>
+  <thead><tr><th scope="col">Part</th><th scope="col" class="num">Value</th><th scope="col" class="num">Adds</th></tr></thead>
+  <tbody>
+    <tr><td>fans: 6th for a seed rated 9 twenty days ago (0.861 × 0.8 = 0.689), 11th for a film finished 10 days ago (0.794 × 0.6 = 0.476); 1.165 over the pool's top 1.94</td><td class="num">0.60</td><td class="num">0.240</td></tr>
+    <tr><td>alike, capped by min(1, 2.2 × alike)</td><td class="num">0.20 → 0.44</td><td class="num">0.132</td></tr>
+    <tr><td>quality: MDBList 78</td><td class="num">0.70</td><td class="num">0.140</td></tr>
+    <tr><td>popularity</td><td class="num">0.50</td><td class="num">0.050</td></tr>
+    <tr><td>Released 2021, fit 1</td><td class="num"></td><td class="num">0.562</td></tr>
+    <tr><td>Released 1985, floor year 2005: era 1 − 17 × 0.03</td><td class="num">× 0.49</td><td class="num">0.275</td></tr>
+  </tbody>
+</table>
+</div>
+<details><summary>The other rows: Because you watched, For you and X, a new profile</summary>
+<ul>
+  <li><strong>Because you watched</strong>, up to 3 rows, loved seeds first: (0.5 × fans of that one seed + 0.3 × similarity + 0.2 × quality) × world × fit − penalty, where world is 1 in the seed's world, 0.45 outside it. A row needs 6 titles and is skipped when 40% repeats an earlier one (<code>server/recs.ts:300-341</code>).</li>
+  <li><strong>For you and X</strong>, for each other profile in the account: (0.75 × 2.2 × √(alike to mine × alike to theirs) + 0.25 × quality) × √(my fit × their fit) (<code>recs.ts:344-360</code>).</li>
+  <li><strong>Nothing to go on</strong>: 0.6 × quality + 0.4 × popularity, as "Top picks to start with" (<code>recs.ts:244-251</code>).</li>
+</ul>
+</details>
+<h3>When it runs, and whose keys it spends</h3>
+<p>The browser recomputes a minute after the taste changes (at least 2 minutes apart), when another profile's taste changes, and when picks are 6 hours old, checked every 30 minutes and 5 s after opening (<code>recsRefresh.ts:27-35</code>).</p>
+<p>Each run spends the caller's TMDB key on recommendations for up to 20 seeds, language lookups and language rows, and up to 8 MDBList batches of 200 ids; Cinemeta and Kitsu need no key (<code>server/recs.ts:140-153</code>).</p>
+<p>Everything lands in Vercel's runtime cache, shared by all users, so a title one person looked up costs the next person nothing (<code>server/cache.ts:5-8</code>).</p>
+
+<h2>Only TorBox plays everywhere</h2>
+<div class="scroll">
+<table>
+  <caption>Where each kind of debrid plays</caption>
+  <thead><tr><th scope="col">Where</th><th scope="col">TorBox</th><th scope="col">Any other service</th></tr></thead>
+  <tbody>
+    <tr><td>Browser and PWA</td><td><span class="good">Any file</span>, as TorBox's HLS re-encoded to 8-bit H.264 and stereo AAC</td><td><span class="mixed">MP4 and WebM only</span> (<code>shared/formats.ts:30</code>)</td></tr>
+    <tr><td>Mac and Windows app</td><td><span class="good">Original file</span> in mpv, from TorBox's download link (<code>convex/desktop.ts:13-26</code>)</td><td><span class="good">Original file</span> in mpv, from the addon's link</td></tr>
+    <tr><td>External player</td><td colspan="2">Offered in the copy (<code>Onboarding.tsx:424-426</code>); I didn't trace the handoff</td></tr>
+    <tr><td>Parties</td><td><span class="good">Yes</span>, the host's</td><td><span class="bad">No</span>: <code>NEEDS_TORBOX</code></td></tr>
+    <tr><td>Timeline previews</td><td><span class="good">Yes</span></td><td><span class="bad">No</span> (<code>server/session.ts:60-64</code>)</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Parties need TorBox because one TorBox stream can play in every member's browser: Convex serves its playlist with the host's key on the server, and segments load from TorBox's CDN with no key (<code>convex/http.ts:14-71</code>).</p>
+<p>Another service gives a file link, which plays only where its container does; that last reason is my reading, not a comment in the code.</p>
+<h3>Previews read keyframes from the file itself</h3>
+<p><code>/api/frames</code> reads the film's MKV index out of the account's TorBox by file size, and <code>/api/frame</code> reads one keyframe, a few hundred KB of a file that can be 30 GB (<code>api/frames.ts</code>, <code>api/frame.ts</code>). The frames Worker does the same on Cloudflare, which doesn't bill bandwidth.</p>
+<p>The Worker holds no TorBox key. <code>/api/frames?ticket</code> seals the caller's key with AES-GCM under SHA-256 of <code>"krida frames ticket " + FRAMES_SECRET</code>, with the file size and expiry as associated data, valid one day plus 5 minutes of clock skew (<code>server/frameTicket.ts:15-66</code>). It isn't deployed, so <code>FRAMES_URL</code> is unset and the player falls back to <code>/api/frame</code> at one picture every 90 s instead of every 10 s (<code>docs/ops.md:57-66</code>).</p>
+
+<h2>Push ships web; apps need releases</h2>
+<div class="scroll">
+<table>
+  <caption>How each platform gets a change</caption>
+  <thead><tr><th scope="col">Platform</th><th scope="col">How it updates</th><th scope="col">Needs a release for</th></tr></thead>
+  <tbody>
+    <tr><td>Web</td><td>A push to <code>main</code> deploys Vercel and Convex. Open tabs ask <code>/version.json</code> every 10 minutes while visible and offer Reload (<code>src/ui/appStatus.ts:31-60</code>)</td><td>Nothing</td></tr>
+    <tr><td>PWA</td><td><code>public/sw.js</code> fetches pages network-first, so the next open is the new build; hashed <code>/assets</code> come from cache; offline opens the last shell</td><td>Nothing</td></tr>
+    <tr><td>Android</td><td>A WebView on the live site (<code>android/app/build.gradle.kts:9</code>). At most every 6 h it reads <code>android.json</code> from the releases repo, downloads the APK, checks its SHA-256, and Android asks to install; only the same signing key is accepted (<code>Updates.kt:16-70</code>)</td><td>Kotlin, the bridge, the manifest</td></tr>
+    <tr><td>Mac and Windows</td><td>A Tauri window on the live site, mpv for the picture (<code>desktop/src-tauri/src/main.rs:16,125</code>). The Tauri updater reads <code>latest.json</code> on open and every 6 h, checks its minisign signature against the key in <code>tauri.conf.json</code>, and installs when it can't stop a film (<code>update.rs:1-6</code>)</td><td>Rust, mpv, Tauri config, deep links</td></tr>
+  </tbody>
+</table>
+</div>
+<p><code>scripts/release.ts</code> runs only on the Mac mini, from a clean <code>main</code> equal to <code>origin/main</code>. It releases an app only when its folder changed since its last tag, builds it signed, publishes to <code>kausthubh-coder/krida-open-releases</code>, then tags and pushes (<code>release.ts:1-11,94-95</code>).</p>
+<p>Signing keys sit in <code>~/.krida-open/</code>: the updater key, the Android keystore and its properties file (<code>release.ts:8,38-39</code>). I didn't open them.</p>
+<p>The releases repo today: <code>android-v1.3.0</code> (versionCode 4) and <code>desktop-v0.1.10</code>, whose <code>latest.json</code> lists only <code>darwin-aarch64</code>.</p>
+<p>When the owner ships a web change, every platform shows it on its next load. Convex deploys in the same push while old tabs still call the old functions, which is why signatures must stay compatible.</p>
+
+<h2>Owner pays sync; users pay media</h2>
+<div class="scroll">
+<table>
+  <caption>Every service, who pays, and the limit that bites first</caption>
+  <thead><tr><th scope="col">Service</th><th scope="col">Pays</th><th scope="col">Limit</th></tr></thead>
+  <tbody>
+    <tr><td>Convex</td><td>Owner</td><td>Database bandwidth: the repo budgets about 33 MB a day (<code>docs/database-reads.md:3-7</code>). Parties heartbeat every 5 to 10 s (<code>lib/rooms.ts:16</code>)</td></tr>
+    <tr><td>Vercel</td><td>Owner</td><td>12 functions, and <code>api/</code> has 12 now, so a new endpoint must share a file. A comment says the free plan pauses past 10 GB a month (<code>workers/frames/index.ts:3-4</code>, unconfirmed). Hobby is for non-commercial use (unconfirmed against today's terms)</td></tr>
+    <tr><td>Cloudflare Worker</td><td>Owner</td><td>100,000 requests a day, then <code>/api/frame</code> takes over (<code>docs/ops.md:63</code>)</td></tr>
+    <tr><td>Clerk</td><td>Owner</td><td>Development instance; free-tier user limits not checked</td></tr>
+    <tr><td>PostHog</td><td>Owner, optional</td><td>Only with <code>VITE_POSTHOG_KEY</code>; drops data past the free allowance</td></tr>
+    <tr><td>TMDB</td><td>User's free key</td><td>No daily cap (<code>docs/architecture.md:100</code>). Answers are shared across users; whether TMDB's terms allow one person's key to fill a cache others read is unconfirmed</td></tr>
+    <tr><td>MDBList</td><td>User's free key, optional</td><td>1,000 requests a day; one picks run can use 8</td></tr>
+    <tr><td>Debrid</td><td>User's subscription</td><td>Their plan's limits; a party spends the host's</td></tr>
+    <tr><td>Addons</td><td>Their hosts</td><td>Every stream search leaves from Convex's servers, so an addon that rate-limits by IP sees all users as one (inferred)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Eight things aren't finished</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">Item</th><th scope="col">State</th><th scope="col">What it takes</th></tr></thead>
+  <tbody>
+    <tr><td>Windows app</td><td><span class="bad">Not released</span></td><td><code>desktop-v0.1.10</code> has Mac files only; <code>node scripts/release.ts --add-windows</code> on a Windows machine</td></tr>
+    <tr><td>Frames Worker</td><td><span class="bad">Not deployed</span></td><td><code>wrangler login</code>, deploy, <code>FRAMES_SECRET</code> in the Worker and Vercel, <code>FRAMES_URL</code> in Vercel</td></tr>
+    <tr><td>TorBox referral</td><td><span class="mixed">Code ready</span></td><td>Set <code>VITE_TORBOX_REFERRAL</code>; empty gives a plain <code>torbox.app</code> link (<code>src/data/keys.ts:66-75</code>). Vercel's env not checked</td></tr>
+    <tr><td>Google sign-in</td><td><span class="mixed">Untested for real</span></td><td>The proof so far used Clerk's test user</td></tr>
+    <tr><td>iPhone PWA</td><td><span class="mixed">Untested on a phone</span></td><td>Install from Safari and play</td></tr>
+    <tr><td>Clerk production</td><td><span class="mixed">Blocked</span></td><td>A custom domain; then change the hard-coded dev domain in <code>convex/auth.config.ts:11</code> and the publishable key</td></tr>
+    <tr><td>Desktop 0.1.11</td><td><span class="mixed">In code</span></td><td><code>krida://</code> links are in <code>links.rs</code>, but <code>tauri.conf.json</code> still says 0.1.10; needs a release</td></tr>
+    <tr><td>The two broken items above</td><td><span class="bad">Open</span></td><td>Check room membership in <code>/hls/playlist.m3u8</code>; rebuild suggestion links when the debrid key changes</td></tr>
+  </tbody>
+</table>
+</div>
+
+<details><summary>What I read, and what I didn't check</summary>
+<p>Read: the spec and <code>AGENTS.md</code>; <code>convex/</code> onboarding, accounts, profiles, invites, rooms, addons, catalogs, engine, sources, http, desktop and <code>lib/</code> accounts, auth, profiles, rooms, addons, keyCheck, rank, providers, deployment; <code>shared/</code> stremio, taste, addons; <code>server/</code> recs, score, session, cache, addonProxy, catalogs, frameTicket; <code>api/</code> rows, recs, frames, frame; the onboarding and home-row UI; <code>public/sw.js</code>; <code>Updates.kt</code>; the Tauri config, <code>update.rs</code>, <code>links.rs</code>, <code>signin.rs</code>; <code>scripts/release.ts</code>; <code>docs/models/README.md</code>, <code>ops.md</code>, <code>recommendations.md</code>, <code>database-reads.md</code>.</p>
+<p>Checked live: <code>/version.json</code> and the releases repo through <code>gh</code>. Not run: TLC, the tests, the app, or any attempt at the findings. Not read: <code>~/.krida-open/</code>, the Clerk, Vercel and Cloudflare dashboards, and the plans' current terms.</p>
+</details>
+
+</main>
+<script>
+addEventListener("beforeprint", () => document.querySelectorAll("details").forEach((d) => { d.dataset.wasOpen = d.open; d.open = true; }));
+addEventListener("afterprint", () => document.querySelectorAll("details").forEach((d) => (d.open = d.dataset.wasOpen === "true")));
+</script>
+</body>
+</html>

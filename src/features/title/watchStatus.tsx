@@ -133,7 +133,9 @@ export function StatusMenu({ item, size = "lg", variant = "icon", className, sta
       {icon}
     </IconButton> : variant === "toolbar" ? <button ref={trigger} type="button" className={cx(toolbarItem, "min-w-0 pl-3.5", className)}
       {...labelledProps} {...triggerProps}>
-      <span className="inline-flex shrink-0 text-[20px]">{icon}</span>{where}{caret}
+      <span className="inline-flex shrink-0 text-[20px]">{icon}</span>
+      {/* Under 360px (a folded Fold) the bar has no room for the word; the icon says it, and the label names it. */}
+      <span className="truncate max-[22.5rem]:sr-only">{status ? statusLabel(status) : "Plan to watch"}</span>{caret}
     </button> : <Button ref={trigger} size="lg" variant={variant} icon={icon} className={cx("min-w-0", className)}
       {...labelledProps} {...triggerProps}>
       {where}{caret}

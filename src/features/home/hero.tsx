@@ -59,7 +59,7 @@ export function Hero({ slides }: { slides: Slide[] }) {
       // The artwork runs on under a sideways phone's rail, so its glass has a picture behind it.
       // A tall phone stops at 36rem, so the first row still shows under it.
       // On a phone it takes most of the first screen, as Nuvio's and Apple TV's do, with the top of the next row showing under it.
-      className="relative isolate -mt-(--inset-top) -ml-(--rail-pad,0px) flex min-h-[min(82dvh,44rem)] items-end overflow-hidden pl-(--rail-pad,0px) md:min-h-[80dvh]"
+      className="relative isolate -mt-(--inset-top) -mr-(--inset-right) -ml-(--rail-pad,0px) flex min-h-[min(82dvh,44rem)] items-end overflow-hidden pr-(--inset-right) pl-(--rail-pad,0px) md:min-h-[80dvh]"
       onPointerEnter={() => setPaused(true)}
       onPointerLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}

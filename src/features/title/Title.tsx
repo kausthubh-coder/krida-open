@@ -227,7 +227,7 @@ function TitleView({ meta, filling }: { meta: Meta; filling: boolean }) {
   return (
     <main className="pb-16">
       {/* The artwork runs on under a sideways phone's rail, so its glass has a picture behind it. */}
-      <section className="relative isolate -mt-(--inset-top) -ml-(--rail-pad,0px) flex min-h-[78dvh] items-end overflow-hidden pl-(--rail-pad,0px) max-md:min-h-[90dvh]">
+      <section className="relative isolate -mt-(--inset-top) -mr-(--inset-right) -ml-(--rail-pad,0px) flex min-h-[78dvh] items-end overflow-hidden pr-(--inset-right) pl-(--rail-pad,0px) max-md:min-h-[90dvh]">
         {/* What the glass actions bend in Safari and Firefox: a copy of the artwork, not of the whole page. */}
         <div className="absolute inset-0 -z-10">
           <Backdrop meta={meta} filling={filling} />

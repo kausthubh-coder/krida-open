@@ -471,7 +471,8 @@ export function SettingsPage() {
 
   return (
     <main className="mx-auto grid w-full max-w-5xl grid-cols-[15rem_minmax(0,1fr)] gap-14 px-8 pt-24 pb-32">
-      <nav aria-label="Settings" className="sticky top-24 flex flex-col gap-1 self-start">
+      {/* Taller than a short window (a sideways phone), it scrolls on its own, so Account and Sign out stay reachable. */}
+      <nav aria-label="Settings" className="sticky top-24 flex max-h-[calc(100dvh-6rem-var(--inset-bottom))] flex-col gap-1 self-start overflow-y-auto overscroll-contain scrollbar-none">
         <div className="px-3 pb-5">{who}</div>
         {groups.map((g, i) => (
           <div key={i} className={cx("flex flex-col gap-1", i > 0 && "mt-3 border-t border-line pt-3")}>

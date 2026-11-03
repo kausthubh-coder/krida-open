@@ -97,10 +97,10 @@ export function TopNav() {
   const scrolled = useScrolled();
   const top = isTopLevel(useLocation().pathname);
   return (
-    <header className="pointer-events-none fixed top-0 right-0 left-(--rail-pad,0px) z-40 pt-[var(--inset-top)]">
+    <header className="pointer-events-none fixed top-0 right-0 left-(--rail-pad,0px) z-40 pt-[var(--inset-top)] pr-(--inset-right)">
       {/* The scroll edge: what scrolls up under the wordmark and the back button dims away instead of meeting them.
           It runs on under a sideways phone's rail, so the artwork there dims with the rest. */}
-      <div aria-hidden className="absolute top-0 right-0 left-[calc(var(--rail-pad,0px)*-1)] h-28 bg-linear-to-b from-page/90 via-page/50 to-transparent" />
+      <div aria-hidden className="absolute top-0 -right-(--inset-right) left-[calc(var(--rail-pad,0px)*-1)] h-28 bg-linear-to-b from-page/90 via-page/50 to-transparent" />
       <div className="relative flex h-16 items-center gap-2 px-4 md:h-20 md:px-12 short:h-16">
         <BackButton />
         <Link

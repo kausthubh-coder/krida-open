@@ -1,0 +1,43 @@
+[package]
+name = "krida"
+version = "0.1.10"
+description = "Krida for Windows"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# macos-private-api: a see-through page on a Mac, so mpv shows under it. Nothing on Windows.
+tauri = { version = "2", features = ["macos-private-api"] }
+# deep-link: a krida:// link opened while Krida runs reaches the open window (links.rs).
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+tauri-plugin-deep-link = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["net", "io-util", "sync", "time", "macros"] }
+url = "2"
+jpeg-decoder = { version = "0.3", default-features = false }
+tauri-plugin-updater = "2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libloading = "0.8"
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", features = ["NSApplication", "NSResponder", "NSWindow", "NSGraphics", "objc2-core-foundation"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

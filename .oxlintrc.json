@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "no-restricted-imports": ["error", {
+      "paths": [
+        { "name": "convex/server", "importNames": ["mutationGeneric", "internalMutationGeneric"],
+          "message": "Define mutations with convex/functions.ts (mutation, internalMutation), so browsers learn about the rows they change." },
+        { "name": "convex/react", "importNames": ["useQuery", "useQueries"],
+          "message": "Use useQuery from convex-helpers/react/cache/hooks, which shares one subscription per query across components." }
+      ],
+      "patterns": [
+        { "group": ["**/_generated/server", "**/_generated/server.js"], "importNames": ["mutation", "internalMutation"],
+          "message": "Define mutations with convex/functions.ts (mutation, internalMutation), so browsers learn about the rows they change." }
+      ]
+    }]
+  },
+  "overrides": [
+    {
+      "files": ["tests/**"],
+      "plugins": ["jest"],
+      "rules": {
+        "jest/valid-expect": "off",
+        "jest/no-conditional-expect": "off",
+        "jest/require-to-throw-message": "error",
+        "jest/no-restricted-matchers": ["error", {
+          "toBeDefined": "Assert the exact value (toBe, toEqual, toMatchObject with a literal); a loose matcher passes when the code returns the wrong thing.",
+          "toBeTruthy": "Assert the exact value (toBe, toEqual, toMatchObject with a literal); a loose matcher passes when the code returns the wrong thing.",
+          "toBeFalsy": "Assert the exact value (toBe, toEqual, toMatchObject with a literal); a loose matcher passes when the code returns the wrong thing.",
+          "not.toThrow": "Assert what the call returns or changes; not throwing passes when it does nothing.",
+          "toHaveBeenCalled": "Assert the payload with toHaveBeenCalledWith."
+        }]
+      }
+    }
+  ]
+}

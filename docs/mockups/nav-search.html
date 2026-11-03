@@ -1,0 +1,391 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+:root{
+  --k-page:oklch(0.145 0.006 60);--k-surface:oklch(0.18 0.007 60);--k-raised:oklch(0.215 0.008 60);--k-overlay:oklch(0.25 0.009 60);
+  --k-line:oklch(1 0 0 / .09);--k-fg:oklch(0.95 0.005 60);--k-muted:oklch(0.76 0.01 60);--k-faint:oklch(0.6 0.012 60);
+  --k-accent:oklch(0.82 0.14 75);--k-on-accent:oklch(0.2 0.03 60);--k-success:oklch(0.74 0.14 150);
+  --k-shadow:inset 0 1px 0 0 oklch(1 0 0/.04),inset 0 0 0 1px oklch(1 0 0/.05),0 0 0 1px oklch(0 0 0/.2),0 2px 2px 0 oklch(0 0 0/.12),0 4px 4px 0 oklch(0 0 0/.12);
+  --k-overlay-shadow:inset 0 1px 0 0 oklch(1 0 0/.05),inset 0 0 0 1px oklch(1 0 0/.06),0 0 0 1px oklch(0 0 0/.25),0 4px 8px 0 oklch(0 0 0/.2),0 16px 40px -8px oklch(0 0 0/.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--foreground)}
+.mock{margin:0 0 40px}
+.cap{font-size:15px;font-weight:600;margin-bottom:4px}
+.note{font-size:13px;line-height:1.5;color:var(--muted-foreground);margin-bottom:12px;max-width:680px}
+.sub{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-foreground);margin:14px 0 6px}
+.sub.bad{color:oklch(0.7 0.17 25)}.sub.good{color:oklch(0.74 0.14 150)}
+.fit{width:100%;overflow:hidden;border-radius:var(--radius,12px)}
+.screen{width:1280px;background:var(--k-page);color:var(--k-fg);font-size:14px;line-height:20px;position:relative;overflow:hidden;transform-origin:0 0}
+img{display:block}
+.bgart{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%}
+.scrim{position:absolute;inset:0;background:linear-gradient(to bottom,oklch(0.145 0.006 60/.85),oklch(0.145 0.006 60/.25))}
+/* nav */
+.nav{position:absolute;top:0;left:0;right:0;height:64px;display:flex;align-items:center;gap:32px;padding:0 48px;z-index:5}
+.nav .logo{font-family:Fraunces;font-weight:600;font-size:20px;letter-spacing:-.02em}.nav .logo b{color:var(--k-accent)}
+.links{display:flex;gap:4px}
+.links a{position:relative;height:40px;padding:0 12px;display:flex;align-items:center;border-radius:99px;color:var(--k-muted);font-weight:500}
+.links a.on{color:var(--k-fg)}.links a.on:after{content:"";position:absolute;left:12px;right:12px;bottom:4px;height:2px;border-radius:2px;background:var(--k-accent)}
+.nav .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.party{height:40px;padding:0 16px 0 12px;border-radius:99px;background:oklch(0 0 0/.35);backdrop-filter:blur(12px);display:flex;align-items:center;gap:8px;font-weight:500}
+.party i{font-size:18px;color:var(--k-muted)}
+.party .join{height:28px;padding:0 12px;border-radius:99px;background:var(--k-accent);color:var(--k-on-accent);display:grid;place-items:center;margin-right:-10px}
+.party em{font-style:normal;color:var(--k-muted)}
+.av{width:28px;height:28px;border-radius:99px;display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--k-on-accent);flex:none}
+.av.s{background:oklch(0.72 0.13 150)}.av.k{background:oklch(0.72 0.14 40)}
+.av.big{width:32px;height:32px;font-size:13px}
+.ring-ok{box-shadow:0 0 0 2px var(--k-success)}
+.stack{display:flex}.stack .av+.av{margin-left:-8px}.stack .av{box-shadow:0 0 0 2px oklch(0 0 0/.4)}
+.me{height:40px;padding:0 8px 0 4px;border-radius:99px;display:flex;align-items:center;gap:6px;color:var(--k-faint)}
+.me.named{padding-right:10px;color:var(--k-muted);font-weight:500;gap:8px}
+.oldpill{height:40px;padding:0 14px 0 6px;border-radius:99px;background:oklch(0 0 0/.35);display:flex;align-items:center;gap:8px;font-weight:500}
+/* centered search field */
+.nsf{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:420px;z-index:6}
+.box{height:40px;border-radius:99px;background:oklch(0 0 0/.35);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px oklch(1 0 0/.1);display:flex;align-items:center;gap:10px;padding:0 4px 0 14px;color:var(--k-faint)}
+.box>i{font-size:18px;color:var(--k-muted)}
+.box .t{flex:1;white-space:nowrap;overflow:hidden}
+.kbd{font-size:12px;line-height:18px;color:var(--k-faint);border:1px solid var(--k-line);border-radius:6px;padding:0 7px}
+.browse{width:32px;height:32px;border-radius:99px;display:grid;place-items:center;color:var(--k-muted);position:relative}
+.browse:before{content:"";position:absolute;left:-6px;top:8px;bottom:8px;width:1px;background:var(--k-line)}
+.browse i{font-size:18px}
+.browse.on{background:oklch(1 0 0/.12);color:var(--k-fg)}
+.nsf.focus .box{background:var(--k-raised);box-shadow:0 0 0 1px oklch(1 0 0/.25);color:var(--k-fg)}
+.caret{display:inline-block;width:1.5px;height:18px;background:var(--k-fg);vertical-align:-3px;margin-left:1px}
+.x{width:28px;height:28px;border-radius:99px;display:grid;place-items:center;color:var(--k-muted)}
+/* dropdown */
+.dd{margin-top:8px;background:var(--k-overlay);border-radius:20px;box-shadow:var(--k-overlay-shadow);padding:8px}
+.dd h3{font-size:12px;line-height:16px;font-weight:500;color:var(--k-faint);padding:10px 10px 6px}
+.row{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:10px;min-height:44px}
+.row.sel{background:oklch(1 0 0/.08)}
+.row .p{width:36px;aspect-ratio:2/3;border-radius:6px;overflow:hidden;flex:none;outline:1px solid oklch(1 0 0/.1);outline-offset:-1px;background:var(--k-surface)}
+.row .p img{width:100%;height:100%;object-fit:cover}
+.row .tx{flex:1;min-width:0}.row .tx b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tx b s{text-decoration:none;font-weight:400;color:var(--k-muted)}
+.row .tx small{display:block;font-size:12px;line-height:16px;color:var(--k-faint)}
+.row .tx small em{font-style:normal;color:var(--k-muted)}
+.bar{height:3px;border-radius:2px;background:oklch(1 0 0/.15);margin-top:5px;width:120px}.bar span{display:block;height:100%;width:62%;border-radius:2px;background:var(--k-accent)}
+.btn{height:32px;padding:0 12px;border-radius:99px;display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px;flex:none}
+.btn.pri{background:var(--k-accent);color:var(--k-on-accent)}
+.go{color:var(--k-faint);font-size:16px}
+.ic{width:36px;height:36px;display:grid;place-items:center;flex:none;color:var(--k-faint);font-size:18px}
+.ic.tile{border-radius:8px;background:oklch(1 0 0/.06);color:var(--k-muted)}
+.hist .tx b{font-weight:400;color:var(--k-muted)}
+.foot{margin-top:4px;border-top:1px solid var(--k-line);display:flex;align-items:center;justify-content:space-between;padding:10px 10px 4px;font-size:12px;color:var(--k-faint)}
+.foot b{color:var(--k-fg);font-weight:500}
+.foot .keys{display:flex;gap:12px;align-items:center}
+.dim{position:absolute;inset:64px 0 0;background:oklch(0.145 0.006 60/.6);z-index:4}
+/* home */
+.hero{position:relative;height:560px}
+.hero>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero .g1{position:absolute;inset:0;background:linear-gradient(to right,oklch(0.145 0.006 60/.92),oklch(0.145 0.006 60/.4) 45%,transparent 70%)}
+.hero .g2{position:absolute;inset:0;background:linear-gradient(to top,var(--k-page),transparent 40%)}
+.hero .g3{position:absolute;inset:0 0 auto;height:140px;background:linear-gradient(to bottom,oklch(0.145 0.006 60/.8),transparent)}
+.hero .c{position:absolute;left:48px;bottom:90px;width:460px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--k-accent)}
+.hero h1{font-family:Fraunces;font-size:56px;line-height:58px;font-weight:600;letter-spacing:-.025em;margin:10px 0 12px}
+.hero p{color:var(--k-muted);font-size:16px;line-height:24px}
+.acts{display:flex;gap:10px;margin-top:20px}
+.lg{height:48px;padding:0 20px;border-radius:99px;display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px}
+.lg.pri{background:var(--k-accent);color:var(--k-on-accent)}.lg.sec{background:oklch(1 0 0/.12)}
+/* search page */
+.sp{padding:96px 48px 40px}
+.h2{font-size:20px;line-height:28px;font-weight:600;letter-spacing:-.01em;margin-bottom:12px;display:flex;gap:12px;align-items:baseline}
+.h2 small{font-size:14px;font-weight:400;color:var(--k-faint);letter-spacing:0}
+.tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.gt{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden}
+.gt img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.85)}
+.gt:after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px oklch(1 0 0/.1);background:linear-gradient(200deg,transparent 30%,oklch(0.145 0.006 60/.9))}
+.gt span{position:absolute;left:14px;bottom:10px;z-index:1;font-family:Fraunces;font-size:20px;font-weight:600}
+.lt{height:84px;border-radius:12px;background:var(--k-surface);box-shadow:var(--k-shadow);padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between}
+.lt b{font-size:28px;line-height:36px;font-weight:500}.lt small{font-size:12px;color:var(--k-faint)}
+.chips{display:flex;gap:8px;margin-top:16px}
+.chip{height:36px;padding:0 14px;border-radius:99px;background:oklch(1 0 0/.06);color:var(--k-muted);display:flex;align-items:center;font-weight:500}
+.trend{display:grid;grid-template-columns:1fr 1fr;column-gap:40px}
+.tr{height:72px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--k-line)}
+.tr .n{width:24px;text-align:right;font-family:Fraunces;font-size:20px;color:var(--k-faint)}
+.tr .p{width:40px;aspect-ratio:2/3;border-radius:8px;overflow:hidden;outline:1px solid oklch(1 0 0/.1);outline-offset:-1px}
+.tr .p img{width:100%;height:100%;object-fit:cover}
+.tr small{display:block;font-size:12px;color:var(--k-faint)}
+.seg{display:inline-flex;margin:0 0 28px;padding:3px;border-radius:99px;background:oklch(1 0 0/.06);gap:2px}
+.seg span{height:30px;padding:0 14px;border-radius:99px;display:flex;align-items:center;gap:6px;color:var(--k-muted);font-weight:500}
+.seg span.on{background:oklch(1 0 0/.12);color:var(--k-fg)}.seg em{font-style:normal;color:var(--k-faint)}
+.best{display:grid;grid-template-columns:3fr 2fr;gap:32px}
+.top{position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;outline:1px solid oklch(1 0 0/.1);outline-offset:-1px}
+.top img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.top .g{position:absolute;inset:0;background:linear-gradient(to top,oklch(0.145 0.006 60/.95),oklch(0.145 0.006 60/.2) 65%,transparent)}
+.top .c{position:absolute;left:24px;bottom:24px;right:24px}
+.top h2{font-family:Fraunces;font-size:34px;line-height:40px;font-weight:600;margin:8px 0 6px}
+.top p{color:var(--k-muted)}
+.also h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.also .row{border-bottom:1px solid var(--k-line);border-radius:0;padding:10px 0}
+.also .row .p{width:48px}
+.callout{position:absolute;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--k-on-accent);background:var(--k-accent);border-radius:99px;padding:5px 12px 5px 8px;box-shadow:0 6px 20px oklch(0 0 0/.5);z-index:9;white-space:nowrap}
+.callout b{width:20px;height:20px;border-radius:99px;background:var(--k-on-accent);color:var(--k-accent);display:grid;place-items:center;font-size:12px}
+/* phone */
+.phones{display:flex;gap:16px;flex-wrap:wrap}
+.phone{width:260px;border-radius:var(--radius,12px);overflow:hidden}
+.phone .screen{width:390px;transform-origin:0 0}
+.pf{height:52px;border-radius:99px;background:var(--k-surface);box-shadow:var(--k-shadow);display:flex;align-items:center;gap:10px;padding:0 16px;color:var(--k-faint);font-size:15px;margin:16px}
+.pf i{font-size:20px;color:var(--k-muted)}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:64px;border-top:1px solid var(--k-line);background:oklch(0.145 0.006 60/.95);display:grid;grid-template-columns:repeat(5,1fr)}
+.tabs span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:500;color:var(--k-faint)}
+.tabs span i{font-size:22px}.tabs span.on{color:var(--k-fg)}
+</style></head><body>
+
+<div class="mock">
+  <div class="cap">1 · One nav, the same on every page</div>
+  <div class="note">Three groups with gaps between them: where to go (left), what to find (centre), who's here (right). Search stops being a link. The field takes its place, and the Browse button at its end opens the Search page you have now. Your friend's face only shows when they're actually watching something. The rest of the time the party button uses the popcorn icon from the phone tab bar, and your own profile is an avatar with a caret.</div>
+
+  <div class="sub bad">Now: two avatars side by side, which one is you?</div>
+  <div class="fit"><div class="screen" style="height:72px">
+    <img class="bgart" src="https://images.metahub.space/background/large/tt0816692/img"><div class="scrim"></div>
+    <div class="nav">
+      <span class="logo">krida<b>.</b></span>
+      <div class="links"><a class="on">Home</a><a>Search</a><a>Library</a></div>
+      <div class="r">
+        <span class="oldpill"><span class="av s">S</span>Watch with Ben</span>
+        <span class="me named"><span class="av k big">K</span>Ana<i class="ph ph-caret-down"></i></span>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="sub good">New: nobody else is around</div>
+  <div class="fit"><div class="screen" style="height:72px">
+    <img class="bgart" src="https://images.metahub.space/background/large/tt0816692/img"><div class="scrim"></div>
+    <div class="nav">
+      <span class="logo">krida<b>.</b></span>
+      <div class="links"><a class="on">Home</a><a>Library</a></div>
+      <div class="r">
+        <span class="party"><i class="ph ph-popcorn"></i>Watch with Ben</span>
+        <span class="me"><span class="av k big">K</span><i class="ph ph-caret-down"></i></span>
+      </div>
+    </div>
+    <div class="nsf"><div class="box"><i class="ph ph-magnifying-glass"></i><span class="t">Search movies, shows, people</span><span class="kbd">/</span><span class="browse" style="margin-left:10px"><i class="ph ph-squares-four"></i></span></div></div>
+  </div></div>
+
+  <div class="sub good">New: Ben is watching something</div>
+  <div class="fit"><div class="screen" style="height:72px">
+    <img class="bgart" src="https://images.metahub.space/background/large/tt0816692/img"><div class="scrim"></div>
+    <div class="nav">
+      <span class="logo">krida<b>.</b></span>
+      <div class="links"><a class="on">Home</a><a>Library</a></div>
+      <div class="r">
+        <span class="party" style="padding-left:6px"><span class="av s ring-ok">S</span>Ben <em>is watching Dune</em><span class="join">Join</span></span>
+        <span class="me"><span class="av k big">K</span><i class="ph ph-caret-down"></i></span>
+      </div>
+    </div>
+    <div class="nsf"><div class="box"><i class="ph ph-magnifying-glass"></i><span class="t">Search movies, shows, people</span><span class="kbd">/</span><span class="browse" style="margin-left:10px"><i class="ph ph-squares-four"></i></span></div></div>
+  </div></div>
+
+  <div class="sub good">New: you're in a party</div>
+  <div class="fit"><div class="screen" style="height:72px">
+    <img class="bgart" src="https://images.metahub.space/background/large/tt0816692/img"><div class="scrim"></div>
+    <div class="nav">
+      <span class="logo">krida<b>.</b></span>
+      <div class="links"><a class="on">Home</a><a>Library</a></div>
+      <div class="r">
+        <span class="party" style="padding-left:6px"><span class="stack"><span class="av k">K</span><span class="av s">S</span></span>Party <em>· Dune: Part Two</em></span>
+        <span class="me"><span class="av k big">K</span><i class="ph ph-caret-down"></i></span>
+      </div>
+    </div>
+    <div class="nsf"><div class="box"><i class="ph ph-magnifying-glass"></i><span class="t">Search movies, shows, people</span><span class="kbd">/</span><span class="browse" style="margin-left:10px"><i class="ph ph-squares-four"></i></span></div></div>
+  </div></div>
+</div>
+
+<div class="mock">
+  <div class="cap">2 · Click the empty field</div>
+  <div class="note">Before you type, the dropdown offers the two ways in that most searches start from: browsing (the Search page) and what you searched before. The page behind dims so the list stands out. Esc or a click outside closes it.</div>
+  <div class="fit"><div class="screen" style="height:560px">
+    <div class="nav">
+      <span class="logo">krida<b>.</b></span>
+      <div class="links"><a class="on">Home</a><a>Library</a></div>
+      <div class="r">
+        <span class="party"><i class="ph ph-popcorn"></i>Watch with Ben</span>
+        <span class="me"><span class="av k big">K</span><i class="ph ph-caret-down"></i></span>
+      </div>
+    </div>
+    <div class="nsf focus" style="width:460px">
+      <div class="box"><i class="ph ph-magnifying-glass"></i><span class="t"><span class="caret" style="margin:0"></span><span style="color:var(--k-faint)">Search movies, shows, people</span></span><span class="browse" style="margin-left:10px"><i class="ph ph-squares-four"></i></span></div>
+      <div class="dd">
+        <div class="row sel"><span class="ic tile"><i class="ph ph-squares-four"></i></span><div class="tx"><b>Browse</b><small>Genres, languages, decades and what's trending</small></div><i class="ph ph-caret-right go"></i></div>
+        <h3>Recent searches</h3>
+        <div class="row hist"><span class="ic"><i class="ph ph-clock-counter-clockwise"></i></span><div class="tx"><b>telugu comedy</b></div><i class="ph ph-x go" style="font-size:14px"></i></div>
+        <div class="row hist"><span class="ic"><i class="ph ph-clock-counter-clockwise"></i></span><div class="tx"><b>denis villeneuve</b></div></div>
+        <div class="row hist"><span class="ic"><i class="ph ph-clock-counter-clockwise"></i></span><div class="tx"><b>frieren</b></div></div>
+        <div class="foot"><span>Press <span class="kbd">/</span> from any page</span><span>Clear recent</span></div>
+      </div>
+    </div>
+    <div class="dim"></div>
+    <div class="hero">
+      <img src="https://images.metahub.space/background/large/tt0816692/img" alt="">
+      <div class="g1"></div><div class="g2"></div><div class="g3"></div>
+      <div class="c"><div class="eyebrow">Picked for you</div><h1>Interstellar</h1><p>2014 · Movie · 2h 49m · Sci-Fi. A team of explorers travels through a wormhole in space to ensure humanity’s survival.</p></div>
+    </div>
+  </div></div>
+</div>
+
+<div class="mock">
+  <div class="cap">3 · Typing: suggestions, without leaving the page</div>
+  <div class="note">Your Library first, from data the app already has, so it shows on the first keystroke. Then up to four titles. Seven rows at most and no scrollbar. The part you typed stays light and the rest of each name is bold, so they're easy to tell apart. ↑↓ moves through the rows, Enter opens one, and “See all results” opens the Search page.</div>
+  <div class="fit"><div class="screen" style="height:560px">
+    <div class="nav">
+      <span class="logo">krida<b>.</b></span>
+      <div class="links"><a class="on">Home</a><a>Library</a></div>
+      <div class="r">
+        <span class="party"><i class="ph ph-popcorn"></i>Watch with Ben</span>
+        <span class="me"><span class="av k big">K</span><i class="ph ph-caret-down"></i></span>
+      </div>
+    </div>
+    <div class="nsf focus" style="width:460px">
+      <div class="box"><i class="ph ph-magnifying-glass"></i><span class="t" style="color:var(--k-fg)">dune<span class="caret"></span></span><span class="x"><i class="ph ph-x" style="font-size:14px"></i></span><span class="browse" style="margin-left:6px"><i class="ph ph-squares-four"></i></span></div>
+      <div class="dd">
+        <h3>In your Library</h3>
+        <div class="row sel">
+          <div class="p"><img src="https://images.metahub.space/poster/medium/tt15239678/img"></div>
+          <div class="tx"><b><s>Dune</s>: Part Two</b><small>Movie · <em>Watching</em> · 1h 04m left</small><div class="bar"><span></span></div></div>
+          <span class="btn pri"><i class="ph-fill ph-play"></i>Continue</span>
+        </div>
+        <div class="row">
+          <div class="p"><img src="https://images.metahub.space/poster/medium/tt1160419/img"></div>
+          <div class="tx"><b><s>Dune</s></b><small>2021 · Movie · <em>Watched</em> · your score 9</small></div>
+          <i class="ph ph-caret-right go"></i>
+        </div>
+        <h3>Titles</h3>
+        <div class="row"><div class="p"><img src="https://images.metahub.space/poster/medium/tt10466872/img"></div><div class="tx"><b><s>Dune</s>: Prophecy</b><small>2024 · Show</small></div><i class="ph ph-caret-right go"></i></div>
+        <div class="row"><div class="p"><img src="https://images.metahub.space/poster/medium/tt0087182/img"></div><div class="tx"><b><s>Dune</s></b><small>1984 · Movie</small></div><i class="ph ph-caret-right go"></i></div>
+        <div class="foot"><span>See all results for “<b>dune</b>”</span><span class="keys"><span><span class="kbd">↑↓</span> move</span><span><span class="kbd">Enter</span> open</span></span></div>
+      </div>
+    </div>
+    <div class="dim"></div>
+    <div class="hero">
+      <img src="https://images.metahub.space/background/large/tt0816692/img" alt="">
+      <div class="g1"></div><div class="g2"></div><div class="g3"></div>
+      <div class="c"><div class="eyebrow">Picked for you</div><h1>Interstellar</h1><p>2014 · Movie · 2h 49m · Sci-Fi. A team of explorers travels through a wormhole in space to ensure humanity’s survival.</p></div>
+    </div>
+  </div></div>
+</div>
+
+<div class="mock">
+  <div class="cap">4 · Browse: the Search page you have now, opened from the field</div>
+  <div class="note">The same nav. The Browse button stays lit to show where you are, the same way the gold line marks Home or Library. The page keeps the genre tiles, languages, decades and Trending. Its big field moves up into the nav, so there's still only one field on screen.</div>
+  <div class="fit"><div class="screen" style="height:900px">
+    <div class="nav">
+      <span class="logo">krida<b>.</b></span>
+      <div class="links"><a>Home</a><a>Library</a></div>
+      <div class="r">
+        <span class="party" style="background:oklch(1 0 0/.08)"><i class="ph ph-popcorn"></i>Watch with Ben</span>
+        <span class="me"><span class="av k big">K</span><i class="ph ph-caret-down"></i></span>
+      </div>
+    </div>
+    <div class="nsf"><div class="box" style="background:oklch(1 0 0/.06)"><i class="ph ph-magnifying-glass"></i><span class="t">Search movies, shows, people</span><span class="kbd">/</span><span class="browse on" style="margin-left:10px"><i class="ph-fill ph-squares-four"></i></span></div></div>
+    <div class="callout" style="top:62px;left:760px"><b>4</b>Lit while you're on Browse</div>
+    <div class="sp">
+      <div class="h2">Browse by genre</div>
+      <div class="tiles">
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt0468569/img"><span>Action</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt0386676/img"><span>Comedy</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt7784604/img"><span>Horror</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt0816692/img"><span>Sci-Fi</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt5311514/img"><span>Romance</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt6751668/img"><span>Thriller</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt0903747/img"><span>Crime</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt0944947/img"><span>Fantasy</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt2560140/img"><span>Anime</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt7660850/img"><span>Drama</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt5753856/img"><span>Mystery</span></div>
+        <div class="gt"><img src="https://images.metahub.space/background/medium/tt5491994/img"><span>Documentary</span></div>
+      </div>
+      <div class="h2" style="margin-top:40px">Languages <small>Tap two to mix them, like Telugu + Comedy</small></div>
+      <div class="tiles">
+        <div class="lt" style="background-image:radial-gradient(120% 90% at 100% 0%,oklch(0.5 0.08 40/.28),transparent 60%)"><b>తెలుగు</b><small>Telugu</small></div>
+        <div class="lt" style="background-image:radial-gradient(120% 90% at 100% 0%,oklch(0.5 0.08 60/.28),transparent 60%)"><b>हिन्दी</b><small>Hindi</small></div>
+        <div class="lt" style="background-image:radial-gradient(120% 90% at 100% 0%,oklch(0.5 0.08 25/.28),transparent 60%)"><b>தமிழ்</b><small>Tamil</small></div>
+        <div class="lt" style="background-image:radial-gradient(120% 90% at 100% 0%,oklch(0.5 0.08 150/.28),transparent 60%)"><b>മലയാളം</b><small>Malayalam</small></div>
+        <div class="lt" style="background-image:radial-gradient(120% 90% at 100% 0%,oklch(0.5 0.08 250/.28),transparent 60%)"><b>한국어</b><small>Korean</small></div>
+        <div class="lt" style="background-image:radial-gradient(120% 90% at 100% 0%,oklch(0.5 0.08 350/.28),transparent 60%)"><b>日本語</b><small>Japanese</small></div>
+      </div>
+      <div class="chips"><span class="chip">2020s</span><span class="chip">2010s</span><span class="chip">2000s</span><span class="chip">90s</span><span class="chip">80s</span><span class="chip">70s</span></div>
+      <div class="h2" style="margin-top:40px">Trending this week</div>
+      <div class="trend">
+        <div class="tr"><span class="n">1</span><div class="p"><img src="https://images.metahub.space/poster/medium/tt15239678/img"></div><div><b style="font-weight:500">Dune: Part Two</b><small>2024 · Movie</small></div></div>
+        <div class="tr"><span class="n">4</span><div class="p"><img src="https://images.metahub.space/poster/medium/tt5753856/img"></div><div><b style="font-weight:500">Dark</b><small>2017 · Show</small></div></div>
+        <div class="tr"><span class="n">2</span><div class="p"><img src="https://images.metahub.space/poster/medium/tt0903747/img"></div><div><b style="font-weight:500">Breaking Bad</b><small>2008 · Show</small></div></div>
+        <div class="tr"><span class="n">5</span><div class="p"><img src="https://images.metahub.space/poster/medium/tt7660850/img"></div><div><b style="font-weight:500">Succession</b><small>2018 · Show</small></div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div class="mock">
+  <div class="cap">5 · See all results: the same page, with the query</div>
+  <div class="note">On the Search page, typing in the nav field updates the page itself instead of opening the dropdown, so the results you already designed fill the page. Clearing the field takes you back to Browse.</div>
+  <div class="fit"><div class="screen" style="height:620px">
+    <div class="nav">
+      <span class="logo">krida<b>.</b></span>
+      <div class="links"><a>Home</a><a>Library</a></div>
+      <div class="r">
+        <span class="party" style="background:oklch(1 0 0/.08)"><i class="ph ph-popcorn"></i>Watch with Ben</span>
+        <span class="me"><span class="av k big">K</span><i class="ph ph-caret-down"></i></span>
+      </div>
+    </div>
+    <div class="nsf focus"><div class="box"><i class="ph ph-magnifying-glass"></i><span class="t" style="color:var(--k-fg)">dune<span class="caret"></span></span><span class="x"><i class="ph ph-x" style="font-size:14px"></i></span><span class="browse" style="margin-left:6px"><i class="ph ph-squares-four"></i></span></div></div>
+    <div class="sp">
+      <div class="seg"><span class="on">All <em>14</em></span><span>Movies <em>9</em></span><span>Shows <em>5</em></span></div>
+      <div class="best">
+        <div class="top">
+          <img src="https://images.metahub.space/background/large/tt1160419/img">
+          <div class="g"></div>
+          <div class="c">
+            <div class="eyebrow">Top result</div>
+            <h2>Dune</h2>
+            <p><b style="color:var(--k-fg);font-weight:500">8.0</b> IMDb · 2021 · Movie · 2h 35m · Sci-Fi</p>
+            <div class="acts"><span class="lg pri"><i class="ph-fill ph-play"></i>Play</span><span class="lg sec"><i class="ph ph-check"></i>Watched</span><span class="lg sec"><i class="ph ph-users-three"></i>Watch with Ben</span></div>
+          </div>
+        </div>
+        <div class="also">
+          <h3>Also matching</h3>
+          <div class="row"><div class="p"><img src="https://images.metahub.space/poster/medium/tt15239678/img"></div><div class="tx"><b>Dune: Part Two</b><small>2024 · Movie · <em>Watching</em></small></div><i class="ph ph-caret-right go"></i></div>
+          <div class="row"><div class="p"><img src="https://images.metahub.space/poster/medium/tt10466872/img"></div><div class="tx"><b>Dune: Prophecy</b><small>2024 · Show</small></div><i class="ph ph-caret-right go"></i></div>
+          <div class="row"><div class="p"><img src="https://images.metahub.space/poster/medium/tt0087182/img"></div><div class="tx"><b>Dune</b><small>1984 · Movie</small></div><i class="ph ph-caret-right go"></i></div>
+          <div class="row" style="border:0"><div class="p"><img src="https://images.metahub.space/poster/medium/tt0142032/img"></div><div class="tx"><b>Frank Herbert’s Dune</b><small>2000 · Show</small></div><i class="ph ph-caret-right go"></i></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div class="mock">
+  <div class="cap">6 · Phones: no change to how you get there</div>
+  <div class="note">There's no room for a field in the phone top bar, so the Search tab stays and the page keeps its own field at the top. Same page, same Browse content.</div>
+  <div class="phones">
+    <div class="phone fitp"><div class="screen" style="height:720px">
+      <div style="height:48px;display:flex;align-items:center;padding:0 16px"><span class="logo" style="font-family:Fraunces;font-weight:600;font-size:20px">krida<b style="color:var(--k-accent)">.</b></span></div>
+      <div class="pf"><i class="ph ph-magnifying-glass"></i>Movies, shows, people</div>
+      <div style="padding:8px 16px">
+        <div class="h2" style="font-size:18px">Browse by genre</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="gt"><img src="https://images.metahub.space/background/medium/tt0468569/img"><span style="font-size:17px">Action</span></div>
+          <div class="gt"><img src="https://images.metahub.space/background/medium/tt0386676/img"><span style="font-size:17px">Comedy</span></div>
+          <div class="gt"><img src="https://images.metahub.space/background/medium/tt7784604/img"><span style="font-size:17px">Horror</span></div>
+          <div class="gt"><img src="https://images.metahub.space/background/medium/tt0816692/img"><span style="font-size:17px">Sci-Fi</span></div>
+          <div class="gt"><img src="https://images.metahub.space/background/medium/tt5311514/img"><span style="font-size:17px">Romance</span></div>
+          <div class="gt"><img src="https://images.metahub.space/background/medium/tt6751668/img"><span style="font-size:17px">Thriller</span></div>
+          <div class="gt"><img src="https://images.metahub.space/background/medium/tt0903747/img"><span style="font-size:17px">Crime</span></div>
+          <div class="gt"><img src="https://images.metahub.space/background/medium/tt0944947/img"><span style="font-size:17px">Fantasy</span></div>
+        </div>
+      </div>
+      <div class="tabs"><span><i class="ph ph-house"></i>Home</span><span class="on"><i class="ph-fill ph-magnifying-glass"></i>Search</span><span><i class="ph ph-popcorn"></i>Party</span><span><i class="ph ph-books"></i>Library</span><span><span class="av k" style="width:22px;height:22px;font-size:10px">K</span>You</span></div>
+    </div></div>
+  </div>
+</div>
+
+<script>
+function fit(){
+  document.querySelectorAll('.fit').forEach(function(f){var s=f.firstElementChild;var k=f.clientWidth/1280;s.style.transform='scale('+k+')';f.style.height=(parseFloat(s.style.height)*k)+'px';});
+  document.querySelectorAll('.fitp').forEach(function(f){var s=f.firstElementChild;var k=f.clientWidth/390;s.style.transform='scale('+k+')';f.style.height=(parseFloat(s.style.height)*k)+'px';});
+}
+addEventListener('resize',fit);fit();
+</script>
+</body></html>

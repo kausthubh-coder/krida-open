@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Krida</title>
+    <!-- The app opens here, dark at once, and moves on to Krida as soon as it answers; offline, it says so. -->
+    <style>
+      html { background: #0c0b0a; color: #eae7e3; font: 15px/1.5 system-ui, sans-serif; height: 100%; }
+      body { display: grid; place-items: center; height: 100%; margin: 0; text-align: center; }
+      [hidden] { display: none; }
+      button { margin-top: 12px; padding: 8px 18px; border: 0; border-radius: 999px; background: #eae7e3; color: #0c0b0a; font: inherit; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div id="offline" hidden>
+      <p>Krida can’t be reached. Check your connection.</p>
+      <button id="retry">Try again</button>
+    </div>
+    <script>
+      const home = window.kridaDesktop?.home ?? "https://krida-open.vercel.app/";
+      const open = () =>
+        fetch(home, { mode: "no-cors", cache: "no-store" }).then(
+          () => location.replace(home),
+          () => (document.getElementById("offline").hidden = false),
+        );
+      document.getElementById("retry").onclick = () => {
+        document.getElementById("offline").hidden = true;
+        open();
+      };
+      open();
+    </script>
+  </body>
+</html>

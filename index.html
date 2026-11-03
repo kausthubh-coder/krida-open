@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" class="bg-page" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Installed as an app: its name, icons and colors, and on iPhones a full-height page under a clear status bar. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Krida" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- iPhones open an installed Krida on these instead of a white screen (scripts/make-splash.ts writes them). -->
+    <!-- splash -->
+    <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1320x2868.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1290x2796.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1284x2778.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1260x2736.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1242x2688.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/splash/828x1792.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1206x2622.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1179x2556.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1170x2532.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/splash/1125x2436.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/splash/750x1334.png" />
+    <!-- /splash -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#151210" />
+    <meta name="color-scheme" content="dark" />
+    <!-- Search engines may index / only: vercel.json sends noindex for every other path. -->
+    <title>Krida</title>
+    <meta name="description" content="Krida is a free, open-source streaming app. Watch any film, show or anime in your browser, alone or in a synced party, through your own debrid service and Stremio addons." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Krida" />
+    <meta property="og:title" content="Krida: press play on anything" />
+    <meta property="og:description" content="A free, open-source streaming app. Bring your own debrid service and Stremio addons, and watch alone or together." />
+    <meta property="og:url" content="https://krida-open.vercel.app/" />
+    <meta property="og:image" content="https://krida-open.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Krida's Home: a banner for a film and rows of posters" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Trailers on Home: YouTube's player API, and Cinemeta for titles whose row doesn't carry a trailer. The
+         players themselves can't use these connections (a cross-site frame gets its own); a warm player does that. -->
+    <!-- Most artwork comes from metahub, the rest mostly from TMDB: their connections are ready before the first row arrives. -->
+    <link rel="preconnect" href="https://images.metahub.space" />
+    <link rel="preconnect" href="https://image.tmdb.org" />
+    <link rel="preconnect" href="https://www.youtube.com" />
+    <link rel="preconnect" href="https://v3-cinemeta.strem.io" crossorigin />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

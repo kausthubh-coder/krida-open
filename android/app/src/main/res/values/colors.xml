@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The page's own background (the color-page token in src/styles.css), so nothing flashes between the splash and the page. -->
+    <color name="page">#0C0A08</color>
+    <!-- The icon's tile, as in favicon.svg. -->
+    <color name="icon">#1D1916</color>
+</resources>

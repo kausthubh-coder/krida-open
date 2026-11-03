@@ -1,0 +1,946 @@
+@import "tailwindcss";
+/* In the components layer, so Tailwind's utilities win over bubli's base look as they do over anything else. */
+@import "bubli/styles.css" layer(components);
+@import "@fontsource-variable/inter";
+
+/*
+ * Krida tokens. Dark only: a cinema app. Neutrals are tinted toward hue 60 (warm) at chroma ≤ 0.012,
+ * surfaces get lighter as they rise. The accent is light, not a hue: Play is a lit pill of white glass, and the
+ * current selection glows white, so color in the frame belongs to the artwork.
+ */
+@theme {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-black: oklch(0 0 0);
+  --color-white: oklch(1 0 0);
+  --color-page: oklch(0.145 0.006 60);
+  --color-surface: oklch(0.18 0.007 60);
+  --color-raised: oklch(0.215 0.008 60);
+  --color-overlay: oklch(0.25 0.009 60);
+  --color-line: oklch(1 0 0 / 0.09);
+  --color-fg: oklch(0.95 0.005 60);
+  --color-fg-muted: oklch(0.76 0.01 60);
+  --color-fg-faint: oklch(0.6 0.012 60);
+  --color-accent: oklch(0.97 0.004 60);
+  --color-accent-hover: oklch(0.88 0.006 60);
+  --color-on-accent: oklch(0.17 0.006 60);
+  --color-success: oklch(0.74 0.14 150);
+  --color-warning: oklch(0.78 0.14 50);
+  --color-danger: oklch(0.7 0.17 25);
+  /* Chart series for Library stats (anime, shows, movies), in this order. Checked for color-blind separation. */
+  --color-anime: #d55181;
+  --color-show: #3987e5;
+  --color-movie: #199e70;
+
+  --font-sans: "Inter Variable", "Inter Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sans);
+
+  --text-*: initial;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-subhead: 1rem;
+  --text-subhead--line-height: 1.5rem;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.75rem;
+  --text-title--letter-spacing: -0.01em;
+  --text-display: 1.75rem;
+  --text-display--line-height: 2.25rem;
+  --text-display--letter-spacing: -0.02em;
+  --text-hero: 3rem;
+  --text-hero--line-height: 3.25rem;
+  --text-hero--letter-spacing: -0.025em;
+
+  --radius-control: 14px;
+  --radius-card: 14px;
+  /* Menus and popovers: p-1.5 around rounded-control rows. */
+  --radius-menu: 20px;
+  --radius-sheet: 28px;
+
+  --ease-snappy: cubic-bezier(0.23, 1, 0.32, 1);
+  /* A spring with about 8% overshoot, for things that change shape: the lens, widening cards, a press letting go. */
+  --ease-spring: linear(
+    0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 19.4%, 1.067, 1.077 24.6%, 1.067 27.3%,
+    1.017 32.4%, 0.996 35.8%, 0.991 39.4%, 1.001 50.9%, 1
+  );
+  /* A looser spring (about 26% overshoot, two wobbles) for glass letting go of a press: it rings like a drop. */
+  --ease-jelly: linear(
+    0, 0.184 5%, 0.566 10%, 0.937 15%, 1.179 20%, 1.263 25%, 1.224 30%, 1.127 35%, 1.026 40%, 0.958 45%, 0.931 51%,
+    0.95 57.5%, 0.99 65%, 1.015 72.5%, 1.018 77%, 1.01 85%, 1
+  );
+
+  --shadow-raised:
+    inset 0 1px 0 0 oklch(1 0 0 / 0.04), inset 0 0 0 1px oklch(1 0 0 / 0.05), 0 0 0 1px oklch(0 0 0 / 0.2),
+    0 2px 2px 0 oklch(0 0 0 / 0.12), 0 4px 4px 0 oklch(0 0 0 / 0.12);
+  /* Glass: a dark hairline outside the light rim (see `glass`), so the edge holds over white and black, and one
+     soft drop. No blurred insets; each is a raster pass of its own. */
+  --shadow-glass: 0 0 0 0.5px oklch(0 0 0 / 0.35), 0 10px 30px -12px oklch(0 0 0 / 0.55);
+  --shadow-overlay:
+    inset 0 1px 0 0 oklch(1 0 0 / 0.05), inset 0 0 0 1px oklch(1 0 0 / 0.06), 0 0 0 1px oklch(0 0 0 / 0.25),
+    0 4px 8px 0 oklch(0 0 0 / 0.2), 0 16px 40px -8px oklch(0 0 0 / 0.5);
+}
+
+/*
+ * A phone held sideways: wide enough for the desktop layout, too short for it. The nav moves to a rail at the
+ * left (the tab bar, turned on its side), so the picture and the rows get the whole height. Keep in sync with
+ * SHORT in ui/media.ts.
+ */
+@custom-variant short (@media (orientation: landscape) and (height < 32rem));
+
+/* A sheet as short as a phone held sideways: on one, or in the player turned sideways on an upright one. */
+@custom-variant low-sheet {
+  @media (orientation: landscape) and (height < 32rem) {
+    @slot;
+  }
+  &:where(html[data-sideways] *) {
+    @slot;
+  }
+}
+
+/*
+ * The player's stage is wide: room for a panel beside the picture. A wide window, or the player turned sideways on
+ * an upright phone (ui/sideways.ts), whose window is narrow but whose frame is a phone's length wide. Use it instead
+ * of md: for anything inside the watch room.
+ */
+@custom-variant stage {
+  @media (width >= 48rem) {
+    @slot;
+  }
+  &:where(html[data-sideways] *) {
+    @slot;
+  }
+}
+
+/*
+ * The player's one-capsule layout, as on a phone: play and the skips in the middle of the picture and every other
+ * button in one row under it. Touch, or a window too narrow for two capsules side by side (52rem holds both with
+ * every button, 728px, inside its padding).
+ */
+@custom-variant compact {
+  @media (pointer: coarse) {
+    @slot;
+  }
+  @media (width < 52rem) {
+    @slot;
+  }
+}
+
+/* A phone-narrow window (max-sm:), except the player turned sideways on one, whose frame is wide. */
+@custom-variant narrow {
+  @media (width < 40rem) {
+    &:where(html:not([data-sideways]) *) {
+      @slot;
+    }
+  }
+}
+
+/* Inter's metrics on Arial, so nothing moves when the web font arrives. */
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial");
+  size-adjust: 107.89%;
+  ascent-override: 89.79%;
+  descent-override: 22.36%;
+  line-gap-override: 0%;
+}
+
+@layer base {
+  html {
+    /* The screen's edges (notch, status bar, home bar), used everywhere instead of env(). The Android app sets
+       --android-inset-* from the phone itself: its WebView reports these unevenly from one version to the next. */
+    --inset-top: var(--android-inset-top, env(safe-area-inset-top));
+    --inset-right: var(--android-inset-right, env(safe-area-inset-right));
+    --inset-bottom: var(--android-inset-bottom, env(safe-area-inset-bottom));
+    --inset-left: var(--android-inset-left, env(safe-area-inset-left));
+    /* The tab bar's gap from the bottom: on the home bar, as a phone's own tab bars sit, and 12px where there's none. */
+    --dock-bottom: max(12px, var(--inset-bottom));
+    /* Turned sideways on an upright phone, the frame's top is the screen's right, its left the screen's top, and
+       so on round. The watch room uses these. */
+    --safe-top: var(--inset-top);
+    --safe-right: var(--inset-right);
+    --safe-bottom: var(--inset-bottom);
+    --safe-left: var(--inset-left);
+    /* How tall the room is: on an upright phone the player's turned, so its height is the screen's width. */
+    --frame-height: 100dvh;
+    &[data-sideways] {
+      --frame-height: 100vw;
+      --safe-top: var(--inset-right);
+      --safe-right: var(--inset-bottom);
+      --safe-bottom: var(--inset-left);
+      --safe-left: var(--inset-top);
+    }
+    /* A sideways phone's camera sits on one side; the player keeps the same space on both, so it stays centred. */
+    &[data-player]:not([data-sideways]) {
+      --safe-right: max(var(--inset-left), var(--inset-right));
+      --safe-left: max(var(--inset-left), var(--inset-right));
+    }
+    background: var(--color-page);
+    color: var(--color-fg);
+    color-scheme: dark;
+    scrollbar-gutter: stable;
+    scroll-padding-top: 80px;
+    /* Phones: the tab bar covers the bottom, so focus and scroll-into-view stop above it. */
+    @media (width < 48rem) {
+      scroll-padding-bottom: calc(60px + var(--dock-bottom));
+    }
+    -webkit-tap-highlight-color: transparent;
+    /* A double tap never zooms (a pinch still does), so taps answer at once. */
+    touch-action: manipulation;
+  }
+  /*
+   * An app, not a page: pressing on a control, a link or a picture doesn't select it or open the browser's link
+   * menu. What you read stays selectable.
+   */
+  :where(button, a, img, nav, label, [role="tab"], [role^="menuitem"]) {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* Installed or full screen, there's no browser around it: no pull to refresh, no rubber band past the ends. */
+  @media (display-mode: standalone), (display-mode: fullscreen) {
+    html {
+      overscroll-behavior: none;
+    }
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100dvh;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p,
+  li {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+  html[data-modal],
+  html[data-player] {
+    overflow: hidden;
+  }
+  html[data-player] {
+    scrollbar-gutter: auto;
+  }
+  /* The Android app's picture-in-picture window (features/player/androidPlayer.ts): the picture and its subtitles
+     alone. Visibility, unlike display, lets the video show through its hidden parents. */
+  html[data-pip] body * {
+    visibility: hidden;
+  }
+  html[data-pip] video,
+  html[data-pip] .subtitle-cue {
+    visibility: visible;
+  }
+  html {
+    scrollbar-color: oklch(1 0 0 / 0.18) transparent;
+  }
+  ::selection {
+    background: oklch(1 0 0 / 0.22);
+  }
+}
+
+/*
+ * Krida for Windows: mpv draws the picture under the page, which lets it show through (features/player/desktop.ts).
+ * Outside the layers, so it outranks <html class="bg-page">.
+ */
+html[data-desktop-video],
+html[data-desktop-video] body {
+  background: transparent;
+}
+/* A see-through page reads as the browser's white to a bubble, which then veils the picture in grey to match it. */
+html[data-desktop-video] {
+  --bubli-tone: oklch(0.1 0 0);
+}
+
+/*
+ * bubli draws Krida's controls, bars, menus, sheets and toasts (ui/bubbles.tsx, ui/ui.tsx, ui/grow.tsx). These are its tokens,
+ * fitted to Krida: on html as well as .bubli-root, so what's portalled out of the tree sees them too.
+ */
+html[data-theme="dark"],
+html[data-theme="dark"] .bubli-root {
+  --bubli-fg: var(--color-fg);
+  --bubli-fg-soft: var(--color-fg-muted);
+  --bubli-plain: var(--color-raised);
+  --bubli-plain-edge: oklch(1 0 0 / 0.12);
+  --bubli-plain-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
+  --bubli-panel: var(--color-surface);
+  --bubli-panel-edge: oklch(1 0 0 / 0.1);
+  --bubli-panel-shadow: 0 24px 56px -16px oklch(0 0 0 / 0.75), 0 2px 8px oklch(0 0 0 / 0.35);
+  --bubli-shade: oklch(1 0 0 / 0.08);
+  --bubli-shade-strong: oklch(1 0 0 / 0.14);
+  --bubli-lens-rest: oklch(1 0 0 / 0.13);
+  --bubli-lens-rest-edge: inset 0 0 0 0.5px oklch(1 0 0 / 0.12), inset 0 1px 0 oklch(1 0 0 / 0.2), 0 1px 4px oklch(0 0 0 / 0.3);
+  --bubli-track: oklch(1 0 0 / 0.16);
+  --bubli-ring: var(--color-accent);
+  --bubli-accent: var(--color-accent);
+  --bubli-danger: var(--color-danger);
+  --bubli-card-radius: var(--radius-sheet);
+  --bubli-row-radius: 14px;
+  --bubli-button-weight: 600;
+  --bubli-scrim: oklch(0 0 0 / 0.55);
+  --bubli-edge-height: 7rem;
+}
+/* A bubble's plain look, before it has drawn and whenever it can't: Solid surfaces, no WebGL, reduced transparency. */
+.bubble-white:not([data-bubli-state="bubble"]) {
+  background: var(--color-accent);
+  box-shadow: 0 8px 18px -8px oklch(0 0 0 / 0.7);
+}
+.bubble-white[data-bubli-state="bubble"] {
+  box-shadow: 0 10px 24px -10px oklch(0 0 0 / 0.75);
+}
+.bubble-bar:not([data-bubli-state="bubble"]),
+.bubble-panel:not([data-bubli-state="bubble"]) {
+  background: var(--color-overlay);
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.1), var(--shadow-overlay);
+}
+/* A control that's a bubble keeps only a trace of its fill: the film is its edge. */
+:is(.fill-scrim, .fill-quiet, .fill-raised)[data-bubli-state="bubble"] {
+  background: oklch(0.12 0.006 60 / 0.3);
+  box-shadow: none;
+  &:hover:not(:disabled) {
+    background: oklch(0.2 0.006 60 / 0.4);
+  }
+}
+:is(.fill-quiet, .fill-raised)[data-bubli-state="bubble"] > :is(input, select) {
+  background: transparent;
+  --tw-ring-shadow: 0 0 #0000;
+}
+/* Firefox's bars and panels: frost without a live copy of the page (ui/barBubble.ts). */
+[data-bubli-bend="moz"] .bubble-bar[data-bubli-state="bubble"] {
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+}
+[data-bubli-bend="moz"] .bubble-panel[data-bubli-state="bubble"] {
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  backdrop-filter: blur(28px) saturate(1.4);
+}
+/* A pane you see the page through (the Party panel): less body, more frost. Solid surfaces keep a little of the page too, unblurred. */
+.bubble-thin[data-bubli-state="bubble"] {
+  --bubli-frost: 22px;
+}
+.bubble-thin:not([data-bubli-state="bubble"]) {
+  background: oklch(0.17 0.008 60 / 0.72);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+}
+html[data-surfaces="solid"] .bubble-thin:not([data-bubli-state="bubble"]) {
+  background: oklch(0.17 0.008 60 / 0.92);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* The lens is placed by transform from the bar's corner (ui/lens.tsx), at its item's size. */
+.krida-lens {
+  top: 0;
+  left: 0;
+  height: auto;
+}
+
+/*
+ * Frosted, without a canvas: small things floating on the picture that are too many, or come and go too fast, for a bubble
+ * of their own (a chip on a card, a label over the player). `glass-thick` is the same for what you read.
+ */
+:root {
+  --glass-tint: oklch(0.18 0.008 60 / 0.42);
+  --glass-thick-tint: oklch(0.17 0.008 60 / 0.78);
+}
+@utility glass {
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.16), inset 0 0 0 0.5px oklch(1 0 0 / 0.12), 0 8px 24px -12px oklch(0 0 0 / 0.55);
+}
+@utility glass-thick {
+  background: var(--glass-thick-tint);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.12), inset 0 0 0 0.5px oklch(1 0 0 / 0.1), var(--shadow-overlay);
+}
+@utility glass-hover {
+  &:hover:not(:disabled) {
+    --glass-tint: oklch(0.28 0.008 60 / 0.5);
+  }
+}
+/* Under an open sheet the page is dimmed and inert, so its glass stops blurring. */
+html[data-modal] :is(.glass, .glass-thick):not(dialog, dialog *) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-thick {
+    background: var(--color-overlay);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+html[data-surfaces="solid"] :is(.glass, .glass-thick) {
+  background: var(--color-overlay);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Sonner holds the toast and its swipe; the bubble is what it holds (ui/toast.tsx). */
+[data-sonner-toast][data-styled="false"] {
+  overflow: visible;
+}
+
+/* The chosen thing in a list inside a bubble: a soft shade, never a bubble in a bubble. */
+@utility lens {
+  background: oklch(1 0 0 / 0.11);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.14);
+}
+
+/*
+ * Folds a part of a bar away to its real width on the spring (a grid track going 1fr to 0fr), and back.
+ * Spacing goes on an element inside the child, never on the child itself: a track can't shrink below the child's
+ * own padding, so it would leave a gap and push the bar's icons off-centre. Use `inert` on folded controls.
+ */
+@utility fold {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* Opening, the words come into focus as their space opens, sliding in with it. */
+  transition:
+    grid-template-columns 360ms var(--ease-spring),
+    opacity 220ms var(--ease-snappy);
+  & > * {
+    min-width: 0;
+    overflow: clip;
+    overflow-clip-margin: 6px;
+    white-space: nowrap;
+    transition:
+      translate 360ms var(--ease-spring),
+      filter 220ms var(--ease-snappy);
+  }
+  /* Folding, they blur away at once, faster than they came, and the space closes behind them. */
+  &[data-folded] {
+    grid-template-columns: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-columns 360ms var(--ease-spring),
+      opacity 120ms ease-out;
+    & > * {
+      translate: -6px 0;
+      filter: blur(2px);
+      transition:
+        translate 360ms var(--ease-spring),
+        filter 120ms ease-out;
+    }
+  }
+}
+
+/* The phone's search capsule: its width comes from sharing the bar with the places, on the same spring, so they trade room. */
+.dock-search {
+  flex: 0 0 auto;
+  min-width: 0;
+  transition: flex-grow 360ms var(--ease-spring);
+  &[data-expanded] {
+    flex-grow: 1;
+  }
+}
+
+/* The phone's bar of places, folding away as search takes the bar. It keeps room for its rim while it's there. */
+.dock-fold {
+  display: grid;
+  grid-template-columns: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-columns 360ms var(--ease-spring),
+    opacity 200ms var(--ease-snappy),
+    flex-grow 360ms var(--ease-spring);
+  & > * {
+    min-width: 0;
+  }
+  &[data-folded] {
+    grid-template-columns: 0fr;
+    flex-grow: 0;
+    opacity: 0;
+    margin-right: -8px;
+    transition:
+      grid-template-columns 360ms var(--ease-spring),
+      opacity 120ms ease-out,
+      flex-grow 360ms var(--ease-spring);
+    & > * {
+      overflow: clip;
+    }
+  }
+}
+
+/*
+ * The dock's tooltips (dockTip.tsx). Resting on a place shows its name after a beat, so brushing along the dock
+ * stays quiet. Keyboard focus shows it straight away.
+ */
+.dock-tip {
+  opacity: 0;
+  scale: 0.92;
+  transform-origin: 50% 100%;
+  transition:
+    opacity 120ms ease-out,
+    scale 120ms ease-out;
+}
+.dock-item:hover > .dock-tip,
+.dock-item:focus-visible > .dock-tip {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 160ms var(--ease-snappy) 350ms,
+    scale 320ms var(--ease-spring) 350ms;
+}
+.dock-item:focus-visible > .dock-tip {
+  transition-delay: 0ms;
+}
+.dock-item:active > .dock-tip {
+  opacity: 0;
+}
+
+/*
+ * Safari zooms the page into any field set under 16px when it's focused, and an installed app has no way to zoom
+ * back out. On touch screens fields are 16px at least. Outside a layer, so it wins over the size utilities.
+ */
+@media (pointer: coarse) {
+  :where(input, textarea, select) {
+    font-size: max(1rem, 1em);
+  }
+}
+
+/*
+ * Card sizes. From 1024px a poster follows the screen's height, so every screen keeps about two and a half rows
+ * in view and a wider one shows more titles: 184px on a laptop, up to 288px on a 1440p or ultrawide monitor.
+ * Small viewport units, so a tablet's toolbars showing and hiding never resize the cards.
+ * On phones a row shows three posters and a sliver of the fourth, like Netflix's, so you see that it scrolls and
+ * see a row's worth at once; wide cards show one and a half.
+ */
+:root {
+  --poster-w: calc((100vw - 16px) / 3.3 - 12px);
+  /* Wide (16:9) cards in rows: Continue watching, For you and… */
+  --wide-w: calc((100vw - 16px) / 1.55 - 12px);
+  @media (width >= 40rem) {
+    --poster-w: 160px;
+    --wide-w: 300px;
+  }
+  @media (width >= 64rem) {
+    --poster-w: clamp(184px, 20svh, 288px);
+    --wide-w: calc(var(--poster-w) * 1.85);
+  }
+}
+
+/* Grids of cards at the same sizes as the rows, as many columns as fit: a Party panel or a side list narrows them. */
+@utility grid-posters {
+  grid-template-columns: repeat(auto-fill, minmax(var(--poster-w), 1fr));
+}
+@utility grid-wide {
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--poster-w) * 1.5), 1fr));
+}
+
+/* The Party panel floats over the page; only the toasts step out from under it. */
+html[data-party-open] {
+  --toast-right: 392px;
+}
+
+/*
+ * The rail on a sideways phone (nav.tsx): 64px at 8px from the edge, clear of the notch. The page makes room for
+ * it and a 16px gap, less its own gutter (16px, 48px from 768px). Artwork bleeds back under it, like the dock.
+ * Toasts drop to the bottom, which no bar holds there.
+ */
+@media (orientation: landscape) and (height < 32rem) {
+  :root {
+    --rail-pad: calc(var(--inset-left) + 72px);
+    --toast-bottom: calc(16px + var(--inset-bottom));
+    @media (width >= 48rem) {
+      --rail-pad: calc(var(--inset-left) + 40px);
+    }
+  }
+  html {
+    scroll-padding-top: 64px;
+  }
+}
+
+@utility img-outline {
+  outline: 1px solid oklch(1 0 0 / 0.1);
+  outline-offset: -1px;
+}
+
+/* A card's hover buttons blur what's behind them only while they show: a backdrop filter keeps a compositor
+   layer even when transparent, and Home has hundreds of these buttons, which made every frame slower. */
+@media (hover: hover) {
+  [data-card]:not(:hover, :has(:focus-visible), :has([aria-expanded="true"])) :is([data-hover-reveal], [data-hover-reveal] *) {
+    backdrop-filter: none;
+  }
+}
+
+/* Press feedback: scale only, so hover color changes stay instant. Down in 100ms; letting go springs back. */
+@utility press {
+  transition: transform 320ms var(--ease-spring);
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+    transition: transform 100ms ease-out;
+  }
+}
+@utility press-soft {
+  transition: transform 320ms var(--ease-spring);
+  &:active {
+    transform: scale(0.985);
+    transition: transform 100ms ease-out;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Horizontal rails fade only the edge that has more to scroll. */
+@property --fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes fade-start {
+  from {
+    --fade-start: 0px;
+  }
+  to {
+    --fade-start: 48px;
+  }
+}
+@keyframes fade-end {
+  from {
+    --fade-end: 48px;
+  }
+  to {
+    --fade-end: 0px;
+  }
+}
+@utility scroll-fade-x {
+  --fade-start: 0px;
+  --fade-end: 48px;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--fade-start),
+    black calc(100% - var(--fade-end)),
+    transparent
+  );
+  @supports (animation-timeline: scroll()) {
+    --fade-end: 0px;
+    animation:
+      fade-start linear both,
+      fade-end linear both;
+    animation-timeline: scroll(self x);
+    animation-range:
+      0 48px,
+      calc(100% - 48px) 100%;
+  }
+}
+
+/* Lists that scroll down (the party chat) fade the same way, top and bottom. */
+@utility scroll-fade-y {
+  --fade-start: 0px;
+  --fade-end: 0px;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--fade-start),
+    black calc(100% - var(--fade-end)),
+    transparent
+  );
+  @supports (animation-timeline: scroll()) {
+    animation:
+      fade-start linear both,
+      fade-end linear both;
+    animation-timeline: scroll(self y);
+    animation-range:
+      0 48px,
+      calc(100% - 48px) 100%;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@utility rise-in {
+  animation: rise-in 360ms var(--ease-snappy) both;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@utility skeleton {
+  background: linear-gradient(
+      90deg,
+      oklch(1 0 0 / 0.03) 0%,
+      oklch(1 0 0 / 0.07) 50%,
+      oklch(1 0 0 / 0.03) 100%
+    )
+    var(--color-surface);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The playing source's bars rise and fall. Scale, not height, so the compositor runs it. */
+@keyframes playing-bar {
+  from {
+    transform: scaleY(0.35);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Folds still fade and blur, but don't slide. */
+  .fold,
+  .fold[data-folded] {
+    transition-duration: 1ms, 150ms;
+  }
+  .fold > *,
+  .fold[data-folded] > * {
+    translate: none;
+    transition-duration: 1ms, 150ms;
+  }
+  .rise-in {
+    animation-name: fade-only;
+  }
+  .skeleton {
+    animation: none;
+  }
+}
+@keyframes fade-only {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Subtitles sit on the video, readable on any frame. */
+.subtitle-cue {
+  font-size: clamp(1rem, 0.6rem + 1.6vw, 2rem);
+  line-height: 1.3;
+  text-shadow:
+    0 0 4px oklch(0 0 0 / 0.9),
+    0 1px 2px oklch(0 0 0 / 0.9);
+  font-weight: 500;
+}
+/* A profile's subtitle settings (Settings → Playback): size, colour and what keeps them readable over the picture. The
+   colours are for reading over any frame, the one place Krida's text takes a hue. */
+.subtitle-cue[data-size="small"] {
+  font-size: clamp(0.85rem, 0.5rem + 1.25vw, 1.6rem);
+}
+.subtitle-cue[data-size="large"] {
+  font-size: clamp(1.25rem, 0.75rem + 2.1vw, 2.6rem);
+}
+.subtitle-cue[data-size="huge"] {
+  font-size: clamp(1.5rem, 0.9rem + 2.7vw, 3.3rem);
+}
+.subtitle-cue[data-color="yellow"] {
+  color: oklch(0.93 0.16 100);
+}
+.subtitle-cue[data-color="cyan"] {
+  color: oklch(0.9 0.11 200);
+}
+.subtitle-cue[data-edge="outline"] {
+  text-shadow:
+    -0.06em -0.06em 0 oklch(0 0 0),
+    0.06em -0.06em 0 oklch(0 0 0),
+    -0.06em 0.06em 0 oklch(0 0 0),
+    0.06em 0.06em 0 oklch(0 0 0),
+    0 0.08em 0 oklch(0 0 0),
+    0 -0.08em 0 oklch(0 0 0),
+    0.08em 0 0 oklch(0 0 0),
+    -0.08em 0 0 oklch(0 0 0);
+}
+.subtitle-cue[data-edge="box"] {
+  text-shadow: none;
+  background: oklch(0 0 0 / 0.78);
+  padding: 0.12em 0.45em;
+  border-radius: 0.2em;
+}
+
+/* Settings → Home's "Blur unwatched episodes": an episode's still and description stay hidden until it's watched. */
+.spoiler img {
+  filter: blur(14px);
+  scale: 1.15;
+}
+.spoiler-text {
+  filter: blur(5px);
+  user-select: none;
+}
+
+/* Hero rotation: the active indicator fills over the slide's time, then the slide advances. */
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/*
+ * A sheet opened from the player while it's turned sideways on an upright phone (ui/sideways.ts) turns with it,
+ * centred in the frame. Sheets live in the top layer, outside the turned room, so they turn themselves.
+ */
+html[data-sideways] dialog[data-sheet] {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: min(460px, calc(100dvh - 24px));
+  max-width: none;
+  height: auto;
+  max-height: calc(100vw - 24px);
+  translate: -50% -50%;
+  rotate: 90deg;
+}
+html[data-sideways] dialog[data-sheet][data-tall] {
+  height: calc(100vw - 24px);
+}
+
+/*
+ * The page takes a trace of the artwork that leads it. `--art` is that artwork's colour (ui/artTint.ts); the page and its
+ * surfaces take a little of its hue at their own lightness, so the frame shifts from one title to the next while text and
+ * controls stay black and white. Without artwork it rests on Krida's neutral.
+ */
+@property --art {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: oklch(0.55 0.006 60);
+}
+html {
+  transition: --art 700ms var(--ease-snappy);
+  --color-page: oklch(from var(--art) 0.145 calc(c * 0.16) h);
+  --color-surface: oklch(from var(--art) 0.18 calc(c * 0.18) h);
+  --color-raised: oklch(from var(--art) 0.215 calc(c * 0.2) h);
+  --color-overlay: oklch(from var(--art) 0.25 calc(c * 0.2) h);
+  --glass-tint: oklch(from var(--art) 0.2 calc(c * 0.3) h / 0.42);
+  --glass-thick-tint: oklch(from var(--art) 0.17 calc(c * 0.25) h / 0.78);
+}
+/* A row in a list or a quiet control: only ever a shade, whatever it sits on. */
+.fill-hover:hover:not(:disabled) {
+  background: oklch(1 0 0 / 0.08);
+}
+.fill-raised {
+  background: oklch(1 0 0 / 0.1);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.14);
+  &:hover:not(:disabled) {
+    background: oklch(1 0 0 / 0.14);
+  }
+}
+.fill-quiet {
+  background: oklch(1 0 0 / 0.055);
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.07);
+  &:hover:not(:disabled) {
+    background: oklch(1 0 0 / 0.085);
+  }
+  &:is(:focus, :focus-within) {
+    box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.28);
+  }
+}
+.fill-scrim {
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.16), inset 0 0 0 0.5px oklch(1 0 0 / 0.14);
+}
+.keycap {
+  background: linear-gradient(oklch(1 0 0 / 0.16), oklch(1 0 0 / 0.06));
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.22), inset 0 -1.5px 0 oklch(0 0 0 / 0.35), 0 0 0 0.5px oklch(0 0 0 / 0.5);
+  color: var(--color-fg);
+}
+/* Progress on cards and the hero: a groove the white fill glows in. */
+.progress-groove {
+  background: oklch(0 0 0 / 0.38);
+  box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.5), 0 0 0 0.5px oklch(1 0 0 / 0.18);
+  & > * {
+    box-shadow: 0 0 8px oklch(1 0 0 / 0.55);
+  }
+}
+.source-list {
+  gap: 2px;
+}
+.playing-bars > i {
+  display: block;
+  width: 3px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: playing-bar 900ms ease-in-out infinite alternate;
+  &:nth-child(2) {
+    animation-delay: -300ms;
+  }
+  &:nth-child(3) {
+    animation-delay: -600ms;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .playing-bars > i {
+    animation: none;
+  }
+}
+/* Sheets arrive from off screen on a spring, not a nudge and a fade. A sheet turned with a sideways player keeps its placement (above). */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-sideways]) dialog[data-sheet][data-variant="side"]:not([data-shown]) {
+    transition-duration: 160ms;
+    translate: 0 100%;
+    @media (width >= 48rem) {
+      translate: calc(100% + 12px) 0;
+    }
+  }
+  dialog[data-sheet][data-shown] {
+    transition-duration: 500ms;
+    transition-timing-function: linear(
+      0, 0.106 6%, 0.312 12%, 0.52 18%, 0.689 23%, 0.813 29%, 0.896 35%, 0.948 41%, 0.978 47%, 0.993 52%, 1.001 58%,
+      1.004 64%, 1.004 70%, 1.003 76%, 1.002 87%, 1
+    );
+  }
+}
+
+/* A kept page while you're elsewhere (app/Pages.tsx). Not display: none, which throws away its layout: showing Home again would
+   lay out every row. Hidden this way it keeps it, and takes no room or paint. */
+.kept-away {
+  content-visibility: hidden;
+  visibility: hidden;
+  height: 0;
+  overflow: clip;
+  @supports not (content-visibility: hidden) {
+    display: none;
+  }
+}

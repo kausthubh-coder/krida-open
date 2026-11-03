@@ -1,0 +1,311 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+:root{
+  --k-page:oklch(0.145 0.006 60);--k-surface:oklch(0.18 0.007 60);--k-raised:oklch(0.215 0.008 60);--k-overlay:oklch(0.25 0.009 60);
+  --k-line:oklch(1 0 0 / .09);--k-fg:oklch(0.95 0.005 60);--k-muted:oklch(0.76 0.01 60);--k-faint:oklch(0.6 0.012 60);
+  --k-accent:oklch(0.82 0.14 75);--k-on-accent:oklch(0.2 0.03 60);--k-success:oklch(0.74 0.14 150);--k-warning:oklch(0.78 0.14 50);
+  --k-shadow:inset 0 1px 0 0 oklch(1 0 0/.04),inset 0 0 0 1px oklch(1 0 0/.05),0 0 0 1px oklch(0 0 0/.2),0 2px 2px 0 oklch(0 0 0/.12),0 4px 4px 0 oklch(0 0 0/.12);
+  /* Chart series, fixed order, validated for the dark surface (dataviz validator: all checks pass). */
+  --s-anime:#d55181;--s-shows:#3987e5;--s-movies:#199e70;
+  --you:oklch(0.72 0.14 40);--ben:oklch(0.72 0.13 150);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--foreground)}
+.dir{margin:8px 0 14px;padding-top:6px}
+.dir h1{font-size:20px;font-weight:600;letter-spacing:-.01em}
+.dir p{font-size:13px;line-height:1.55;color:var(--muted-foreground);max-width:700px;margin-top:4px}
+.mock{margin:0 0 30px}
+.cap{font-size:15px;font-weight:600;margin-bottom:4px}
+.note{font-size:13px;line-height:1.5;color:var(--muted-foreground);margin-bottom:10px;max-width:700px}
+.fit{width:100%;overflow:hidden;border-radius:var(--radius,12px)}
+.screen{width:1280px;background:var(--k-page);color:var(--k-fg);font-size:14px;line-height:20px;position:relative;overflow:hidden}
+.disp{font-family:Fraunces,Georgia,serif}.tab{font-variant-numeric:tabular-nums}
+.nav{height:64px;display:flex;align-items:center;gap:28px;padding:0 48px}
+.nav .logo{font-family:Fraunces;font-weight:700;font-size:20px;letter-spacing:-.02em}
+.nav a{color:var(--k-muted);font-weight:500}.nav a.on{color:var(--k-fg)}
+.nav .r{margin-left:auto;display:flex;gap:10px;align-items:center}
+.pill{height:36px;padding:0 14px 0 6px;border-radius:99px;background:oklch(1 0 0/.08);display:flex;align-items:center;gap:8px;font-weight:500}
+.av{width:24px;height:24px;border-radius:99px;display:grid;place-items:center;font-size:11px;font-weight:600;color:oklch(0.2 0.03 60)}
+.av.s{background:var(--ben)}.av.k{background:var(--you)}
+.art{position:relative;overflow:hidden;background:linear-gradient(160deg,oklch(0.24 0.02 60),oklch(0.17 0.01 40));border-radius:12px;outline:1px solid oklch(1 0 0/.1);outline-offset:-1px}
+.art>span{position:absolute;inset:0;display:grid;place-items:center;padding:10px;text-align:center;font-family:Fraunces;font-size:15px;color:var(--k-muted)}
+.art>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.art>img.blur{filter:blur(18px) brightness(.55);transform:scale(1.3)}
+.art>img.inset{position:absolute;inset:auto;left:12px;top:12px;bottom:12px;width:auto;height:calc(100% - 24px);aspect-ratio:2/3;border-radius:6px;outline:1px solid oklch(1 0 0/.1)}
+.poster{aspect-ratio:2/3}.wide{aspect-ratio:16/9}
+.btn{height:44px;padding:0 20px 0 16px;border-radius:99px;display:inline-flex;align-items:center;gap:8px;font-weight:500;background:oklch(1 0 0/.12)}
+.btn.sm{height:36px;padding:0 14px 0 12px}
+.btn.p{background:var(--k-accent);color:var(--k-on-accent)}.btn.w{background:var(--k-fg);color:var(--k-page)}
+.eyb{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--k-faint)}
+.seg{display:flex;background:oklch(1 0 0/.06);border-radius:99px;padding:3px}
+.seg span{height:32px;padding:0 14px;border-radius:99px;display:flex;align-items:center;gap:6px;color:var(--k-muted);font-weight:500}
+.seg span.on{background:var(--k-overlay);color:var(--k-fg);box-shadow:var(--k-shadow)}
+.seg em,.tabs em{font-style:normal;color:var(--k-faint);font-size:12px}
+.chip{height:32px;padding:0 12px;border-radius:99px;background:oklch(1 0 0/.06);color:var(--k-muted);display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.chip.on{background:var(--k-fg);color:var(--k-page)}.chip.on em{color:oklch(0.4 0.01 60)}
+.chip em{font-style:normal;font-size:12px;color:var(--k-faint)}
+.badge{position:absolute;top:8px;right:8px;z-index:2;font-size:12px;font-weight:500;background:oklch(0 0 0/.65);padding:1px 8px;border-radius:99px;display:flex;gap:4px;align-items:center;backdrop-filter:blur(8px)}
+.star{color:var(--k-accent)}
+/* library header */
+.libtop{display:flex;align-items:flex-end;gap:24px;padding:20px 48px 0}
+.libtop h1{font-size:28px;line-height:36px;font-weight:600;letter-spacing:-.02em}
+.libtop .facts{color:var(--k-faint);padding-bottom:4px}.libtop .facts b{color:var(--k-muted);font-weight:500}
+.tabs{display:flex;gap:28px;padding:0 48px;margin-top:20px;border-bottom:1px solid var(--k-line);align-items:center}
+.tabs>span{height:44px;display:flex;align-items:center;gap:6px;color:var(--k-muted);font-weight:500;position:relative}
+.tabs>span.on{color:var(--k-fg)}.tabs>span.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--k-fg);border-radius:2px}
+.tabs .tools{margin-left:auto;display:flex;gap:8px}
+.wrapb{margin:20px 48px 0;height:132px;border-radius:20px;position:relative;overflow:hidden;background:radial-gradient(70% 160% at 0% 100%,oklch(0.36 0.09 40/.5),transparent 60%),radial-gradient(50% 120% at 45% 0%,oklch(0.32 0.08 300/.35),transparent 60%),var(--k-surface);box-shadow:var(--k-shadow);display:flex;align-items:center;padding:0 28px;gap:24px}
+.wrapb h3{font-family:Fraunces;font-size:26px;line-height:32px;font-weight:600;letter-spacing:-.02em}
+.wrapb p{color:var(--k-muted);margin-top:4px;max-width:520px}
+.wrapb .col{position:absolute;right:28px;top:-36px;display:flex;gap:10px;transform:rotate(-8deg);opacity:.9}
+.wrapb .col .art{width:78px}.wrapb .col .c2{margin-top:34px}
+.sh{display:flex;align-items:baseline;gap:10px;padding:0 48px;margin:22px 0 12px}
+.sh h2{font-size:16px;line-height:24px;font-weight:600}.sh small{color:var(--k-faint)}
+.sh .all{margin-left:auto;color:var(--k-muted);font-weight:500;display:flex;gap:4px;align-items:center}
+.wgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px 16px;padding:0 48px}
+.wc .bar{position:absolute;left:12px;right:12px;bottom:10px;height:4px;border-radius:9px;background:oklch(1 0 0/.22);z-index:2}
+.wc .bar i{display:block;height:100%;border-radius:9px;background:var(--k-fg)}
+.wc .sc{position:absolute;inset:0;background:linear-gradient(to top,oklch(0 0 0/.65),transparent 55%);z-index:1}
+.wc .t{margin-top:8px;font-weight:500;display:flex;gap:8px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc .s{font-size:12px;line-height:16px;color:var(--k-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc .left{white-space:nowrap;display:flex;align-items:baseline;position:absolute;left:12px;bottom:22px;z-index:2;font-family:Fraunces;font-size:28px;font-weight:600;line-height:1;letter-spacing:-.02em}
+.wc .left small{font-family:Inter;font-size:12px;font-weight:500;color:var(--k-muted);letter-spacing:0;margin-left:6px}
+.tag{font-size:11px;font-weight:500;color:var(--k-faint);border:1px solid var(--k-line);border-radius:99px;padding:0 6px;line-height:16px}
+/* panels */
+.dash{padding:16px 48px 36px;display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.panel{background:var(--k-surface);box-shadow:var(--k-shadow);border-radius:16px;padding:18px 20px;position:relative}
+.panel h4{font-size:14px;font-weight:500;color:var(--k-muted);margin-bottom:14px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.panel h4 small{color:var(--k-faint);font-weight:400;font-size:12px}
+.kpi b{font-size:28px;line-height:36px;font-weight:600;letter-spacing:-.02em;display:block}
+.kpi small{font-size:12px;color:var(--k-faint)}
+.cov{padding:12px 48px 0;color:var(--k-faint);font-size:12px;display:flex;gap:8px;align-items:center}
+.ins{display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--k-line)}
+.ins:first-of-type{border-top:0;padding-top:2px}
+.ins .art{width:36px;flex:none;border-radius:6px}
+.ins p{color:var(--k-fg);font-size:15px;line-height:22px}.ins p span{display:block;color:var(--k-faint);font-size:13px;line-height:18px;margin-top:2px}
+.ins .more{margin-left:auto;color:var(--k-faint);font-size:18px;align-self:center}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--k-faint)}
+.legend span{display:flex;gap:6px;align-items:center}.legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.axis{font-size:11px;fill:oklch(0.6 0.012 60)}
+.lockrow{display:flex;gap:10px;margin-top:12px}.lockrow .art{width:58px;border-radius:8px}
+.meter{height:6px;border-radius:9px;background:oklch(1 0 0/.08);overflow:hidden}.meter i{display:block;height:100%;background:var(--k-fg);border-radius:9px}
+.ppl{display:flex;gap:12px}
+.ppl div{display:flex;flex-direction:column;align-items:center;gap:6px;width:76px;text-align:center;font-size:12px;line-height:16px;color:var(--k-muted)}
+.ppl .pp{width:56px;height:56px;border-radius:99px;background:linear-gradient(160deg,oklch(0.42 0.03 60),oklch(0.24 0.02 40));display:grid;place-items:center;font-family:Fraunces;font-size:18px;color:var(--k-fg)}
+/* stories */
+.stories{display:flex;gap:18px;padding:32px 48px;align-items:flex-start;background:oklch(0.11 0.005 60)}
+.story{flex:none;width:222px;height:395px;border-radius:20px;position:relative;overflow:hidden;padding:20px;display:flex;flex-direction:column;box-shadow:var(--k-shadow)}
+.story .bars{display:flex;gap:4px;margin-bottom:20px}.story .bars i{flex:1;height:3px;border-radius:9px;background:oklch(1 0 0/.25)}.story .bars i.d{background:oklch(1 0 0/.9)}
+.story .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:oklch(1 0 0/.6)}
+.story h4{font-family:Fraunces;font-weight:600;letter-spacing:-.02em;font-size:23px;line-height:27px;margin-top:10px}
+.story .big{font-family:Fraunces;font-weight:700;font-size:86px;line-height:.9;letter-spacing:-.05em}
+.story p{color:oklch(1 0 0/.74);font-size:14px;line-height:20px;margin-top:10px}
+.story .bg{position:absolute;inset:0;z-index:0}.story .bg img{width:100%;height:100%;object-fit:cover;filter:saturate(.9) brightness(.42)}
+.story>*:not(.bg){position:relative;z-index:1}
+/* share card */
+.share{width:270px;height:480px;border-radius:20px;overflow:hidden;position:relative;background:linear-gradient(180deg,oklch(0.2 0.02 40),oklch(0.13 0.006 60) 55%);box-shadow:var(--k-shadow);padding:18px;display:flex;flex-direction:column;flex:none}
+.share .wall-clip{height:200px;overflow:hidden;margin:-18px -18px 0;padding:10px 0 0;-webkit-mask-image:linear-gradient(#000 70%,transparent)}.share .wall{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;transform:rotate(-6deg) scale(1.15);margin:-6px -8px 0}
+.share .wall .art{border-radius:6px}
+.share h5{font-family:Fraunces;font-size:22px;line-height:26px;font-weight:600;letter-spacing:-.02em;margin-top:6px}
+.share dl{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:12px}
+.share dt{font-size:11px;color:var(--k-faint);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.share dd{font-size:15px;font-weight:500;line-height:20px}
+.share.mini dl dt:nth-last-child(-n+4),.share.mini dl dd:nth-last-child(-n+2){display:none}.share .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--k-faint)}
+.share .foot b{font-family:Fraunces;font-size:16px;color:var(--k-fg)}
+/* reel */
+.reel{margin:0 48px;background:var(--k-surface);box-shadow:var(--k-shadow);border-radius:20px;padding:20px 24px 18px;position:relative}
+.reel h3{font-size:16px;font-weight:600;display:flex;align-items:baseline;gap:10px}.reel h3 small{color:var(--k-faint);font-weight:400;font-size:13px}
+.chap{display:grid;grid-template-columns:330px 1fr;gap:32px;padding:26px 48px 0}
+.chap h2{font-family:Fraunces;font-size:48px;line-height:52px;font-weight:600;letter-spacing:-.03em}
+.chap p.lead{font-size:17px;line-height:26px;color:var(--k-muted);margin-top:10px}
+.chap .facts{display:flex;gap:22px;margin-top:18px}.chap .facts b{display:block;font-size:20px;font-weight:600}.chap .facts small{color:var(--k-faint);font-size:12px}
+.strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}
+.strip .t{margin-top:8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strip .s{font-size:12px;color:var(--k-faint)}
+.film{position:relative;height:560px;overflow:hidden;display:flex;align-items:center;padding:0 96px}
+.film .bg{position:absolute;inset:0}.film .bg img{width:100%;height:100%;object-fit:cover}
+.film .scrim{position:absolute;inset:0}
+.film>*:not(.bg):not(.scrim){position:relative}
+</style></head>
+<body><div id="app"></div><script>
+const MP=(id)=>`https://images.metahub.space/poster/medium/${id}/img`;
+const MB=(id)=>`https://images.metahub.space/background/medium/${id}/img`;
+const SK=(p)=>`https://wsrv.nl/?url=https://simkl.in/posters/${p}_m.webp&q=90`;
+const A={aot:SK("11/1197362619d6097784"),dn:SK("43/436771286e8b342"),nar:SK("46/467803453a7a86db6"),hxh:SK("41/417147f1360bed8"),bc:SK("68/6826054c9bd9bc91e"),fri:SK("19/19347284584794ac34"),lie:SK("69/69079809fafb2a939"),sv:SK("11/11348976e6601640a7"),mha:SK("18/1854694847b5284581"),gin:SK("11/115465744d5c1a94f3"),sak:SK("17/175929840c8db855d3"),zom:SK("13/136220539f08cf796a"),ww:SK("17/1727286582616b707d"),hell:SK("19/19057040dbeae51310"),ds:SK("18/18524927457add9fe9"),wha:SK("19/194379733cd8095db8"),rez:SK("20/203238555561052fb6"),ida:SK("15/15124533ab67f9c3f2"),ari:SK("15/15512702ab47e41eb6"),farm:SK("19/199461672e89c34f3d"),grace:SK("13/1325960057e110a5c0"),chiv:SK("69/69041583f0194995e"),ber:SK("30/30427dcacac892f"),bb:SK("17/17256687e96d4523b2")};
+const img=(src,cls="")=>`<img class="${cls}" src="${src}" onerror="this.remove()">`;
+const P=(src,t,extra="")=>`<div class="art poster"><span>${t}</span>${img(src)}${extra}</div>`;
+const W=(bg,t,poster)=>`<div class="art wide"><span>${t}</span>${poster?img(poster,"blur")+img(poster,"inset"):img(bg)}`; // closed by caller
+const nav=()=>`<div class="nav"><span class="logo">krida.</span><a>Home</a><a>Search</a><a class="on">Library</a><div class="r"><span class="pill"><span class="av s">S</span>Watch with Ben</span><span class="pill"><span class="av k">K</span>Ana</span></div></div>`;
+const score=(v)=>`<div class="badge"><i class="ph-fill ph-star star"></i><b class="tab" style="font-weight:500">${v}</b></div>`;
+const ico=(n)=>`<i class="ph ph-${n}"></i>`;
+
+/* ---------- shared pieces ---------- */
+// Taste map: x light→heavy, y grounded→fantastical. Points are titles placed by their genres.
+function tasteMap(w,h,{ben=false,drift=true,labels=true}={}){
+  const pts=[];let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const cl=[[.72,.22,60,"a"],[.25,.72,46,"m"],[.3,.3,26,"a"],[.75,.7,18,"m"],[.5,.55,22,"s"],[.58,.35,14,"s"]];
+  for(const [cx,cy,n,k] of cl)for(let i=0;i<n;i++)pts.push([cx+(rnd()-.5)*.26,cy+(rnd()-.5)*.22,k]);
+  const col={a:"var(--s-anime)",s:"var(--s-shows)",m:"var(--s-movies)"};
+  const X=x=>24+x*(w-48),Y=y=>16+y*(h-44);
+  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  s+=`<line x1="${X(.5)}" y1="${Y(0)}" x2="${X(.5)}" y2="${Y(1)}" stroke="oklch(1 0 0/.07)"/><line x1="${X(0)}" y1="${Y(.5)}" x2="${X(1)}" y2="${Y(.5)}" stroke="oklch(1 0 0/.07)"/>`;
+  if(ben){s+=`<ellipse cx="${X(.46)}" cy="${Y(.62)}" rx="${w*.2}" ry="${h*.2}" fill="oklch(0.72 0.13 150/.13)" stroke="oklch(0.72 0.13 150/.6)" stroke-dasharray="4 4"/>`;}
+  for(const [x,y,k] of pts)s+=`<circle cx="${X(x)}" cy="${Y(y)}" r="3.2" fill="${col[k]}" fill-opacity=".85" stroke="var(--k-surface)" stroke-width="1.5"/>`;
+  if(drift){const d=[[.3,.62,"2024"],[.52,.42,"2025"],[.66,.3,"2026"]];s+=`<path d="M${d.map(p=>X(p[0])+" "+Y(p[1])).join(" L")}" fill="none" stroke="oklch(0.95 0.005 60)" stroke-width="2" stroke-dasharray="1 5" stroke-linecap="round"/>`;
+    d.forEach((p,i)=>{s+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="${i==2?6:4}" fill="${i==2?'var(--k-fg)':'var(--k-page)'}" stroke="var(--k-fg)" stroke-width="2"/><text x="${X(p[0])+10}" y="${Y(p[1])+4}" font-size="12" font-weight="600" fill="oklch(0.95 0.005 60)">${p[2]}</text>`});}
+  if(labels){[["Shōnen epics",.72,.06],["Telugu comfort films",.06,.9],["Isekai you score 4",.12,.12],["Crime and thrillers",.68,.97]].forEach(([t,x,y])=>s+=`<text x="${X(x)}" y="${Y(y)}" font-size="12" fill="oklch(0.76 0.01 60)">${t}</text>`);}
+  s+=`<text class="axis" x="${X(0)}" y="${h-4}">Light</text><text class="axis" x="${X(1)}" y="${h-4}" text-anchor="end">Heavy</text><text class="axis" x="${X(.5)+6}" y="${Y(0)+10}">Fantastical</text><text class="axis" x="${X(.5)+6}" y="${Y(1)-4}">Grounded</text>`;
+  return s+`</svg>`;
+}
+// Months Jun 2024 → Oct 2026. Hours split anime / shows / movies, shaped from real Simkl dates.
+const MONTHS=["Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"];
+const HRS=[[4,0,2],[0,0,0],[3,2,0],[6,0,3],[8,2,2],[3,1,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[26,6,12],[44,8,14],[96,10,22],[52,6,10],[40,12,16],[8,2,4],[18,3,9],[4,2,2],[14,10,8],[6,6,2],[38,4,18],[72,4,10],[14,6,16],[6,0,2],[0,0,0],[0,0,0],[6,0,2],[30,6,34]];
+function reelChart(w,h,{sel=-1,notes=true,back=true}={}){
+  const n=MONTHS.length,left=back?118:30,bw=(w-left-8)/n,max=130,H=h-46,base=H+8;
+  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  for(const g of [0,40,80,120]){const y=base-g/max*H;s+=`<line x1="${left}" x2="${w}" y1="${y}" y2="${y}" stroke="oklch(1 0 0/.06)"/><text class="axis" x="${left-6}" y="${y+4}" text-anchor="end">${g} h</text>`;}
+  if(back){s+=`<rect x="0" y="${base-H*.92}" width="${left-44}" height="${H*.92}" rx="6" fill="oklch(1 0 0/.06)"/><text x="${(left-44)/2}" y="${base-H*.92+20}" text-anchor="middle" font-size="12" font-weight="600" fill="oklch(0.95 0.005 60)">Before</text><text x="${(left-44)/2}" y="${base-H*.92+36}" text-anchor="middle" font-size="11" fill="oklch(0.6 0.012 60)">309 titles</text><text x="${(left-44)/2}" y="${base-H*.92+50}" text-anchor="middle" font-size="11" fill="oklch(0.6 0.012 60)">logged at once</text><text class="axis" x="${(left-44)/2}" y="${base+18}" text-anchor="middle">2017–24</text>`;}
+  HRS.forEach((m,i)=>{let y=base;const x=left+i*bw+3,ww=bw-6;const keys=["--s-anime","--s-shows","--s-movies"];const op=sel<0||sel===i?1:.35;
+    m.forEach((v,k)=>{if(!v)return;const hh=v/max*H;y-=hh;s+=`<rect x="${x}" y="${y+1}" width="${ww}" height="${Math.max(2,hh-2)}" rx="${k===m.findLastIndex(q=>q>0)?4:1}" fill="var(${keys[k]})" opacity="${op}"/>`});
+    if(m.every(v=>!v))s+=`<rect x="${x}" y="${base-2}" width="${ww}" height="2" rx="1" fill="oklch(1 0 0/.12)"/>`;
+    if(i%3===0||i===n-1)s+=`<text class="axis" x="${x+ww/2}" y="${base+18}" text-anchor="middle">${MONTHS[i]}</text>`;
+    if(MONTHS[i]==="Jan"||i===0)s+=`<text x="${x}" y="${base+34}" font-size="11" font-weight="600" fill="oklch(0.76 0.01 60)">${i===0?2024:i<19?2025:2026}</text>`;});
+  if(sel>=0){const x=left+sel*bw+bw/2;s+=`<line x1="${x}" x2="${x}" y1="6" y2="${base}" stroke="var(--k-fg)" stroke-width="2"/><rect x="${x-16}" y="${base+4}" width="32" height="6" rx="3" fill="var(--k-fg)"/><circle cx="${x}" cy="6" r="5" fill="var(--k-fg)"/>`;}
+  if(notes){const note=(i,t,dy)=>{const x=left+i*bw+bw/2,top=base-HRS[i].reduce((a,b)=>a+b,0)/max*H,end=i>n-6;s+=`<line x1="${x}" x2="${x}" y1="${top-6}" y2="${top-dy+8}" stroke="oklch(1 0 0/.25)"/><text x="${end?x-4:x+4}" y="${top-dy}" text-anchor="${end?"end":"start"}" font-size="12" fill="oklch(0.76 0.01 60)">${t}</text>`};
+    note(13,"Naruto Shippuden, start to finish",14);note(26,"11 weeks of nothing",40);note(28,"Krida",14);}
+  return s+`</svg>`;
+}
+const legend=`<div class="legend"><span><i style="background:var(--s-anime)"></i>Anime</span><span><i style="background:var(--s-shows)"></i>Shows</span><span><i style="background:var(--s-movies)"></i>Movies</span></div>`;
+function scoreHist(w,h){const d={2:1,3:2,4:9,5:14,6:33,7:76,8:65,9:32,10:19},max=92,H=h-26;let s=`<svg width="${w}" height="${h}">`;const bw=w/10;
+  for(let i=1;i<=10;i++){const v=d[i]||0,hh=v/max*H;s+=`<rect x="${(i-1)*bw+4}" y="${H-hh}" width="${bw-8}" height="${Math.max(2,hh)}" rx="3" fill="${i===7?'var(--k-fg)':'oklch(1 0 0/.22)'}"/><text class="axis" x="${(i-.5)*bw}" y="${h-6}" text-anchor="middle">${i}</text>`;if(i===7)s+=`<text x="${(i-.5)*bw}" y="${H-hh-6}" text-anchor="middle" font-size="12" font-weight="600" fill="oklch(0.95 0.005 60)">76</text>`;}
+  return s+`</svg>`;}
+const shareCard=`<div class="share"><div class="wall-clip"><div class="wall">${[A.aot,MP("tt2631186"),A.dn,MP("tt8948790"),A.lie,MP("tt4574334"),A.sv,MP("tt7391996"),A.mha,MP("tt0417299"),A.nar,MP("tt34915705")].map(u=>P(u,"")).join("")}</div></div>
+<h5>Ana’s 2026 on Krida</h5><dl><dt>Watched</dt><dt>Finished</dt><dd class="tab">1,140 hours</dd><dd class="tab">96 titles</dd><dt>Top show</dt><dt>Top film</dt><dd>Death Note</dd><dd>Tourist Family</dd><dt>Viewer type</dt><dt>Scores</dt><dd>The Finisher</dd><dd class="tab">7.3 average</dd></dl>
+<div class="foot"><b>krida.</b><span>krida-open.vercel.app</span></div></div>`;
+
+/* ---------- insights (real, from Ana's Simkl history) ---------- */
+const INS=[
+ [A.aot,"Six of your nineteen 10s are Attack on Titan.","Every season got one. Nothing else has more than one."],
+ [MP("tt4574334"),"Stranger Things is 3 episodes from the end.","You stopped on January 18 and haven’t been back."],
+ [A.ida,"Isekai power fantasies keep getting a 4 from you.","Six of your twelve lowest scores. You started two more this year."],
+ [MP("tt8948790"),"Every film you’ve given a 10 is South Indian.","Seven Telugu, one Tamil. Hollywood’s best from you is a 9."],
+ [A.ber,"Berserk has been on your list for two years.","171 titles are waiting. At this year’s pace that’s about 18 months."],
+ [A.nar,"Naruto alone took about 11 days of your life.","720 episodes across both series."],
+];
+const insights=(n)=>INS.slice(0,n).map(i=>`<div class="ins">${P(i[0],"")}<p>${i[1]}<span>${i[2]}</span></p><i class="ph ph-caret-right more"></i></div>`).join("");
+
+</script><style>
+.rate-head{display:flex;align-items:center;gap:24px;padding:24px 48px 4px}
+.rate-head h2{font-size:20px;line-height:28px;font-weight:600;letter-spacing:-.01em}
+.rate-head p{color:var(--k-faint);margin-top:2px}
+.kbd{font-size:11px;color:var(--k-faint);border:1px solid var(--k-line);border-radius:5px;padding:0 5px;line-height:16px;font-variant-numeric:tabular-nums}
+.grp{display:flex;align-items:baseline;gap:10px;padding:0 48px;margin:26px 0 6px}
+.grp h3{font-size:14px;font-weight:600;color:var(--k-muted)}.grp small{color:var(--k-faint);font-size:12px}
+.rows{padding:0 48px}
+.rrow{display:flex;align-items:center;gap:16px;min-height:84px;padding:10px 0;border-top:1px solid var(--k-line)}
+.rrow .art{width:44px;flex:none;border-radius:6px}
+.rrow .who{min-width:0;flex:1}.rrow .who b{font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rrow .who small{color:var(--k-faint);font-size:12px;display:flex;gap:6px;align-items:center}
+.strip10{display:flex;gap:4px;background:oklch(1 0 0/.04);padding:4px;border-radius:12px}
+.strip10 span{width:40px;height:40px;border-radius:9px;display:grid;place-items:center;color:var(--k-muted);font-weight:500;font-variant-numeric:tabular-nums}
+.strip10 span.h{background:oklch(1 0 0/.08);color:var(--k-fg)}
+.strip10 span.on{background:var(--k-accent);color:var(--k-on-accent)}
+.ghost{height:44px;padding:0 14px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;color:var(--k-muted);font-weight:500}
+.ghost.hv{background:oklch(1 0 0/.06);color:var(--k-fg)}
+.done{color:var(--k-muted);display:flex;align-items:center;gap:10px}.done .ph-check-circle{color:var(--k-success);font-size:20px}
+.undo{color:var(--k-fg);font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:oklch(1 0 0/.3)}
+.foot-note{margin:18px 48px 0;padding:14px 16px;border-radius:12px;background:var(--k-surface);box-shadow:var(--k-shadow);display:flex;gap:12px;align-items:center;color:var(--k-muted)}
+.foot-note i{font-size:20px;color:var(--k-faint)}
+.toast{position:absolute;left:50%;transform:translateX(-50%);bottom:28px;background:var(--k-overlay);box-shadow:0 0 0 1px oklch(0 0 0/.25),0 16px 40px -8px oklch(0 0 0/.6),inset 0 1px 0 oklch(1 0 0/.06);border-radius:14px;padding:12px 14px 12px 16px;display:flex;gap:14px;align-items:center;min-width:460px}
+.toast p{flex:1}.toast p small{display:block;color:var(--k-faint);font-size:12px}
+.backdrop{position:absolute;inset:0;background:oklch(0.1 0.005 60/.72);backdrop-filter:blur(2px)}
+.fsheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:640px;border-radius:20px;background:var(--k-raised);box-shadow:var(--k-shadow),0 24px 60px -10px oklch(0 0 0/.6);overflow:hidden}
+.fsheet .top{position:relative;height:150px;overflow:hidden}
+.fsheet .top img{width:100%;height:100%;object-fit:cover;filter:blur(24px) brightness(.5);transform:scale(1.3)}
+.fsheet .top::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,var(--k-raised),transparent)}
+.fsheet .body{padding:0 28px 24px;margin-top:-104px;position:relative}
+.fsheet .hd{display:flex;gap:20px;align-items:flex-end}
+.fsheet .hd .art{width:128px;flex:none;box-shadow:0 12px 30px -6px oklch(0 0 0/.7)}
+.fsheet h3{font-family:Fraunces;font-size:30px;line-height:34px;font-weight:600;letter-spacing:-.02em}
+.grid10{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-top:22px}
+.grid10 span{height:56px;border-radius:12px;background:oklch(1 0 0/.06);display:grid;place-items:center;font-size:18px;font-weight:500;color:var(--k-muted);font-variant-numeric:tabular-nums;position:relative}
+.grid10 span small{position:absolute;bottom:-18px;font-size:10px;color:var(--k-faint);white-space:nowrap}
+.grid10 span.h{background:oklch(1 0 0/.12);color:var(--k-fg)}
+.prog{height:3px;background:oklch(1 0 0/.08)}.prog i{display:block;height:100%;background:var(--k-fg)}
+.phone{width:390px;height:780px;border-radius:36px;background:var(--k-page);box-shadow:0 0 0 10px oklch(0.22 0.005 60),0 30px 60px -10px oklch(0 0 0/.6);overflow:hidden;position:relative;flex:none}
+.atable{width:100%;border-collapse:collapse;font-size:13px;line-height:19px}
+.atable th{text-align:left;font-weight:600;color:var(--k-muted);padding:10px 12px;border-bottom:1px solid var(--k-line);font-size:12px}
+.atable td{padding:11px 12px;border-bottom:1px solid var(--k-line);vertical-align:top;color:var(--k-muted)}
+.atable td:first-child{font-weight:600;white-space:nowrap}.atable td.hi{color:oklch(0.7 0.17 25)}.atable td.md{color:var(--k-warning)}
+.atable code{font-size:12px;color:var(--k-fg)}
+</style>
+<script>
+const strip=(on,h)=>`<div class="strip10">${Array.from({length:10},(_,i)=>`<span class="${i+1===on?'on':i+1===h?'h':''}">${i+1}</span>`).join("")}</div>`;
+const row=(src,t,meta,opts={})=>opts.done?`<div class="rrow">${P(src,"")}<div class="who"><b>${t}</b><small>${meta}</small></div><div class="done"><i class="ph-fill ph-check-circle"></i>Rated <b class="tab" style="color:var(--k-fg)">${opts.done}</b> · <span class="undo">Undo</span></div></div>`
+ :`<div class="rrow">${P(src,"")}<div class="who"><b>${t}</b><small>${meta}</small></div>${strip(0,opts.h)}<span class="ghost ${opts.dw?'hv':''}"><i class="ph ph-eye-slash"></i>Didn’t watch it</span></div>`;
+const tabsR=`<div class="tabs"><span>Up next <em>37</em></span><span>My list <em>181</em></span><span>Watched <em>483</em></span><span class="on">To rate <em>255</em></span><span>Stats</span><div class="tools"><div class="seg"><span class="on">All</span><span>Movies <em>153</em></span><span>Shows <em>102</em></span></div></div></div>`;
+const toRate=`<div class="screen" style="height:1340px">${nav()}
+<div class="libtop"><h1>Library</h1><p class="facts"><b class="tab">702</b> titles · about <b class="tab">2,660</b> hours · you score <b class="tab">7.3</b> on average</p></div>${tabsR}
+<div class="rate-head"><div><h2>255 things you’ve watched have no score</h2><p>One tap saves. Each score sharpens your picks, and whole-title scores sync to Simkl.</p></div>
+<span class="btn w" style="margin-left:auto"><i class="ph ph-cards"></i>Rate one at a time</span></div>
+<div class="grp"><h3>Finished recently</h3><small>14</small></div><div class="rows">
+${row(MP("tt1049413"),"Up","Movie · 2009 · Finished today",{done:7})}
+${row(MP("tt7838252"),"K.G.F: Chapter 1","Movie · 2018 · Finished May 25",{h:8})}
+${row(A.zom,"Zom 100: Bucket List of the Dead","Show · 12 of 12 episodes · Finished Jun 8")}
+${row(MP("tt33014583"),"Dhurandhar","Movie · 2025 · Finished May 10")}
+</div>
+<div class="grp"><h3>Stopped partway</h3><small>Dropped or on hold after 3 or more episodes · 11</small></div><div class="rows">
+${row(A.ww,"Witch Watch","Show · Dropped after 8 of 25 episodes")}
+${row(A.bb,"Blue Box","Show · 8 of 25 episodes · On hold")}
+</div>
+<div class="grp"><h3>From your Simkl import</h3><small>Logged together on May 11–12, 2025 · 230</small></div>
+<p style="padding:0 48px 4px;color:var(--k-faint);font-size:13px">These came in all at once. If one isn’t really yours, choose Didn’t watch it.</p><div class="rows">
+${row(MP("tt32080876"),"Dragon","Movie · 2025",{dw:1})}
+${row(MP("tt27540542"),"Lucky Baskhar","Movie · 2024")}
+${row(MP("tt31226981"),"Sankranthiki Vasthunam","Movie · 2025")}
+</div>
+<div class="foot-note"><i class="ph ph-info"></i><p>20 shows aren’t here because you’ve seen fewer than 3 episodes, like The Office and Gintama. One episode isn’t enough to judge a show. They’ll show up once you’re 3 in.</p></div>
+<div class="toast"><i class="ph ph-eye-slash" style="font-size:20px;color:var(--k-muted)"></i><p>Removed Mechanic Rocky from your watched history<small>Simkl updates in 45 seconds. Your picks forget it too.</small></p><span class="btn sm">Undo</span></div>
+</div>`;
+const focus=`<div class="screen" style="height:820px">${nav()}<div class="libtop"><h1>Library</h1></div>${tabsR}
+<div class="backdrop"></div>
+<div class="fsheet"><div class="prog"><i style="width:${12/255*100}%"></i></div><div class="top">${img(MP("tt27540542"))}</div><div class="body">
+<div style="position:absolute;right:20px;top:-30px;display:flex;align-items:center;gap:10px;color:var(--k-muted)"><span class="tab">12 of 255</span><span style="width:36px;height:36px;border-radius:99px;display:grid;place-items:center;background:oklch(1 0 0/.08)"><i class="ph ph-x"></i></span></div>
+<div class="hd">${P(MP("tt27540542"),"Lucky Baskhar")}<div><span class="eyb">From your Simkl import</span><h3 style="margin-top:6px">Lucky Baskhar</h3><p style="color:var(--k-faint);margin-top:4px">Movie · 2024 · Dulquer Salmaan</p></div></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:24px"><p style="font-weight:500">How was it?</p><p style="color:var(--k-muted)">8 · Really good</p></div>
+<div class="grid10">${Array.from({length:10},(_,i)=>`<span class="${i===7?'h':''}">${i+1}${i===0?'<small>Not for me</small>':i===9?'<small>A favorite</small>':''}</span>`).join("")}</div>
+<div style="display:flex;gap:8px;align-items:center;margin-top:34px"><span class="ghost" style="padding-left:0"><i class="ph ph-eye-slash"></i>Didn’t watch it <span class="kbd">H</span></span><span class="ghost"><i class="ph ph-arrow-bend-up-right"></i>Skip <span class="kbd">S</span></span><span style="margin-left:auto;color:var(--k-faint);font-size:12px;display:flex;gap:6px;align-items:center">Press <span class="kbd">1</span>–<span class="kbd">9</span>, <span class="kbd">0</span> for 10 · <span class="kbd">←</span> back</span></div>
+</div></div></div>`;
+const phone=`<div class="screen" style="height:860px;display:flex;gap:56px;align-items:center;justify-content:center;background:oklch(0.11 0.005 60)">
+<div class="phone"><div style="height:44px"></div><div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px"><span class="tab" style="color:var(--k-muted)">12 of 255</span><span style="width:44px;height:44px;border-radius:99px;display:grid;place-items:center;background:oklch(1 0 0/.08)"><i class="ph ph-x"></i></span></div>
+<div style="padding:12px 84px 0">${P(MP("tt27540542"),"Lucky Baskhar")}</div>
+<div style="text-align:center;padding:18px 20px 0"><h3 class="disp" style="font-size:26px;line-height:30px;font-weight:600">Lucky Baskhar</h3><p style="color:var(--k-faint);margin-top:4px">Movie · 2024 · From your Simkl import</p></div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:22px 20px 0">${Array.from({length:10},(_,i)=>`<span style="height:52px;border-radius:12px;background:${i===7?'var(--k-accent)':'oklch(1 0 0/.07)'};color:${i===7?'var(--k-on-accent)':'var(--k-muted)'};display:grid;place-items:center;font-size:18px;font-weight:500">${i+1}</span>`).join("")}</div>
+<div style="display:flex;justify-content:space-between;padding:8px 22px 0;font-size:12px;color:var(--k-faint)"><span>Not for me</span><span>A favorite</span></div>
+<div style="display:flex;gap:8px;padding:18px 20px 0"><span class="btn" style="flex:1;justify-content:center"><i class="ph ph-eye-slash"></i>Didn’t watch it</span><span class="btn" style="flex:1;justify-content:center">Skip</span></div></div>
+<div style="max-width:380px;color:var(--k-muted);font-size:15px;line-height:23px"><p class="disp" style="font-size:28px;line-height:34px;color:var(--k-fg);font-weight:600">On a phone, one at a time is the default.</p><p style="margin-top:12px">The To rate tab opens straight into this. Tap a score and the next title slides in. Swipe down to stop. Your place is kept for next time.</p></div></div>`;
+const AUD=[["High","Settings → Your ratings, Home","The rating backlog lives in Settings and a one-time Home banner. Library has no idea 255 watched titles have no score.","A To rate tab in Library with a live count. Settings keeps a link to it.","Visual Hierarchy"],
+["High","<code>taste.tsx:52</code> card → editor","Each title takes 5 steps: open the dialog, wait for “Loading your rating…”, pick a score, Save changes, close.","Tap 1–10 in the row to save, with Undo right there. The full editor stays on the title page for seasons and episodes.","Performance Is Design"],
+["High","<code>feedback.ts:130</code>","Anything in Watching counts, so you’re asked to rate The Office (1 of 195) and Gintama (1 of 201).","A show needs 3 episodes, or half of a short show. Dropped and on-hold shows count once they reach that. The same rule applies to stats.","Real Content"],
+["High","Whole flow","There’s no way to say “I didn’t watch this”, and 230 of the 255 came from a single bulk import.","Didn’t watch it removes the title from Watched, stats and picks, with Undo. Simkl follows your write-back setting.","Destructive Actions"],
+["Med","<code>feedback.ts:136</code>","Shows only 32 of your 255, padded with popular titles you may never have seen. “12 of 48 rated” means nothing.","The whole backlog, paginated. Popular starter titles stay only on Home, for profiles with nothing to go on.","Real Content"],
+["Med","Ordering","Sorted by last-watched date, so bulk-import dates mix with real ones.","Groups: Finished recently, Stopped partway, From your Simkl import (with its date).","Whitespace"],
+["Med","<code>taste.tsx:224</code> search","Search only filters the 48 titles already loaded.","Search covers the whole backlog on the server.","Input Details"],
+["Med","<code>StarterSheet</code> wide dialog","48 posters scroll inside a modal.","A real page (the tab), plus a focused one-at-a-time sheet that holds one title.","Overlays"],
+["Low","Score labels","A score only gets its label (“Really good”) after you pick it.","Show the label while hovering or focusing a number, so you know before you commit.","Interaction States"]];
+const audit=`<div class="screen" style="padding:28px 32px"><table class="atable"><thead><tr><th>Severity</th><th>Where</th><th>Before</th><th>After</th><th>Concept</th></tr></thead><tbody>
+${AUD.map(r=>`<tr><td class="${r[0]==="High"?"hi":r[0]==="Med"?"md":""}">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join("")}
+</tbody></table>
+<p style="margin-top:16px;color:var(--k-faint);font-size:13px"><b style="color:var(--k-muted)">Outside the library:</b> keyboard rating (1–9, 0, H, S) for quick passes on desktop. Rating a show you aren’t tracking also creates a Watching entry (<code>ratings.ts:29</code>); I’ll fix that here.</p></div>`;
+const sec2=(cap,note,html)=>`<section class="mock"><p class="cap">${cap}</p><p class="note">${note}</p><div class="fit">${html}</div></section>`;
+document.getElementById("app").innerHTML=
+sec2("C1 · Library → To rate","The rating backlog gets its own Library tab, using direction A's chrome (it fits B as a section the same way). Rows instead of a poster grid, so 255 titles scan quickly. One tap on a score saves and the row shows Undo. A dropped show is still asked about: dropping it is an opinion too.",toRate)+
+sec2("C2 · Rate one at a time","For a quick pass: one title, big targets, keyboard shortcuts, and Didn't watch it or Skip without leaving the sheet. The bar at the top shows how far through the backlog you are.",focus)+
+sec2("C3 · On a phone","",phone)+
+sec2("Audit · the current rating flow","Critly review of the StarterSheet in Settings and Home, checked against your real data.",audit);
+document.querySelectorAll(".fit").forEach(f=>{const s=f.firstElementChild;s.style.zoom=f.clientWidth/1280;});
+</script>
+</body></html>

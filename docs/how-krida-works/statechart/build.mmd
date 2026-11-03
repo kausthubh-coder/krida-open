@@ -1,0 +1,69 @@
+---
+title: "A warm-up and a press of Play share one build"
+---
+stateDiagram-v2
+  state "Legend" as legend {
+    lg0: good
+    lg1: bad
+    lg2: work
+    lg3: Breaks OneBuildAtATime
+    lg4: Path to the OneBuildAtATime bug
+  }
+  class lg0 teal
+  class lg1 orange
+  class lg2 blue
+  class lg3 breaks
+  class lg4 bugPath
+  s0: Nothing started
+  s1: Resting on Play
+  s2: Play pressed
+  s3: The warm-up holds the claim
+  s4: Play builds
+  s5: The warm-up's claim is past 3 minutes
+  s6: Stream prepared, Play not pressed
+  s7: Couldn't start
+  s8: Picture ready
+  s9: Play waits on the warm-up
+  s10: Two builds of one title
+  [*] --> s0
+  s0 --> s1: you rest on Play
+  s0 --> s2: you press Play
+  s1 --> s3: the warm-up starts
+  s1 --> s2: you press Play
+  s2 --> s4: Play takes the build or Play takes over the expired claim
+  s3 --> s2: you press Play
+  s3 --> s5: 3 minutes pass
+  s3 --> s0: the warm-up fails
+  s3 --> s6: the warm-up finishes
+  s4 --> s7: Play's build fails
+  s4 --> s8: Play's build finishes
+  s2 --> s9: Play finds a build running
+  s5 --> s0: the warm-up fails
+  s5 --> s6: the warm-up finishes
+  s5 --> s2: you press Play
+  s6 --> s2: you press Play
+  s2 --> s10: Play takes over the expired claim
+  s2 --> s8: Play finds a prepared stream
+  s10 --> s4: the warm-up dies or the warm-up fails or the warm-up finishes
+  s10 --> s7: Play's build fails
+  s10 --> s8: Play's build finishes
+  s9 --> s2: the build is over, or its 3 minutes are up
+  classDef breaks fill:#ffecee,stroke:#e72e3b,stroke-width:2.5px,color:#cd2834
+  class s0 blue
+  class s0 bugPath
+  class s1 blue
+  class s1 bugPath
+  class s2 blue
+  class s2 bugPath
+  class s3 blue
+  class s3 bugPath
+  class s4 blue
+  class s5 blue
+  class s5 bugPath
+  class s6 blue
+  class s7 orange
+  class s8 teal
+  class s9 blue
+  class s10 orange
+  class s10 breaks
+  class s10 bugPath

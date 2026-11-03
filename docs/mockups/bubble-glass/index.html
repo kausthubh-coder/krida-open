@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Krida in bubble glass: two directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="lg/liquid-glass.css" />
+<script>
+  // Direction comes from the URL so a screenshot or a link always shows the same one.
+  const d = new URLSearchParams(location.search).get('d') === 'day' ? 'day' : 'night';
+  document.documentElement.dataset.direction = d;
+  document.documentElement.dataset.glassTheme = d === 'day' ? 'bubble' : 'night';
+</script>
+<style>
+  :root {
+    --page: oklch(0.145 0.006 60);
+    --fg: oklch(0.95 0.005 60);
+    --muted: oklch(0.76 0.01 60);
+    --faint: oklch(0.6 0.012 60);
+    --lg-font: 'Inter', system-ui, sans-serif;
+    --lg-accent: oklch(0.97 0.004 60);
+    --lg-tab-active: var(--fg);
+    --radius-art: 14px;
+  }
+  /* Direction B: Krida in daylight. Artwork still leads; the page is paper, glass is milky white. */
+  [data-direction='day'] {
+    --page: oklch(0.97 0.003 60);
+    --fg: oklch(0.2 0.006 60);
+    --muted: oklch(0.42 0.01 60);
+    --faint: oklch(0.55 0.012 60);
+    --lg-tab-active: var(--fg);
+  }
+  /* Direction A: night bubble. Clear glass on the dark cinema page: almost no tint, a faint rainbow
+     film on the rim and two glints, so the artwork shows through and the rim does the talking. */
+  [data-glass-theme='night'] {
+    --lg-label: oklch(0.97 0.004 60);
+    --lg-label-2: oklch(0.97 0.004 60 / 0.62);
+    --lg-tint: radial-gradient(ellipse 80% 75% at 50% 45%, rgb(255 255 255 / 0.10), rgb(255 255 255 / 0.04) 70%, rgb(255 255 255 / 0.02));
+    --lg-tint-strong: rgb(255 255 255 / 0.2);
+    --lg-fill: rgb(255 255 255 / 0.14);
+    --lg-separator: rgb(255 255 255 / 0.12);
+    --lg-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.55), 0 0 0 0.5px rgb(0 0 0 / 0.35);
+  }
+  [data-glass-theme='night'] .lg-switch-knob,
+  [data-glass-theme='night'] .lg-slider-thumb {
+    --lg-tint: radial-gradient(ellipse 80% 70% at 50% 45%, rgb(255 255 255 / 0.32), rgb(255 255 255 / 0.12));
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.35);
+  }
+  /* Panels you read get a dark body over bright pictures, so text keeps its contrast. */
+  [data-glass-theme='night'] .lg-panel[data-glass='regular'] { --lg-tint: rgb(24 22 20 / 0.42); }
+  [data-glass-theme='night'] .lg-menu-panel {
+    --lg-tint: rgb(40 38 36 / 0.55);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--page); color: var(--fg); font: 400 15px/1.45 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  button { font: inherit; }
+  svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .lg-btn svg.i { width: 18px; height: 18px; }
+
+  /* The switcher sits outside every scene, top right. */
+  .switcher { position: fixed; top: 18px; right: 22px; z-index: 50; display: flex; gap: 10px; align-items: center; }
+  .switcher a { text-decoration: none; }
+  .engine { font-size: 12px; color: var(--muted); margin-right: 6px; }
+
+  /* ---- Screen 1: Home ---------------------------------------------------------------------- */
+  .screen { position: relative; min-height: 100vh; overflow: clip; }
+  .home-scene { position: relative; }
+  .hero { position: relative; height: 82vh; min-height: 600px; }
+  .hero img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 20%; }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, var(--page) 0%, color-mix(in oklch, var(--page) 70%, transparent) 30%, transparent 62%), linear-gradient(0deg, var(--page) 0%, transparent 40%); }
+  [data-direction='day'] .hero { height: auto; min-height: 0; padding: 92px 32px 0; }
+  [data-direction='day'] .hero .frame { position: relative; height: 70vh; min-height: 540px; border-radius: 28px; overflow: hidden; box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.35); }
+  [data-direction='day'] .hero::after { display: none; }
+  [data-direction='day'] .hero .frame::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(0 0 0 / 0.55) 0%, rgb(0 0 0 / 0.15) 45%, transparent 65%); }
+  .hero .copy { position: absolute; left: 48px; bottom: 96px; z-index: 2; width: min(500px, 40vw); color: oklch(0.97 0.004 60); }
+  [data-direction='day'] .hero .copy { left: 56px; bottom: 56px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
+  .logo { display: block; width: 300px; max-width: 100%; margin: 18px 0 16px; filter: drop-shadow(0 4px 20px rgb(0 0 0 / 0.5)); }
+  .meta { font-size: 14px; opacity: 0.8; margin-bottom: 18px; }
+  .progress { height: 3px; border-radius: 3px; background: rgb(255 255 255 / 0.25); margin-bottom: 22px; }
+  .progress i { display: block; height: 100%; width: 36%; border-radius: inherit; background: #fff; }
+  .actions { display: flex; gap: 10px; align-items: center; }
+  .wordmark { position: absolute; top: 28px; left: 48px; z-index: 3; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 20px; color: oklch(0.97 0.004 60); }
+  [data-direction='day'] .wordmark { color: var(--fg); top: 32px; left: 56px; }
+
+  /* Play is the one white thing on the screen in both directions; in bubble it's a milky bubble. */
+  .lg-btn.play { --lg-tint: oklch(0.98 0.003 60 / 0.94); color: oklch(0.17 0.006 60) !important; font-weight: 600; }
+  .lg-btn.lg-lg { height: 50px; padding: 0 24px; font-size: 16px; }
+  .lg-btn.lg-lg.lg-icon { width: 50px; padding: 0; }
+
+  .rails { position: relative; z-index: 2; margin-top: -40px; padding-bottom: 160px; }
+  [data-direction='day'] .rails { margin-top: 36px; }
+  .rail { margin: 0 0 34px; }
+  .rail h2 { font-size: 20px; font-weight: 600; margin: 0 48px 12px; }
+  [data-direction='day'] .rail h2 { margin-left: 56px; }
+  .row { position: relative; display: flex; gap: 14px; padding: 0 48px; overflow: hidden; }
+  [data-direction='day'] .row { padding: 0 56px; }
+  .poster { flex: none; width: 168px; aspect-ratio: 2 / 3; border-radius: var(--radius-art); overflow: hidden; background: oklch(0.25 0.009 60); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06); }
+  [data-direction='day'] .poster { box-shadow: 0 12px 24px -16px rgb(0 0 0 / 0.5); }
+  .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .row-arrow { position: absolute; top: 50%; right: 22px; translate: 0 -50%; z-index: 3; }
+
+  /* The dock floats at the bottom of the window, over whatever scrolls under it. */
+  .dock { position: absolute; left: 50%; top: calc(100vh - 82px); translate: -50% 0; z-index: 40; display: flex; gap: 10px; align-items: center; }
+  .dock lg-tabbar .lg-seg-row > button { height: 50px; min-width: 58px; font-size: 0; gap: 0; }
+  .dock lg-tabbar .lg-seg-row > button svg { width: 24px; height: 24px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: oklch(0.62 0.13 155); color: #fff; display: grid; place-items: center; font: 600 13px/1 'Inter'; }
+
+  /* ---- Screen 2: a title page's controls, over its backdrop ---------------------------------- */
+  .title-screen { position: relative; padding: 120px 48px 140px; }
+  .title-scene { position: absolute; inset: 0; }
+  .title-scene img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; }
+  .title-scene::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, var(--page) 5%, color-mix(in oklch, var(--page) 55%, transparent) 45%, transparent 75%), linear-gradient(0deg, var(--page), transparent 30%); }
+  [data-direction='day'] .title-screen { margin: 0 32px; border-radius: 28px; overflow: hidden; padding: 72px 56px 72px; }
+  [data-direction='day'] .title-scene::after { background: linear-gradient(90deg, rgb(0 0 0 / 0.65) 5%, rgb(0 0 0 / 0.2) 50%, transparent 75%); }
+  .title-body { position: relative; z-index: 2; max-width: 620px; color: oklch(0.97 0.004 60); }
+  .title-body .logo { width: 260px; }
+  .title-body p { opacity: 0.86; margin: 0 0 22px; }
+  .toolbar { display: inline-flex; align-items: center; gap: 2px; padding: 4px; border-radius: 999px; }
+  .toolbar .tb { all: unset; display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 500; }
+  .toolbar .tb:hover { background: rgb(255 255 255 / 0.08); }
+  .tabs-row { display: flex; gap: 12px; align-items: center; margin-top: 34px; flex-wrap: wrap; }
+  .eps { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 300px)); gap: 16px; margin-top: 22px; }
+  .ep { border-radius: var(--radius-art); overflow: hidden; aspect-ratio: 16 / 9; position: relative; }
+  .ep img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ep span { position: absolute; left: 12px; bottom: 10px; font-size: 13px; font-weight: 600; color: #fff; text-shadow: 0 1px 6px rgb(0 0 0 / 0.7); }
+
+  /* ---- Screen 3: the player ----------------------------------------------------------------- */
+  .player { position: relative; height: 100vh; min-height: 640px; background: #000; }
+  [data-direction='day'] .player { margin: 40px 32px 0; height: calc(100vh - 80px); border-radius: 28px; overflow: hidden; }
+  .video { position: absolute; inset: 0; }
+  .video img { width: 100%; height: 100%; object-fit: cover; }
+  .chrome { position: absolute; left: 32px; right: 32px; bottom: 28px; z-index: 3; display: grid; gap: 14px; }
+  .timeline { display: flex; align-items: center; gap: 14px; color: #fff; font-size: 13px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px rgb(0 0 0 / 0.6); }
+  .timeline lg-slider { flex: 1; --lg-slider-fill: #fff; }
+  .capsules { display: flex; justify-content: space-between; align-items: center; }
+  .capsule { display: inline-flex; align-items: center; gap: 4px; padding: 5px; border-radius: 999px; }
+  .toolbar .tb.ic { width: 44px; padding: 0; justify-content: center; }
+  .vol { display: inline-flex; align-items: center; gap: 10px; padding: 0 14px 0 8px; color: #fff; }
+  .vol lg-slider { width: 110px; --lg-slider-fill: #fff; }
+  .player-top { position: absolute; top: 24px; left: 32px; z-index: 3; display: flex; gap: 12px; align-items: center; color: #fff; }
+  .player-top b { font-weight: 600; text-shadow: 0 1px 6px rgb(0 0 0 / 0.6); }
+  .panel { position: absolute; right: 32px; top: 90px; z-index: 3; width: 320px; padding: 8px; border-radius: 26px; color: var(--lg-label); }
+  .panel h3 { margin: 10px 12px 6px; font-size: 13px; font-weight: 600; opacity: 0.7; }
+  .panel .lg-list-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; font-size: 15px; }
+  .panel .lg-list-row + .lg-list-row { border-top: 1px solid var(--lg-separator); }
+  [data-direction='night'] .player .lg, [data-direction='day'] .player .lg { --lg-label: #fff; }
+
+  .note { max-width: 760px; margin: 60px auto 140px; padding: 0 24px; color: var(--muted); font-size: 14px; }
+  .note b { color: var(--fg); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="lib" viewBox="0 0 24 24"><path d="M5 4h3v16H5zM10 4h3v16h-3zM15.5 4.5l2.9-.8 3.6 15.5-2.9.8z"/></symbol>
+  <symbol id="party" viewBox="0 0 24 24"><path d="M4 8h16l-2 12H6zM8 8 7 4M16 8l1-4M12 8V3"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><path d="M7 4h3.5v16H7zM13.5 4H17v16h-3.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
+  <symbol id="film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></symbol>
+  <symbol id="r10" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></symbol>
+  <symbol id="f10" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4h-4"/></symbol>
+  <symbol id="cc" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 10.5a2 2 0 1 0 0 3M16 10.5a2 2 0 1 0 0 3"/></symbol>
+  <symbol id="vol" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7"/></symbol>
+  <symbol id="full" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></symbol>
+</svg>
+
+<div class="switcher">
+  <span class="engine" id="engine"></span>
+  <lg-segmented id="dir" class="lg-compact">
+    <button value="night">Night bubble</button>
+    <button value="day">Day bubble</button>
+  </lg-segmented>
+</div>
+
+<!-- Screen 1: Home. The scene is everything that scrolls; the dock floats over it. -->
+<section class="screen" aria-label="Home">
+  <div class="home-scene" data-glass-scene id="home-scene">
+    <div class="hero">
+      <div class="frame">
+        <img class="bg" src="https://images.metahub.space/background/large/tt4236770/img" alt="" />
+      </div>
+      <span class="wordmark"><svg class="i" style="width:18px;height:18px"><use href="#play" /></svg>krida</span>
+      <div class="copy">
+        <div class="eyebrow">Continue watching</div>
+        <img class="logo" src="https://images.metahub.space/logo/medium/tt4236770/img" alt="Yellowstone" />
+        <div class="meta">S1 E2 · 15 min left</div>
+        <div class="progress"><i></i></div>
+        <div class="actions">
+          <button class="lg-btn lg-lg lg-tinted play" data-glass><svg class="i"><use href="#play" /></svg>Resume</button>
+          <button class="lg-btn lg-lg" data-glass><svg class="i"><use href="#info" /></svg>More info</button>
+          <button class="lg-btn lg-lg lg-icon" data-glass aria-label="Plan to watch"><svg class="i"><use href="#plus" /></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="rails" id="rails"></div>
+  </div>
+  <nav class="dock" aria-label="Krida">
+    <lg-tabbar value="home" data-glass-scene-ref="#home-scene">
+      <button value="home" aria-label="Home"><svg class="i"><use href="#home" /></svg>Home</button>
+      <button value="library" aria-label="Library"><svg class="i"><use href="#lib" /></svg>Library</button>
+      <button value="party" aria-label="Party"><svg class="i"><use href="#party" /></svg>Party</button>
+      <button value="me" aria-label="Profile"><span class="avatar">K</span>Me</button>
+    </lg-tabbar>
+    <button class="lg-btn lg-icon lg-lg" data-glass data-glass-scene-ref="#home-scene" aria-label="Search"><svg class="i"><use href="#search" /></svg></button>
+  </nav>
+</section>
+
+<!-- Screen 2: a title page. -->
+<section class="title-screen" aria-label="Title page">
+  <div class="title-scene" data-glass-scene id="title-scene">
+    <img src="https://images.metahub.space/background/large/tt1160419/img" alt="" />
+  </div>
+  <div class="title-body">
+    <img class="logo" src="https://images.metahub.space/logo/medium/tt1160419/img" alt="Dune" />
+    <p>2021 · 2 h 35 min · Action, Adventure, Drama</p>
+    <p>Paul Atreides arrives on Arrakis after his father accepts the stewardship of the dangerous planet.</p>
+    <div class="actions">
+      <button class="lg-btn lg-lg lg-tinted play" data-glass><svg class="i"><use href="#play" /></svg>Play</button>
+      <div class="toolbar lg-panel" data-glass>
+        <button class="tb"><svg class="i"><use href="#film" /></svg>Trailer</button>
+        <button class="tb"><svg class="i"><use href="#plus" /></svg>Plan to watch</button>
+        <button class="tb"><svg class="i"><use href="#star" /></svg>Rate</button>
+        <button class="tb" aria-label="Watch together"><svg class="i"><use href="#people" /></svg></button>
+      </div>
+    </div>
+    <div class="tabs-row">
+      <lg-segmented value="eps">
+        <button value="eps">Episodes</button>
+        <button value="more">More like this</button>
+        <button value="details">Details</button>
+      </lg-segmented>
+      <lg-menu value="s1">
+        <button slot="trigger" class="lg-btn" type="button" data-glass>Season 1 <svg class="i"><use href="#down" /></svg></button>
+        <div role="menu" aria-label="Season">
+          <button value="s1">Season 1</button>
+          <button value="s2">Season 2</button>
+          <button value="s3">Season 3</button>
+        </div>
+      </lg-menu>
+    </div>
+  </div>
+</section>
+
+<!-- Screen 3: the player. A still stands in for the video. -->
+<section class="player" aria-label="Player">
+  <div class="video" data-glass-scene id="video">
+    <img src="https://images.metahub.space/background/large/tt15239678/img" alt="" />
+  </div>
+  <div class="player-top">
+    <button class="lg-btn lg-icon" data-glass aria-label="Back"><svg class="i"><use href="#back" /></svg></button>
+    <b>Dune: Part Two</b>
+  </div>
+  <div class="panel lg-panel" data-glass="regular">
+    <h3>Playback</h3>
+    <div class="lg-list-row"><span>Play next episode</span><lg-switch checked aria-label="Play next episode"></lg-switch></div>
+    <div class="lg-list-row"><span>Skip intros</span><lg-switch checked aria-label="Skip intros"></lg-switch></div>
+    <div class="lg-list-row"><span>Subtitles</span><lg-switch aria-label="Subtitles"></lg-switch></div>
+  </div>
+  <div class="chrome">
+    <div class="timeline"><span>1:12:40</span><lg-slider min="0" max="100" value="42" aria-label="Seek"></lg-slider><span>2:46:00</span></div>
+    <div class="capsules">
+      <div class="capsule toolbar lg-panel" data-glass>
+        <button class="tb ic" aria-label="Back 10 seconds"><svg class="i"><use href="#r10" /></svg></button>
+        <button class="tb ic" aria-label="Pause"><svg class="i"><use href="#pause" /></svg></button>
+        <button class="tb ic" aria-label="Forward 10 seconds"><svg class="i"><use href="#f10" /></svg></button>
+        <span class="vol"><svg class="i"><use href="#vol" /></svg><lg-slider min="0" max="100" value="70" aria-label="Volume"></lg-slider></span>
+      </div>
+      <div class="capsule toolbar lg-panel" data-glass>
+        <button class="tb ic" aria-label="Subtitles"><svg class="i"><use href="#cc" /></svg></button>
+        <button class="tb ic" aria-label="Watch together"><svg class="i"><use href="#people" /></svg></button>
+        <button class="tb ic" aria-label="Full screen"><svg class="i"><use href="#full" /></svg></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<p class="note"><b>Mockup.</b> Real Krida artwork and the real glass engine from <code>~/dev/liquid-glass</code>: the glass bends the live page in Chrome, Safari and Firefox. Press and drag the controls. Switch directions at the top right.</p>
+
+
+<script type="module">
+  import { themes, config } from './lg/liquid-glass.js';
+  // Night bubble: the light bubble's rim, tuned for a dark page (no dark outline, softer glow).
+  themes.night = { iridescence: 0.4, rimGlow: 0.22, outline: 0, spec: 0.5, glints: 1, dispersion: 0.6, light: -135, clearKnobs: true, press: 'squash' };
+
+  const rows = [
+    ['Top 10 movies on Netflix', ['tt31049299', 'tt9218128', 'tt32268992', 'tt1099212', 'tt4630562', 'tt6649066', 'tt34459219', 'tt31378509', 'tt27369017']],
+    ['Top 10 shows on Netflix', ['tt9813792', 'tt26933824', 'tt11704040', 'tt26229612', 'tt35934755', 'tt12590266', 'tt0903747', 'tt4236770', 'tt11280740']],
+  ];
+  document.getElementById('rails').innerHTML = rows
+    .map(([title, ids]) => `<section class="rail"><h2>${title}</h2><div class="row">${ids
+      .map((id) => `<div class="poster"><img src="https://images.metahub.space/poster/medium/${id}/img" alt="" loading="eager" /></div>`)
+      .join('')}<button class="lg-btn lg-icon lg-lg row-arrow" data-glass aria-label="More"><svg class="i"><use href="#chev" /></svg></button></div></section>`)
+    .join('');
+
+  document.getElementById('engine').textContent = `Engine: ${config.engine}`;
+  const dir = document.getElementById('dir');
+  dir.setAttribute('value', document.documentElement.dataset.direction);
+  await import('./lg/components.js');
+  dir.addEventListener('change', () => {
+    const u = new URL(location.href);
+    u.searchParams.set('d', dir.value);
+    location.href = u;
+  });
+</script>
+</body>
+</html>

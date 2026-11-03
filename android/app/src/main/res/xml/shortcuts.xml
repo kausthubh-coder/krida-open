@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A long press on the app icon: straight to Search or the Library, as the web app's manifest offers. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="search"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_search"
+        android:shortcutShortLabel="@string/shortcut_search">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.krida"
+            android:targetClass="app.krida.MainActivity"
+            android:data="https://krida-open.vercel.app/search" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="library"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_library"
+        android:shortcutShortLabel="@string/shortcut_library">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.krida"
+            android:targetClass="app.krida.MainActivity"
+            android:data="https://krida-open.vercel.app/library" />
+    </shortcut>
+</shortcuts>

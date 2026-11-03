@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.krida",
+      "sha256_cert_fingerprints": ["BE:D5:89:26:6B:E3:6A:77:BF:DE:C0:26:63:AB:E0:7F:6F:5F:80:DC:A4:38:5D:13:5C:6B:53:1C:A0:F2:64:A5"]
+    }
+  }
+]

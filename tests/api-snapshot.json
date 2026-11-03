@@ -1,0 +1,6311 @@
+{
+  "accounts:clear": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "kind": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "tmdb"
+            },
+            {
+              "type": "literal",
+              "value": "mdblist"
+            },
+            {
+              "type": "literal",
+              "value": "debrid"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
+  "accounts:connections": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "accounts:keys": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "accounts:save": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "kind": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "tmdb"
+            },
+            {
+              "type": "literal",
+              "value": "mdblist"
+            },
+            {
+              "type": "literal",
+              "value": "debrid"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "key": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "service": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "torbox"
+            },
+            {
+              "type": "literal",
+              "value": "realdebrid"
+            },
+            {
+              "type": "literal",
+              "value": "alldebrid"
+            },
+            {
+              "type": "literal",
+              "value": "premiumize"
+            },
+            {
+              "type": "literal",
+              "value": "debridlink"
+            },
+            {
+              "type": "literal",
+              "value": "offcloud"
+            },
+            {
+              "type": "literal",
+              "value": "easydebrid"
+            }
+          ]
+        },
+        "optional": true
+      }
+    }
+  },
+  "addons:copyFrom": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "fromProfileId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "profiles"
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:importUrls": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "urls": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "string"
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:install": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "url": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:installSuggested": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "suggestion": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "torrentio"
+            },
+            {
+              "type": "literal",
+              "value": "comet"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:list": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:reload": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "addonId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "addons"
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:remove": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "addonId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "addons"
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:reorder": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "ids": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "id",
+            "tableName": "addons"
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:setEnabled": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "addonId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "addons"
+        },
+        "optional": false
+      },
+      "enabled": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      }
+    }
+  },
+  "addons:suggestions": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "catalogs:friends": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "catalogs:home": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "catalogs:mine": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "catalogs:rows": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "catalogs:warmup": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "desktop:fileLink": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "streamId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "streams"
+        },
+        "optional": false
+      }
+    }
+  },
+  "feedback:forTitle": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "id": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "feedback:mine": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "source": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "krida"
+            },
+            {
+              "type": "literal",
+              "value": "simkl"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "paginationOpts": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "numItems": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": false
+            },
+            "cursor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "endCursor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "id": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "maximumRowsRead": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "maximumBytesRead": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "feedback:set": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "item": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "id": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "value": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "union",
+              "value": [
+                {
+                  "type": "literal",
+                  "value": "down"
+                },
+                {
+                  "type": "literal",
+                  "value": "up"
+                },
+                {
+                  "type": "literal",
+                  "value": "love"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
+  "feedback:starter": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "feedback:summary": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "invites:forRoom": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "invites:knock": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "invites:knockState": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "invites:mine": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "invites:respond": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "inviteId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "invites"
+        },
+        "optional": false
+      },
+      "accept": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      }
+    }
+  },
+  "invites:send": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "toId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "profiles"
+        },
+        "optional": false
+      }
+    }
+  },
+  "invites:withdraw": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "inviteId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "invites"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:fillGenres": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "items": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "object",
+            "value": {
+              "id": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": false
+              },
+              "type": {
+                "fieldType": {
+                  "type": "union",
+                  "value": [
+                    {
+                      "type": "literal",
+                      "value": "movie"
+                    },
+                    {
+                      "type": "literal",
+                      "value": "series"
+                    }
+                  ]
+                },
+                "optional": false
+              }
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:genres": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "ids": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "string"
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:has": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "imdbId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:list": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:markUnwatched": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "item": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "id": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:mine": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:overview": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "separateStatuses": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      }
+    }
+  },
+  "library:ownRows": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:progressRows": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:restoreWatched": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "id": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:savedIds": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "paginationOpts": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "numItems": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": false
+            },
+            "cursor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "endCursor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "id": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "maximumRowsRead": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "maximumBytesRead": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:setStatus": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "item": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "id": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "state": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "union",
+              "value": [
+                {
+                  "type": "literal",
+                  "value": "watching"
+                },
+                {
+                  "type": "literal",
+                  "value": "plantowatch"
+                },
+                {
+                  "type": "literal",
+                  "value": "hold"
+                },
+                {
+                  "type": "literal",
+                  "value": "completed"
+                },
+                {
+                  "type": "literal",
+                  "value": "dropped"
+                }
+              ]
+            },
+            {
+              "type": "literal",
+              "value": "rewatching"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:shared": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:simklRows": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:statuses": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "source": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "krida"
+            },
+            {
+              "type": "literal",
+              "value": "simkl"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "paginationOpts": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "numItems": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": false
+            },
+            "cursor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "endCursor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "id": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "maximumRowsRead": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "maximumBytesRead": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:statusFor": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "id": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:toggle": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "item": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "saved": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      },
+      "addedAt": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      }
+    }
+  },
+  "library:toRate": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "library:unwatchWarnings": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "logs:report": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "kind": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "message": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "detail": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "page": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "platform": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "build": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "messages:list": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "messages:send": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "kind": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "chat"
+            },
+            {
+              "type": "literal",
+              "value": "reaction"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "body": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "onboarding:pass": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "step": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "debrid"
+            },
+            {
+              "type": "literal",
+              "value": "addons"
+            },
+            {
+              "type": "literal",
+              "value": "extras"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
+  "onboarding:recheck": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "force": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      }
+    }
+  },
+  "onboarding:status": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "profiles:choose": {
+    "kind": "mutation",
+    "args": {
+      "profileId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "profiles"
+        },
+        "optional": false
+      },
+      "pin": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "profiles:create": {
+    "kind": "mutation",
+    "args": {
+      "name": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "hue": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      },
+      "pin": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "profiles:deleteProfile": {
+    "kind": "mutation",
+    "args": {
+      "profileId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "profiles"
+        },
+        "optional": false
+      },
+      "pin": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "profiles:edit": {
+    "kind": "mutation",
+    "args": {
+      "profileId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "profiles"
+        },
+        "optional": false
+      },
+      "name": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "hue": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "pin": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "profiles:ensureAccount": {
+    "kind": "mutation",
+    "args": {}
+  },
+  "profiles:inviteTemporary": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "name": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "profiles:joinTemporary": {
+    "kind": "mutation",
+    "args": {
+      "code": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "profiles:list": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "profiles:me": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "profiles:qaSignIn": {
+    "kind": "mutation",
+    "args": {
+      "name": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "password": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "profiles:setPin": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "pin": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
+  "profiles:signOut": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "profiles:signOutAccount": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "profiles:temporaryInvite": {
+    "kind": "query",
+    "args": {
+      "code": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "profiles:update": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "name": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "hue": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "prefs": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "audioLang": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "subLang": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "sounds": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": false
+            },
+            "hiddenRows": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": true
+            },
+            "rowOrder": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": true
+            },
+            "pinnedRows": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": true
+            },
+            "heroRow": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "rowNames": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "object",
+                  "value": {
+                    "key": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    },
+                    "name": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    }
+                  }
+                }
+              },
+              "optional": true
+            },
+            "typeHiddenRows": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": true
+            },
+            "hideUnreleased": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "skipIntro": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "skipRecap": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "autoNext": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "trailers": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "private": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "blurUnwatched": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "nextUpFrom": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "furthest"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "last"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "upcoming": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "row"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "hide"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "reuseSource": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "sourceFilter": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "subLang2": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "subtitleSize": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "small"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "medium"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "large"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "huge"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "subtitleColor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "white"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "yellow"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "cyan"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "subtitleEdge": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "shadow"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "outline"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "box"
+                  }
+                ]
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": true
+      },
+      "prefsPatch": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "audioLang": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "subLang": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "sounds": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "hiddenRows": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": true
+            },
+            "rowOrder": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": true
+            },
+            "pinnedRows": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": true
+            },
+            "heroRow": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "rowNames": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "object",
+                  "value": {
+                    "key": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    },
+                    "name": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    }
+                  }
+                }
+              },
+              "optional": true
+            },
+            "typeHiddenRows": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": true
+            },
+            "hideUnreleased": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "skipIntro": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "skipRecap": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "autoNext": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "trailers": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "private": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "blurUnwatched": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "nextUpFrom": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "furthest"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "last"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "upcoming": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "row"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "hide"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "reuseSource": {
+              "fieldType": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "sourceFilter": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "subLang2": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "subtitleSize": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "small"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "medium"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "large"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "huge"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "subtitleColor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "white"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "yellow"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "cyan"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "subtitleEdge": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "shadow"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "outline"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "box"
+                  }
+                ]
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": true
+      }
+    }
+  },
+  "progress:continueWatching": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "progress:forTitle": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "imdbId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "progress:history": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "progress:mark": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "episodes": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "object",
+            "value": {
+              "type": {
+                "fieldType": {
+                  "type": "union",
+                  "value": [
+                    {
+                      "type": "literal",
+                      "value": "movie"
+                    },
+                    {
+                      "type": "literal",
+                      "value": "series"
+                    }
+                  ]
+                },
+                "optional": false
+              },
+              "imdbId": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": false
+              },
+              "videoId": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": false
+              },
+              "season": {
+                "fieldType": {
+                  "type": "number"
+                },
+                "optional": true
+              },
+              "episode": {
+                "fieldType": {
+                  "type": "number"
+                },
+                "optional": true
+              },
+              "name": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": false
+              },
+              "episodeTitle": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": true
+              },
+              "poster": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": true
+              },
+              "background": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": true
+              },
+              "logo": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": true
+              },
+              "year": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": true
+              },
+              "ref": {
+                "fieldType": {
+                  "type": "object",
+                  "value": {
+                    "imdbId": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    },
+                    "season": {
+                      "fieldType": {
+                        "type": "number"
+                      },
+                      "optional": true
+                    },
+                    "episode": {
+                      "fieldType": {
+                        "type": "number"
+                      },
+                      "optional": true
+                    }
+                  }
+                },
+                "optional": true
+              }
+            }
+          }
+        },
+        "optional": false
+      },
+      "watched": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      }
+    }
+  },
+  "progress:save": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "position": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      },
+      "duration": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      },
+      "final": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      }
+    }
+  },
+  "progress:setHidden": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "imdbId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "hidden": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      }
+    }
+  },
+  "progress:started": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "ratings:details": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "id": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "ratings:mine": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "source": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "krida"
+            },
+            {
+              "type": "literal",
+              "value": "simkl"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "paginationOpts": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "numItems": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": false
+            },
+            "cursor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "endCursor": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": true
+            },
+            "id": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "maximumRowsRead": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "maximumBytesRead": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "ratings:save": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "item": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "id": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "rating": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "optional": true
+      },
+      "season": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "episode": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "state": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "union",
+              "value": [
+                {
+                  "type": "literal",
+                  "value": "watching"
+                },
+                {
+                  "type": "literal",
+                  "value": "plantowatch"
+                },
+                {
+                  "type": "literal",
+                  "value": "hold"
+                },
+                {
+                  "type": "literal",
+                  "value": "completed"
+                },
+                {
+                  "type": "literal",
+                  "value": "dropped"
+                }
+              ]
+            },
+            {
+              "type": "literal",
+              "value": "rewatching"
+            }
+          ]
+        },
+        "optional": true
+      }
+    }
+  },
+  "recs:moreLikeThis": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "type": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "movie"
+            },
+            {
+              "type": "literal",
+              "value": "series"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "id": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "recs:others": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "recs:rows": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "recs:save": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "rows": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "object",
+            "value": {
+              "kind": {
+                "fieldType": {
+                  "type": "union",
+                  "value": [
+                    {
+                      "type": "literal",
+                      "value": "picks"
+                    },
+                    {
+                      "type": "literal",
+                      "value": "because"
+                    },
+                    {
+                      "type": "literal",
+                      "value": "together"
+                    },
+                    {
+                      "type": "literal",
+                      "value": "taste"
+                    }
+                  ]
+                },
+                "optional": false
+              },
+              "title": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": false
+              },
+              "seedId": {
+                "fieldType": {
+                  "type": "string"
+                },
+                "optional": true
+              },
+              "seed": {
+                "fieldType": {
+                  "type": "object",
+                  "value": {
+                    "id": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    },
+                    "name": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    },
+                    "loved": {
+                      "fieldType": {
+                        "type": "boolean"
+                      },
+                      "optional": false
+                    },
+                    "type": {
+                      "fieldType": {
+                        "type": "union",
+                        "value": [
+                          {
+                            "type": "literal",
+                            "value": "movie"
+                          },
+                          {
+                            "type": "literal",
+                            "value": "series"
+                          }
+                        ]
+                      },
+                      "optional": true
+                    },
+                    "poster": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": true
+                    }
+                  }
+                },
+                "optional": true
+              },
+              "genres": {
+                "fieldType": {
+                  "type": "array",
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "optional": true
+              },
+              "langs": {
+                "fieldType": {
+                  "type": "array",
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "optional": true
+              },
+              "items": {
+                "fieldType": {
+                  "type": "array",
+                  "value": {
+                    "type": "object",
+                    "value": {
+                      "id": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": false
+                      },
+                      "type": {
+                        "fieldType": {
+                          "type": "union",
+                          "value": [
+                            {
+                              "type": "literal",
+                              "value": "movie"
+                            },
+                            {
+                              "type": "literal",
+                              "value": "series"
+                            }
+                          ]
+                        },
+                        "optional": false
+                      },
+                      "name": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": false
+                      },
+                      "poster": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      },
+                      "background": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      },
+                      "logo": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      },
+                      "year": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      },
+                      "description": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      },
+                      "rating": {
+                        "fieldType": {
+                          "type": "number"
+                        },
+                        "optional": true
+                      },
+                      "ratingSource": {
+                        "fieldType": {
+                          "type": "literal",
+                          "value": "tmdb"
+                        },
+                        "optional": true
+                      },
+                      "scores": {
+                        "fieldType": {
+                          "type": "object",
+                          "value": {
+                            "imdb": {
+                              "fieldType": {
+                                "type": "number"
+                              },
+                              "optional": true
+                            },
+                            "tomatoes": {
+                              "fieldType": {
+                                "type": "number"
+                              },
+                              "optional": true
+                            },
+                            "metacritic": {
+                              "fieldType": {
+                                "type": "number"
+                              },
+                              "optional": true
+                            },
+                            "letterboxd": {
+                              "fieldType": {
+                                "type": "number"
+                              },
+                              "optional": true
+                            },
+                            "mal": {
+                              "fieldType": {
+                                "type": "number"
+                              },
+                              "optional": true
+                            }
+                          }
+                        },
+                        "optional": true
+                      },
+                      "genres": {
+                        "fieldType": {
+                          "type": "array",
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "optional": false
+                      },
+                      "reason": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      },
+                      "trailer": {
+                        "fieldType": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      }
+                    }
+                  }
+                },
+                "optional": false
+              }
+            }
+          }
+        },
+        "optional": false
+      },
+      "taste": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "seeds": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "object",
+                  "value": {
+                    "id": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    },
+                    "type": {
+                      "fieldType": {
+                        "type": "union",
+                        "value": [
+                          {
+                            "type": "literal",
+                            "value": "movie"
+                          },
+                          {
+                            "type": "literal",
+                            "value": "series"
+                          }
+                        ]
+                      },
+                      "optional": false
+                    },
+                    "weight": {
+                      "fieldType": {
+                        "type": "number"
+                      },
+                      "optional": false
+                    },
+                    "seen": {
+                      "fieldType": {
+                        "type": "boolean"
+                      },
+                      "optional": false
+                    },
+                    "loved": {
+                      "fieldType": {
+                        "type": "boolean"
+                      },
+                      "optional": false
+                    },
+                    "name": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": true
+                    },
+                    "imdb": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": true
+                    }
+                  }
+                }
+              },
+              "optional": false
+            },
+            "exclude": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": false
+            },
+            "disliked": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "object",
+                  "value": {
+                    "id": {
+                      "fieldType": {
+                        "type": "string"
+                      },
+                      "optional": false
+                    },
+                    "type": {
+                      "fieldType": {
+                        "type": "union",
+                        "value": [
+                          {
+                            "type": "literal",
+                            "value": "movie"
+                          },
+                          {
+                            "type": "literal",
+                            "value": "series"
+                          }
+                        ]
+                      },
+                      "optional": false
+                    }
+                  }
+                }
+              },
+              "optional": false
+            },
+            "seenFranchises": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "string"
+                }
+              },
+              "optional": false
+            }
+          }
+        },
+        "optional": false
+      },
+      "digest": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "othersDigest": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:advance": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "fromVideoId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "queueItemId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "auto": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:answerSwitch": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "requestId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "accept": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:byLink": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "code": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:cancelStart": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:cancelSwitch": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:changeMedia": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "startAt": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:chooseSource": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "index": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      },
+      "key": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:clearNext": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:clock": {
+    "kind": "mutation",
+    "args": {}
+  },
+  "rooms:control": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "playing": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      },
+      "position": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      },
+      "action": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "videoId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "at": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:create": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "startAt": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "sourceIndex": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "sourceKey": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "screen": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "sdr"
+            },
+            {
+              "type": "literal",
+              "value": "hdr"
+            },
+            {
+              "type": "literal",
+              "value": "app"
+            }
+          ]
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:createParty": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": true
+      },
+      "startAt": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "inviteIds": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "id",
+            "tableName": "profiles"
+          }
+        },
+        "optional": false
+      },
+      "screen": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "sdr"
+            },
+            {
+              "type": "literal",
+              "value": "hdr"
+            },
+            {
+              "type": "literal",
+              "value": "app"
+            }
+          ]
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:get": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:heartbeat": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "position": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "buffering": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      },
+      "watching": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      },
+      "screen": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "sdr"
+            },
+            {
+              "type": "literal",
+              "value": "hdr"
+            },
+            {
+              "type": "literal",
+              "value": "app"
+            }
+          ]
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:join": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "code": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:kick": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "profileId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "profiles"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:leave": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "announce": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:live": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:mine": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:people": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:playNow": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "startAt": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "sourceIndex": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "sourceKey": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:playSuggestion": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "suggestionId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:queueAdd": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:queueMove": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "itemId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "to": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:queuePlay": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "itemId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:queueRemove": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "itemId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:queueRestore": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "item": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "id": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "media": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "type": {
+                    "fieldType": {
+                      "type": "union",
+                      "value": [
+                        {
+                          "type": "literal",
+                          "value": "movie"
+                        },
+                        {
+                          "type": "literal",
+                          "value": "series"
+                        }
+                      ]
+                    },
+                    "optional": false
+                  },
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "videoId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "name": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "episodeTitle": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "poster": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "background": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "logo": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "year": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "ref": {
+                    "fieldType": {
+                      "type": "object",
+                      "value": {
+                        "imdbId": {
+                          "fieldType": {
+                            "type": "string"
+                          },
+                          "optional": false
+                        },
+                        "season": {
+                          "fieldType": {
+                            "type": "number"
+                          },
+                          "optional": true
+                        },
+                        "episode": {
+                          "fieldType": {
+                            "type": "number"
+                          },
+                          "optional": true
+                        }
+                      }
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": false
+            },
+            "addedBy": {
+              "fieldType": {
+                "type": "id",
+                "tableName": "profiles"
+              },
+              "optional": false
+            },
+            "addedAt": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": false
+            }
+          }
+        },
+        "optional": false
+      },
+      "index": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:removeSuggestion": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "suggestionId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:requestSwitch": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "startAt": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:restoreSuggestion": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "item": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "id": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "media": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "type": {
+                    "fieldType": {
+                      "type": "union",
+                      "value": [
+                        {
+                          "type": "literal",
+                          "value": "movie"
+                        },
+                        {
+                          "type": "literal",
+                          "value": "series"
+                        }
+                      ]
+                    },
+                    "optional": false
+                  },
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "videoId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "name": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "episodeTitle": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "poster": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "background": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "logo": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "year": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": true
+                  },
+                  "ref": {
+                    "fieldType": {
+                      "type": "object",
+                      "value": {
+                        "imdbId": {
+                          "fieldType": {
+                            "type": "string"
+                          },
+                          "optional": false
+                        },
+                        "season": {
+                          "fieldType": {
+                            "type": "number"
+                          },
+                          "optional": true
+                        },
+                        "episode": {
+                          "fieldType": {
+                            "type": "number"
+                          },
+                          "optional": true
+                        }
+                      }
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": false
+            },
+            "by": {
+              "fieldType": {
+                "type": "id",
+                "tableName": "profiles"
+              },
+              "optional": false
+            },
+            "inIds": {
+              "fieldType": {
+                "type": "array",
+                "value": {
+                  "type": "id",
+                  "tableName": "profiles"
+                }
+              },
+              "optional": false
+            },
+            "createdAt": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": false
+            }
+          }
+        },
+        "optional": false
+      },
+      "index": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:retry": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:setNext": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:setStopAfter": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "on": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      },
+      "videoId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:shareLink": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:stop": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:suggest": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:vote": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "suggestionId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "in": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      }
+    }
+  },
+  "rooms:warm": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "media": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "type": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "literal",
+                    "value": "movie"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "series"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "imdbId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "videoId": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "season": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "episode": {
+              "fieldType": {
+                "type": "number"
+              },
+              "optional": true
+            },
+            "name": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": false
+            },
+            "episodeTitle": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "poster": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "background": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "logo": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "year": {
+              "fieldType": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "ref": {
+              "fieldType": {
+                "type": "object",
+                "value": {
+                  "imdbId": {
+                    "fieldType": {
+                      "type": "string"
+                    },
+                    "optional": false
+                  },
+                  "season": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  },
+                  "episode": {
+                    "fieldType": {
+                      "type": "number"
+                    },
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      },
+      "screen": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "sdr"
+            },
+            {
+              "type": "literal",
+              "value": "hdr"
+            },
+            {
+              "type": "literal",
+              "value": "app"
+            }
+          ]
+        },
+        "optional": true
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": true
+      }
+    }
+  },
+  "rooms:watchCredits": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "roomId": {
+        "fieldType": {
+          "type": "id",
+          "tableName": "rooms"
+        },
+        "optional": false
+      },
+      "videoId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "simkl:disconnect": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "simkl:enabled": {
+    "kind": "query",
+    "args": {}
+  },
+  "simkl:finish": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "code": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "state": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "iss": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  },
+  "simkl:forTitle": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "id": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "simkl:setWriteBack": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "writeBack": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      }
+    }
+  },
+  "simkl:start": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "redirectUri": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "simkl:status": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "simkl:syncNow": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "simkl:syncState": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "simkl:touch": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "sources:fileLink": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "type": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "movie"
+            },
+            {
+              "type": "literal",
+              "value": "series"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "videoId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "key": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "sources:list": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "type": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "movie"
+            },
+            {
+              "type": "literal",
+              "value": "series"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "videoId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "refresh": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      }
+    }
+  },
+  "sources:listRanked": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "type": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "movie"
+            },
+            {
+              "type": "literal",
+              "value": "series"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "videoId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "name": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "season": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "episode": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": true
+      },
+      "refresh": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": true
+      },
+      "screen": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "sdr"
+            },
+            {
+              "type": "literal",
+              "value": "hdr"
+            },
+            {
+              "type": "literal",
+              "value": "app"
+            }
+          ]
+        },
+        "optional": true
+      }
+    }
+  },
+  "sources:warm": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "type": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "movie"
+            },
+            {
+              "type": "literal",
+              "value": "series"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "videoId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "sync:pull": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "since": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      }
+    }
+  },
+  "sync:snapshot": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "table": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "tracked"
+            },
+            {
+              "type": "literal",
+              "value": "viewing"
+            },
+            {
+              "type": "literal",
+              "value": "library"
+            },
+            {
+              "type": "literal",
+              "value": "feedback"
+            },
+            {
+              "type": "literal",
+              "value": "partRatings"
+            },
+            {
+              "type": "literal",
+              "value": "unwatched"
+            },
+            {
+              "type": "literal",
+              "value": "progress"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "cursor": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
+  "titles:animeBackdrop": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "tmdbId": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "type": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "movie"
+            },
+            {
+              "type": "literal",
+              "value": "series"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
+  "titles:artwork": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "id": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "name": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "year": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "type": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "movie"
+            },
+            {
+              "type": "literal",
+              "value": "series"
+            }
+          ]
+        },
+        "optional": true
+      }
+    }
+  },
+  "titles:info": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "type": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "movie"
+            },
+            {
+              "type": "literal",
+              "value": "series"
+            }
+          ]
+        },
+        "optional": false
+      },
+      "id": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "titles:search": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "q": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "titles:searchPage": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "q": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "cursor": {
+        "fieldType": {
+          "type": "object",
+          "value": {
+            "movie": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "tv": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": false
+            },
+            "multi": {
+              "fieldType": {
+                "type": "union",
+                "value": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optional": false
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "trailers:imdb": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "ids": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "string"
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  "wrapped:get": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "now": {
+        "fieldType": {
+          "type": "number"
+        },
+        "optional": false
+      }
+    }
+  },
+  "wrapped:refreshSoon": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "timeZone": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": true
+      }
+    }
+  }
+}

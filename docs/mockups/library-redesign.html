@@ -1,0 +1,96 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<title>Library redesign: two directions</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+:root{--page:oklch(0.145 0.006 60);--surface:oklch(0.18 0.007 60);--raised:oklch(0.215 0.008 60);--overlay:oklch(0.25 0.009 60);
+--line:oklch(1 0 0/.09);--fg:oklch(0.95 0.005 60);--muted:oklch(0.76 0.01 60);--faint:oklch(0.6 0.012 60);--accent:oklch(0.82 0.14 75);--on:oklch(0.2 0.03 60);
+--shadow:inset 0 1px 0 0 oklch(1 0 0/.04),inset 0 0 0 1px oklch(1 0 0/.05),0 0 0 1px oklch(0 0 0/.2),0 2px 2px 0 oklch(0 0 0/.12),0 4px 4px 0 oklch(0 0 0/.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#222;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;padding:24px;color:#ddd}
+.label{font:600 15px Inter;margin:0 0 4px}.idea{font-size:13px;color:#aaa;margin:0 0 12px;max-width:760px}
+.screen{width:1280px;background:var(--page);color:var(--fg);font-size:14px;line-height:20px;position:relative;overflow:hidden;margin-bottom:40px;border-radius:12px}
+.disp{font-family:Fraunces,Georgia,serif}.tn{font-variant-numeric:tabular-nums}
+.nav{height:64px;display:flex;align-items:center;gap:32px;padding:0 48px;position:relative;z-index:2}
+.nav b{font-family:Fraunces;font-size:20px}.nav b i{color:var(--accent);font-style:normal}
+.nav a{color:var(--muted);font-weight:500;position:relative}.nav a.on{color:var(--fg)}.nav a.on::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;background:var(--accent);border-radius:2px}
+.art{position:relative;overflow:hidden;background:var(--surface);border-radius:12px;outline:1px solid oklch(1 0 0/.1);outline-offset:-1px}
+.art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.poster{aspect-ratio:2/3}.wide{aspect-ratio:16/9}
+.btn{height:40px;padding:0 16px;border-radius:99px;display:inline-flex;align-items:center;gap:8px;font-weight:500;background:oklch(1 0 0/.1);white-space:nowrap}
+.btn.p{background:var(--accent);color:var(--on)}.btn.g{background:none;color:var(--muted)}
+.tabs{display:flex;gap:24px;border-bottom:1px solid var(--line)}
+.tabs span{height:44px;display:flex;align-items:center;gap:6px;color:var(--muted);font-weight:500;position:relative}
+.tabs span em{font-style:normal;font-size:12px;color:var(--faint)}
+.tabs span.on{color:var(--fg)}.tabs span.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--fg);border-radius:2px}
+.chips{display:flex;gap:8px}.chip{height:36px;padding:0 14px;border-radius:99px;background:oklch(1 0 0/.06);color:var(--muted);display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.chip.on{background:var(--fg);color:var(--page)}.chip em{font-style:normal;font-size:12px;opacity:.65}
+.search{height:40px;width:240px;border-radius:99px;background:oklch(1 0 0/.06);display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--faint)}
+.sel{height:40px;border-radius:99px;background:oklch(1 0 0/.06);display:flex;align-items:center;gap:6px;padding:0 14px;color:var(--muted);font-weight:500}
+.grid{display:grid;gap:24px 16px}
+.pc .t{margin-top:8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc .s{font-size:12px;line-height:16px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{position:absolute;top:8px;left:8px;z-index:2;font-size:12px;font-weight:500;background:oklch(0 0 0/.65);padding:1px 8px;border-radius:99px;backdrop-filter:blur(8px)}
+.badge i{color:var(--accent);font-style:normal}
+.mh{display:flex;align-items:baseline;gap:10px;margin:32px 0 12px}.mh h3{font-size:16px;line-height:24px;font-weight:600}.mh small{color:var(--faint);font-size:12px}
+.wash{position:absolute;inset:0 0 auto 0;height:420px;z-index:0}
+.wash img{width:100%;height:100%;object-fit:cover;opacity:.32;filter:saturate(.8)}
+.wash::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,oklch(0.145 0.006 60/.3),var(--page) 92%),linear-gradient(to right,var(--page),transparent 60%)}
+.prompt{display:flex;align-items:center;gap:20px;padding:16px 20px;border-radius:16px;background:var(--surface);box-shadow:var(--shadow)}
+.prompt .stack{display:flex}.prompt .stack .art{width:40px;margin-left:-12px;box-shadow:0 0 0 2px var(--surface)}
+.prompt .stack .art:first-child{margin-left:0}
+.side{width:232px;flex:none;padding:8px 0}
+.side a{height:44px;display:flex;align-items:center;gap:10px;padding:0 14px;border-radius:10px;color:var(--muted);font-weight:500}
+.side a em{margin-left:auto;font-style:normal;font-size:12px;color:var(--faint)}
+.side a.on{background:oklch(1 0 0/.07);color:var(--fg)}
+.side h6{font-size:12px;color:var(--faint);font-weight:500;margin:20px 14px 6px}
+</style></head><body>
+
+<p class="label">A · Cinema shelf</p>
+<p class="idea">Artwork leads: a soft backdrop wash from what you're watching. One compact header, four tabs (To rate folds into Watched), one toolbar row per tab with search, type and sort. Bigger posters (6 across at 1280) aligned to the nav edge. The rating backlog is a single quiet prompt, not a wall of buttons.</p>
+<div class="screen" id="a">
+  <div class="wash"><img src="https://images.metahub.space/background/large/tt10986410/img" alt=""></div>
+  <div class="nav"><b>krida<i>.</i></b><a>Home</a><a>Search</a><a class="on">Library</a></div>
+  <div style="position:relative;z-index:1;padding:40px 48px 64px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h1 class="disp" style="font-size:48px;line-height:52px;letter-spacing:-.025em;font-weight:600">Library</h1>
+      <span class="btn g">✦ Your Wrapped</span>
+    </div>
+    <div class="tabs" style="margin-top:20px"><span>Up next <em>20</em></span><span>My list <em>49</em></span><span class="on">Watched <em>247</em></span><span>Stats</span></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:20px">
+      <div class="chips"><span class="chip on">Diary</span><span class="chip">To rate <em>132</em></span></div>
+      <div style="margin-left:auto;display:flex;gap:8px"><span class="search">⌕ Search your library</span><div class="chips"><span class="chip on">All</span><span class="chip">Movies</span><span class="chip">Shows</span></div><span class="sel">Newest first ▾</span></div>
+    </div>
+    <div class="prompt" style="margin-top:24px"><div class="stack" id="stack"></div><div style="flex:1"><p style="font-weight:500">132 titles are waiting for your score</p><p style="color:var(--faint);font-size:12px">Scores sharpen your picks and sync to Simkl.</p></div><span class="btn p">★ Start rating</span></div>
+    <div id="diary"></div>
+  </div>
+</div>
+
+<p class="label">B · Index with a sidebar</p>
+<p class="idea">Apple TV library structure: sections and type filters in a left sidebar with counts, content to the right in a calm grid with dense meta. No backdrop. To rate stays its own section. Phone falls back to a top tab row.</p>
+<div class="screen" id="b">
+  <div class="nav"><b>krida<i>.</i></b><a>Home</a><a>Search</a><a class="on">Library</a></div>
+  <div style="display:flex;gap:40px;padding:24px 48px 64px">
+    <div class="side">
+      <h1 class="disp" style="font-size:28px;line-height:36px;font-weight:600;padding:0 14px 12px">Library</h1>
+      <a>▶ Up next<em>20</em></a><a>▣ My list<em>49</em></a><a class="on">✓ Watched<em>247</em></a><a>★ To rate<em>132</em></a><a>▤ Stats</a>
+      <h6>Type</h6><a class="on">All</a><a>Movies<em>159</em></a><a>Shows<em>88</em></a>
+      <h6>More</h6><a>✦ Your Wrapped</a>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px"><span class="search" style="width:320px">⌕ Search your library</span><span class="sel" style="margin-left:auto">Newest first ▾</span></div>
+      <div id="diaryb"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ids=[["tt6933238","Unabomber","2026"],["tt22526100","The Love Hypothesis","2026"],["tt26657236","Backrooms","2026"],["tt12042730","Project Hail Mary","2026"],["tt1756855","Coyote vs. Acme","2026"],["tt29355505","Toy Story 5","2026"],["tt11561116","The Whisper Man","2026"],["tt4154796","Avengers: Endgame","2019"],["tt0111161","The Shawshank Redemption","1994"],["tt0120791","Practical Magic","1998"],["tt5177120","The Ministry of Ungentlemanly Warfare","2024"],["tt15398776","Oppenheimer","2023"],["tt26581740","Weapons","2025"],["tt0120903","X-Men","2000"],["tt21097264","East of Eden","2026"],["tt31510819","MobLand","2025"],["tt5875444","Slow Horses","2022"],["tt13210838","The Gentlemen","2024"],["tt9288030","Reacher","2022"],["tt13111078","Lioness","2023"]];
+const poster=(id)=>`https://images.metahub.space/poster/medium/${id}/img`;
+const card=([id,n,y],i)=>`<div class="pc"><div class="art poster">${i%3==1?`<span class="badge"><i>★</i> ${[8,7,9,6][i%4]}</span>`:""}<img src="${poster(id)}"></div><p class="t">${n}</p><p class="s">${y} · ${i>13?"Show":"Movie"}</p></div>`;
+const month=(t,n,items,cols)=>`<div class="mh"><h3>${t}</h3><small>${n}</small></div><div class="grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${items.map(card).join("")}</div>`;
+document.getElementById("diary").innerHTML=month("October 2026","8 titles",ids.slice(0,6),6)+month("September 2026","15 titles",ids.slice(6,18),6);
+document.getElementById("diaryb").innerHTML=month("October 2026","8 titles",ids.slice(0,6),6)+month("September 2026","15 titles",ids.slice(6,18),6);
+document.getElementById("stack").innerHTML=ids.slice(10,14).map(([id])=>`<div class="art poster"><img src="${poster(id)}"></div>`).join("");
+</script>
+</body></html>

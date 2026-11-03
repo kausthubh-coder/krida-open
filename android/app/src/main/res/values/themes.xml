@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Krida" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/page</item>
+        <item name="android:colorBackground">@color/page</item>
+        <item name="android:colorAccent">@android:color/white</item>
+    </style>
+
+    <!-- Shown while the page loads: the icon on the page's color, held until the first paint (MainActivity). -->
+    <style name="Theme.Krida.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/page</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/icon</item>
+        <item name="postSplashScreenTheme">@style/Theme.Krida</item>
+    </style>
+</resources>

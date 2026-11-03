@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+:root{--page:oklch(0.145 0.006 60);--surface:oklch(0.18 0.007 60);--raised:oklch(0.215 0.008 60);--line:oklch(1 0 0/.09);--fg:oklch(0.95 0.005 60);--muted:oklch(0.76 0.01 60);--faint:oklch(0.6 0.012 60);--accent:oklch(0.82 0.14 75)}
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--foreground,#eee)}
+.opt{margin:0 0 28px}
+.opt h3{font:600 15px/1.4 Inter,sans-serif;margin:0 0 4px}
+.opt p.d{font:13px/1.5 Inter,sans-serif;margin:0 0 10px;opacity:.75;max-width:70ch}
+.vp{width:100%;overflow:hidden;border-radius:12px;position:relative}
+.screen{width:1440px;transform-origin:0 0;background:var(--page);color:var(--fg);position:relative;overflow:hidden;font-size:14px;line-height:20px}
+.nav{height:64px;display:flex;align-items:center;gap:28px;padding:0 48px}
+.nav .brand{font:600 22px Fraunces,serif}
+.nav a{color:var(--muted)}.nav a.on{color:var(--fg)}
+.nav .field{margin-left:auto;width:360px;height:40px;border-radius:99px;background:var(--surface);display:flex;align-items:center;padding:0 16px;gap:10px;color:var(--fg)}
+.nav .av{width:32px;height:32px;border-radius:99px;background:oklch(.6 .12 145);display:grid;place-items:center;font-weight:600;color:var(--page)}
+.main{padding:28px 48px 0}
+h2.big{font-size:28px;line-height:36px;letter-spacing:-.02em;font-weight:600;margin:0}
+.sub{color:var(--muted);margin-top:2px}
+.bar{display:flex;align-items:center;gap:8px;margin:18px 0 24px}
+.chip{height:36px;border-radius:99px;padding:0 14px;display:inline-flex;align-items:center;gap:7px;font-weight:500;background:oklch(1 0 0/.06);color:var(--muted);white-space:nowrap}
+.chip.on{background:var(--fg);color:var(--page)}
+.chip .x{opacity:.6;font-size:12px}
+.chip .cv{font-size:10px;opacity:.7}
+.sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+.seg{margin-left:auto;display:flex;gap:4px}
+.seg span{height:40px;padding:0 16px;border-radius:99px;display:grid;place-items:center;font-weight:500;color:var(--muted)}
+.seg span.on{background:var(--fg);color:var(--page)}
+.row{display:flex;gap:16px;margin-bottom:24px;margin-right:-48px;overflow:hidden}
+.card{flex:none;width:184px}
+.art{height:276px;border-radius:12px;background:var(--surface) center/cover;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px oklch(1 0 0/.1)}
+.cap{margin-top:8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cap small{display:block;font-weight:400;font-size:12px;line-height:16px;color:var(--faint)}
+.card.open{width:491px}
+.shade{position:absolute;inset:0;background:linear-gradient(to top,oklch(0 0 0/.8),oklch(0 0 0/.25) 45%,transparent 70%)}
+.logo{position:absolute;left:14px;bottom:12px;max-width:58%}
+.logo img{max-height:44px;max-width:100%;display:block;filter:drop-shadow(0 2px 12px #0008)}
+.logo p{margin:6px 0 0;font-size:12px;line-height:16px;color:var(--muted)}.logo b{color:var(--fg)}
+.btns{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}
+.ib{width:44px;height:44px;border-radius:99px;background:oklch(.2 .006 60/.7);display:grid;place-items:center;font-size:16px}
+.ib.play{background:var(--accent);color:oklch(.2 .03 60)}
+.live{position:absolute;top:10px;left:12px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg);background:oklch(0 0 0/.55);padding:2px 8px;border-radius:99px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px 16px}
+.l .art{height:auto;aspect-ratio:16/9}
+</style></head><body>
+
+<div class="opt"><h3>A. Posters that open in place, like Home <span style="opacity:.6;font-weight:400">(recommended)</span></h3>
+<p class="d">The grid keeps posters. Resting on one widens it into its trailer exactly as on Home: same spring, same card. Its row's neighbours slide right (past the edge) and come back when you leave. One control line replaces the two chip rows.</p>
+<div class="vp" data-h="760"><div class="screen" id="a"></div></div></div>
+
+<div class="opt"><h3>B. Landscape cards, trailer plays inside the card</h3>
+<p class="d">Results become 16:9 backdrop cards in four columns. Nothing moves when a trailer starts; it fades in over the backdrop. Fewer titles per screen (12 instead of 14 to 21), and regional films without a backdrop fall back to a cropped poster.</p>
+<div class="vp" data-h="760"><div class="screen" id="b"></div></div></div>
+
+<script>
+const T=[["tt0386676","The Office","2005 · Show"],["tt0829482","Superbad","2007 · Movie"],["tt2467372","Brooklyn Nine-Nine","2013 · Show"],["tt1119646","The Hangover","2009 · Movie"],["tt0108778","Friends","1994 · Show"],["tt10986410","Ted Lasso","2020 · Show"],["tt2278388","The Grand Budapest Hotel","2014 · Movie"],["tt0838283","Step Brothers","2008 · Movie"],["tt1442437","Modern Family","2009 · Show"],["tt7908628","What We Do in the Shadows","2019 · Show"],["tt3526078","Schitt’s Creek","2015 · Show"],["tt1478338","Bridesmaids","2011 · Movie"],["tt1232829","21 Jump Street","2012 · Movie"],["tt1439629","Community","2009 · Show"],["tt0357413","Anchorman","2004 · Movie"],["tt14218830","Abbott Elementary","2021 · Show"]];
+const P=id=>`https://images.metahub.space/poster/medium/${id}/img`,B=id=>`https://images.metahub.space/background/medium/${id}/img`,L=id=>`https://images.metahub.space/logo/medium/${id}/img`;
+const head=`<div class="nav"><span class="brand">krida.</span><a>Home</a><a class="on">Search</a><a>Library</a><div class="field">⌕ comedy</div><span class="av">K</span></div>
+<div class="main"><h2 class="big">Popular comedy movies and shows</h2><div class="sub">Most popular first</div>
+<div class="bar"><span class="chip on">Comedy <span class="x">✕</span></span><span class="sep"></span><span class="chip">Language <span class="cv">▾</span></span><span class="chip">Genre <span class="cv">▾</span></span><span class="chip">Decade <span class="cv">▾</span></span><span class="chip">Most popular <span class="cv">▾</span></span>
+<div class="seg"><span class="on">All</span><span>Movies</span><span>Shows</span></div></div>`;
+const open=t=>`<div class="card open"><div class="art" style="background-image:url(${B(t[0])})"><div class="shade"></div><div class="logo"><img src="${L(t[0])}"><p><b>7.6</b> IMDb · <b>88%</b> RT · 2007 · Comedy</p></div><div class="btns"><span class="ib">🔈</span><span class="ib">＋</span><span class="ib">☆</span><span class="ib play">▶</span></div></div><div class="cap" style="width:184px">${t[1]}<small>${t[2]}</small></div></div>`;
+const card=t=>`<div class="card"><div class="art" style="background-image:url(${P(t[0])})"></div><div class="cap">${t[1]}<small>${t[2]}</small></div></div>`;
+document.getElementById("a").innerHTML=head+`<div class="row">${card(T[0])}${open(T[1])}${T.slice(2,7).map(card).join("")}</div><div class="row">${T.slice(7,14).map(card).join("")}</div></div>`;
+const land=(t,i)=>i==1
+  ?`<div class="card" style="width:auto"><div class="art" style="background-image:url(${B(t[0])})"><div class="shade"></div><div class="logo"><img src="${L(t[0])}"></div><div class="btns"><span class="ib">🔈</span><span class="ib">＋</span><span class="ib play">▶</span></div></div><div class="cap">${t[1]}<small>${t[2]}</small></div></div>`
+  :`<div class="card" style="width:auto"><div class="art" style="background-image:url(${B(t[0])})"><div class="shade" style="opacity:.6"></div><div class="logo"><img src="${L(t[0])}" style="max-height:34px"></div></div><div class="cap">${t[1]}<small>${t[2]}</small></div></div>`;
+document.getElementById("b").innerHTML=head+`<div class="grid4 l">${T.slice(0,12).map(land).join("")}</div></div>`;
+function fit(){document.querySelectorAll(".vp").forEach(v=>{const s=v.clientWidth/1440;v.querySelector(".screen").style.transform=`scale(${s})`;v.style.height=(+v.dataset.h*s)+"px";});}
+fit();addEventListener("resize",fit);
+</script></body></html>

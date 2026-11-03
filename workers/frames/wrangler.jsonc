@@ -1,0 +1,10 @@
+// The frames Worker (index.ts). Deploy and secrets: docs/ops.md.
+{
+  "name": "krida-open-frames",
+  "main": "index.ts",
+  "compatibility_date": "2026-10-14",
+  // process.env holds TORBOX_API_URL when set (stand-ins); the TorBox key comes sealed in each ticket.
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true, "traces": { "enabled": true } }
+}

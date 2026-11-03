@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Krida in Liquid Glass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+/* Krida's tokens, unchanged. */
+:root{
+  --page:oklch(0.145 0.006 60);--surface:oklch(0.18 0.007 60);--raised:oklch(0.215 0.008 60);--overlay:oklch(0.25 0.009 60);
+  --line:oklch(1 0 0 / .09);--fg:oklch(0.95 0.005 60);--muted:oklch(0.76 0.01 60);--faint:oklch(0.6 0.012 60);
+  --accent:oklch(0.82 0.14 75);--accent-hover:oklch(0.86 0.12 75);--on-accent:oklch(0.2 0.03 60);--success:oklch(0.74 0.14 150);
+  --ease-snappy:cubic-bezier(0.23,1,0.32,1);
+  /* New: a spring with ~8% overshoot, for things that change shape (lens, widening posters, glass release). */
+  --ease-spring:linear(0,0.009,0.035 2.1%,0.141 4.4%,0.723 12.9%,0.938 16.7%,1.017 19.4%,1.067,1.077 24.6%,1.067 27.3%,1.017 32.4%,0.996 35.8%,0.991 39.4%,1.001 50.9%,1);
+  /* New: the glass recipe. Tint is the overlay token at 40%, so it stays warm and dark enough for text over any artwork. */
+  --glass-tint:oklch(0.25 0.009 60 / .40);
+  --glass-blur:blur(14px) saturate(1.7) brightness(1.04);
+  --shadow-glass:inset 0 1px 0 0 oklch(1 0 0 / .16),inset 0 -12px 24px -16px oklch(1 0 0 / .10),0 0 0 1px oklch(0 0 0 / .16),0 2px 6px 0 oklch(0 0 0 / .18),0 12px 32px -10px oklch(0 0 0 / .55);
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box;margin:0}
+html,body{background:transparent}
+body{font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:20px;color:var(--foreground,var(--fg));-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+i.ph,i.ph-fill,i.ph-bold{line-height:1}
+
+/* Page chrome around the screens (follows the thread theme). */
+.doc{display:flex;flex-direction:column;gap:12px;padding-bottom:8px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.bar .grow{flex:1}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:color-mix(in oklch,var(--foreground,#fff) 8%,transparent)}
+.seg button{height:30px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:500;color:var(--muted-foreground,#aaa)}
+.seg button[aria-pressed=true]{background:var(--card,#333);color:var(--foreground,#fff);box-shadow:0 1px 2px oklch(0 0 0 / .3)}
+.chip{height:32px;padding:0 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;background:color-mix(in oklch,var(--foreground,#fff) 8%,transparent)}
+.chip:active{transform:scale(.97)}
+.label{font-size:12px;color:var(--muted-foreground,#999);letter-spacing:.02em;margin-top:20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.label b{font-weight:600;color:var(--foreground,#eee)}
+.note{font-size:13px;line-height:19px;color:var(--muted-foreground,#aaa);max-width:72ch}
+.note b{color:var(--foreground,#eee);font-weight:500}
+.try{display:flex;flex-wrap:wrap;gap:6px}
+
+/* Screens are designed at real size and scaled to fit the column. */
+.fit{position:relative;width:100%;overflow:hidden;border-radius:12px}
+.stage{position:absolute;top:0;left:0;transform-origin:0 0;overflow:hidden;background:var(--page);color:var(--fg)}
+.desk{width:1280px;height:820px}
+.play{width:1280px;height:720px;background:#000}
+.phone-wrap{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.phone-fit{width:min(100%,300px)}
+.phone{width:390px;height:780px;border-radius:44px}
+
+/* ---------- Glass ---------- */
+.glass{position:relative;isolation:isolate;background:linear-gradient(180deg,oklch(1 0 0 / .09),oklch(1 0 0 / .02) 60%),var(--glass-tint);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--shadow-glass)}
+.glass.refract{backdrop-filter:var(--lens) blur(7px) saturate(1.8) brightness(1.04)}
+/* Thick glass for panels you read (sources, Party, invites): more tint and blur, so text holds over any frame. */
+.glass.thick{background:linear-gradient(180deg,oklch(1 0 0 / .07),oklch(1 0 0 / .02) 50%),oklch(0.21 0.008 60 / .74);backdrop-filter:blur(28px) saturate(1.5)}
+/* Specular rim: bright where light hits (top left), faint elsewhere. */
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;z-index:2;
+  background:linear-gradient(155deg,oklch(1 0 0 / .5),oklch(1 0 0 / .1) 30%,oklch(1 0 0 / .03) 60%,oklch(1 0 0 / .22));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+/* Light that follows the pointer, plus grain so the blur never bands. */
+.glass::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:radial-gradient(180px circle at var(--mx,30%) var(--my,-40%),oklch(1 0 0 / .13),transparent 70%),var(--grain);
+  background-size:auto,160px;opacity:.55;mix-blend-mode:soft-light}
+.glass>*{position:relative;z-index:1}
+@media (prefers-reduced-transparency:reduce){.glass,.glass.refract{background:var(--overlay);backdrop-filter:none}}
+
+.pill{border-radius:999px}
+.g-btn{height:44px;padding:0 18px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;font-weight:500;font-size:15px;white-space:nowrap}
+.g-icon{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;font-size:20px;flex-shrink:0}
+/* Press: 0.97 in 100ms; release springs back, which is the "liquid" part of a press. */
+.press{transition:transform 420ms var(--ease-spring)}
+.press:active{transform:scale(.96);transition:transform 100ms ease-out}
+.g-btn:hover,.g-icon:hover{background-color:oklch(1 0 0 / .06)}
+.btn-play{height:48px;padding:0 24px 0 20px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:16px;
+  background:var(--accent);color:var(--on-accent);box-shadow:inset 0 1px 0 oklch(1 0 0 / .45),inset 0 -2px 6px oklch(0.5 0.12 60 / .35),0 8px 24px -8px oklch(0.82 0.14 75 / .55)}
+.btn-play:hover{background:var(--accent-hover)}
+.wm{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.02em;font-size:22px}
+.wm span{color:var(--accent)}
+.kbd{min-width:20px;height:20px;padding:0 5px;border-radius:5px;display:inline-grid;place-items:center;font-size:11px;color:var(--muted);background:oklch(1 0 0 / .08);box-shadow:inset 0 -1px 0 oklch(1 0 0 / .06)}
+.av{border-radius:999px;display:grid;place-items:center;font-weight:600;color:oklch(.2 .03 60);flex-shrink:0}
+.img{background:#2a2622 center/cover no-repeat;outline:1px solid oklch(1 0 0 / .1);outline-offset:-1px}
+.cap{font-size:12px;line-height:16px;color:var(--faint)}
+.tab{font-variant-numeric:tabular-nums}
+
+/* ---------- Liquid lens (shared by nav, slides, phone tabs) ---------- */
+.seg-glass{display:flex;padding:4px;gap:2px}
+.seg-glass>button{position:relative;z-index:2;height:36px;padding:0 16px;border-radius:999px;font-weight:500;color:var(--muted)}
+.seg-glass>button[aria-current=page]{color:var(--fg)}
+.seg-glass>button:not([aria-current=page]):hover{color:var(--fg)}
+.lens{position:absolute;z-index:1;top:4px;height:36px;left:0;width:0;border-radius:999px;pointer-events:none;will-change:transform,width;
+  background:linear-gradient(180deg,oklch(1 0 0 / .2),oklch(1 0 0 / .07));
+  box-shadow:inset 0 1px 0 oklch(1 0 0 / .35),inset 0 0 0 1px oklch(1 0 0 / .1),inset 0 -6px 12px -6px oklch(1 0 0 / .18),0 4px 12px -4px oklch(0 0 0 / .4)}
+
+/* ---------- Desktop Home ---------- */
+.hero-bg{position:absolute;inset:0 0 auto 0;height:640px;overflow:hidden}
+.hero-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 500ms var(--ease-snappy)}
+.hero-bg img.on{opacity:1;animation:drift 18s linear infinite alternate}
+@keyframes drift{from{transform:scale(1.02)}to{transform:scale(1.08) translateX(-1.5%)}}
+.scrim-b{position:absolute;inset:0 0 auto 0;height:640px;background:linear-gradient(to top,var(--page) 2%,oklch(0.145 0.006 60 / .6) 22%,transparent 55%)}
+.scrim-l{position:absolute;inset:0 auto auto 0;width:760px;height:640px;background:linear-gradient(to right,oklch(0.145 0.006 60 / .85),oklch(0.145 0.006 60 / .4) 55%,transparent)}
+.nav{position:absolute;top:16px;left:24px;right:24px;display:flex;align-items:center;gap:12px;z-index:20}
+.nav .wm{padding:0 12px 0 8px}
+.search{flex:1;max-width:460px;margin:0 auto;height:44px;display:flex;align-items:center;gap:10px;padding:0 6px 0 16px;color:var(--muted)}
+.search .ph{font-size:18px;color:var(--muted)}
+.search span.t{flex:1}
+.search .browse{height:34px;padding:0 12px;border-radius:999px;display:flex;align-items:center;gap:6px;font-weight:500;color:var(--muted);font-size:13px}
+.search .browse:hover{background:oklch(1 0 0 / .08);color:var(--fg)}
+.me{height:44px;padding:0 10px 0 5px;display:flex;align-items:center;gap:8px;font-weight:500;color:var(--muted)}
+.hero{position:absolute;left:64px;top:190px;width:520px;z-index:5}
+.eyebrow{font-size:13px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.eyebrow i{color:var(--accent)}
+.logo{height:110px;display:flex;align-items:flex-end;margin-bottom:18px}
+.logo img{max-height:110px;max-width:420px;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 4px 16px oklch(0 0 0 / .5))}
+.logo h1{font-family:Fraunces,Georgia,serif;font-size:56px;line-height:58px;letter-spacing:-.025em;font-weight:600}
+.meta{display:flex;gap:10px;color:var(--muted);font-size:14px;align-items:center;margin-bottom:12px}
+.score{display:inline-flex;align-items:center;gap:5px;font-weight:600;color:var(--fg)}
+.score em{font-style:normal;font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;background:oklch(0.85 0.17 95);color:#111}
+.desc{color:var(--muted);font-size:15px;line-height:23px;max-width:46ch;margin-bottom:24px}
+.actions{display:flex;gap:10px;align-items:center}
+.swap{transition:opacity 220ms var(--ease-snappy),filter 220ms var(--ease-snappy),transform 220ms var(--ease-snappy)}
+.swap.out{opacity:0;filter:blur(4px);transform:translateY(4px);transition-duration:120ms;transition-timing-function:ease-in}
+/* Icon morph: blur, scale and fade between icons. */
+.morph{display:grid;width:20px;height:20px;font-size:20px}
+.morph>i{grid-area:1/1;transition:opacity 300ms var(--ease-snappy),scale 300ms var(--ease-snappy),filter 300ms var(--ease-snappy)}
+.morph>i:last-child,[data-on=true] .morph>i:first-child{opacity:0;scale:.25;filter:blur(4px)}
+[data-on=true] .morph>i:last-child{opacity:1;scale:1;filter:none}
+.dots{position:absolute;right:120px;top:536px;z-index:6}
+.dots .seg-glass>button{width:34px;padding:0;height:28px;display:grid;place-items:center}
+.dots .seg-glass>button::after{content:"";width:6px;height:6px;border-radius:99px;background:oklch(1 0 0 / .5)}
+.dots .seg-glass>button[aria-current=page]::after{background:var(--fg)}
+.dots .lens{height:28px}
+.mute{position:absolute;right:64px;top:528px;z-index:6}
+.rail{position:absolute;left:64px;right:0;top:600px;z-index:5}
+.rail h2{font-size:20px;line-height:28px;font-weight:600;letter-spacing:-.01em;margin-bottom:12px;display:flex;align-items:baseline;gap:10px}
+.rail h2 small{font-size:12px;font-weight:400;color:var(--faint)}
+.row{display:flex;gap:12px}
+/* Posters widen in place into their preview; neighbours move aside on the same spring. */
+.poster{position:relative;flex:0 0 140px;height:210px;border-radius:12px;overflow:hidden;transition:flex-basis 520ms var(--ease-spring)}
+.poster.open{flex-basis:373px}
+.poster.closing{transition:flex-basis 240ms var(--ease-snappy)}
+.poster>div{position:absolute;inset:0;border-radius:inherit;transition:opacity 260ms var(--ease-snappy)}
+.poster .bd{opacity:0}
+.poster.open .bd{opacity:1}
+.poster .info{position:absolute;left:10px;right:10px;bottom:10px;padding:10px 12px;border-radius:12px;display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(6px);transition:opacity 200ms var(--ease-snappy),transform 260ms var(--ease-snappy)}
+.poster.open .info{opacity:1;transform:none;transition-delay:120ms}
+.info-solid{background:linear-gradient(to top,oklch(0.145 0.006 60 / .92),oklch(0.145 0.006 60 / 0))}
+.info .ttl{font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-play{width:34px;height:34px;border-radius:99px;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-size:15px}
+
+/* Source sheet: grows out of Play. */
+.sources{position:absolute;left:64px;top:96px;width:440px;border-radius:28px;padding:8px;z-index:30;transform-origin:24px 100%;
+  opacity:0;scale:.94;visibility:hidden;transition:opacity 120ms ease-in,scale 120ms ease-in,visibility 0s 120ms}
+.sources.open{opacity:1;scale:1;visibility:visible;transition:opacity 260ms var(--ease-snappy),scale 260ms var(--ease-snappy),visibility 0s}
+.sources header{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px}
+.sources header b{flex:1;font-size:16px;font-weight:600}
+.src{display:flex;align-items:center;gap:12px;width:100%;height:56px;padding:0 12px;border-radius:20px;text-align:left}
+.src:hover{background:oklch(1 0 0 / .07)}
+.q{width:52px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;background:oklch(1 0 0 / .1)}
+.q.best{background:var(--accent);color:var(--on-accent)}
+.src .d{flex:1;min-width:0}
+.src .d div:first-child{font-weight:500}
+.src .ok{font-size:12px;color:var(--success);display:flex;gap:4px;align-items:center}
+.finding{height:236px;display:grid;place-items:center;color:var(--muted)}
+.finding>div{display:flex;flex-direction:column;align-items:center;gap:14px}
+.goo-spin{width:64px;height:24px;position:relative;filter:url(#goo)}
+.goo-spin span{position:absolute;top:4px;width:16px;height:16px;border-radius:99px;background:var(--fg);animation:blob 1.1s var(--ease-snappy) infinite}
+.goo-spin span:nth-child(2){animation-delay:-.37s}.goo-spin span:nth-child(3){animation-delay:-.74s}
+@keyframes blob{0%{left:0;transform:scale(.6)}50%{left:24px;transform:scale(1)}100%{left:48px;transform:scale(.6)}}
+
+/* Toasts. */
+.toast{position:absolute;left:50%;bottom:28px;translate:-50% 0;z-index:40;height:56px;padding:0 8px 0 18px;border-radius:999px;display:flex;align-items:center;gap:12px;
+  opacity:0;scale:.96;transition:opacity 120ms ease-in,scale 120ms ease-in,translate 120ms ease-in;pointer-events:none}
+.toast.show{opacity:1;scale:1;pointer-events:auto;transition:opacity 260ms var(--ease-snappy),scale 420ms var(--ease-spring),width 420ms var(--ease-spring)}
+.toast .msg{font-weight:500;white-space:nowrap}
+.spin{width:16px;height:16px;border-radius:99px;border:2px solid oklch(1 0 0 / .2);border-top-color:var(--fg);animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(1turn)}}
+
+/* ---------- Player ---------- */
+.frame{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vgrad{position:absolute;inset:0;background:linear-gradient(to top,oklch(0 0 0 / .55),transparent 30%),linear-gradient(to bottom,oklch(0 0 0 / .35),transparent 20%)}
+.ptop{position:absolute;top:20px;left:20px;right:20px;display:flex;align-items:center;gap:10px;z-index:5}
+.ptitle{height:44px;padding:0 18px;display:flex;align-items:center;gap:10px;font-weight:500}
+.ptitle span{color:var(--muted);font-weight:400}
+.controls{position:absolute;left:24px;right:24px;bottom:24px;height:64px;border-radius:999px;display:flex;align-items:center;gap:4px;padding:0 10px;z-index:5;transition:right 280ms var(--ease-snappy)}
+.party-open .controls{right:388px}
+.controls .g-icon{width:44px;height:44px}
+.time{font-size:13px;color:var(--muted);padding:0 10px;white-space:nowrap}
+.scrub{flex:1;height:44px;display:flex;align-items:center;cursor:pointer;touch-action:none;padding:0 6px}
+.track{position:relative;width:100%;height:6px;border-radius:99px;background:oklch(1 0 0 / .18);transition:height 120ms var(--ease-snappy)}
+.scrub:hover .track,.scrub.drag .track{height:10px}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:var(--fg)}
+.buf{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:oklch(1 0 0 / .18)}
+.knob{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:99px;background:var(--fg);box-shadow:0 2px 8px oklch(0 0 0 / .5);scale:0;transition:scale 160ms var(--ease-spring)}
+.scrub:hover .knob{scale:1}.scrub.drag .knob{scale:1.35}
+.party{position:absolute;top:20px;right:20px;bottom:20px;width:352px;border-radius:28px;z-index:6;display:flex;flex-direction:column;
+  translate:calc(100% + 24px) 0;transition:translate 140ms ease-in}
+.party-open .party{translate:0 0;transition:translate 300ms var(--ease-snappy)}
+.party header{display:flex;align-items:center;padding:16px 10px 8px 20px}
+.party header b{flex:1;font-size:20px;line-height:28px;font-weight:600;letter-spacing:-.01em}
+.people{padding:0 20px 8px;display:flex;flex-direction:column}
+.person{height:44px;display:flex;align-items:center;gap:12px}
+.person .s{flex:1}.person .cap{display:block}
+.chat{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:12px 16px;border-top:1px solid var(--line);overflow:hidden}
+.ev{text-align:center;font-size:12px;color:var(--faint)}
+.bub{max-width:80%;padding:8px 12px;border-radius:18px;background:oklch(1 0 0 / .1);align-self:flex-start;line-height:19px}
+.bub.me{align-self:flex-end;background:var(--accent);color:var(--on-accent)}
+.bub.new{animation:rise 320ms var(--ease-spring) both;transform-origin:100% 100%}
+@keyframes rise{from{opacity:0;transform:translateY(8px) scale(.94)}}
+.compose{margin:0 12px 12px;height:48px;border-radius:999px;display:flex;align-items:center;padding:0 6px 0 16px;background:oklch(1 0 0 / .07)}
+.compose input{flex:1;background:none;border:0;outline:0;color:var(--fg);font:inherit}
+.compose input::placeholder{color:var(--faint)}
+.send{width:36px;height:36px;border-radius:99px;display:grid;place-items:center;background:var(--accent);color:var(--on-accent)}
+.invite{position:absolute;top:84px;right:20px;width:360px;border-radius:24px;padding:14px;z-index:8;display:flex;flex-direction:column;gap:12px;
+  opacity:0;translate:0 -10px;scale:.97;transform-origin:100% 0;pointer-events:none;visibility:hidden;transition:opacity 120ms ease-in,translate 120ms ease-in,scale 120ms ease-in,visibility 0s 120ms}
+.invite.show{opacity:1;translate:0 0;scale:1;pointer-events:auto;visibility:visible;transition:opacity 260ms var(--ease-snappy),translate 420ms var(--ease-spring),scale 420ms var(--ease-spring),visibility 0s}
+.party-open .invite{right:392px}
+.invite .top{display:flex;gap:12px;align-items:center}
+.invite .top div{flex:1}
+.invite .acts{display:flex;gap:8px;justify-content:flex-end}
+.invite .acts button{height:36px;padding:0 14px;border-radius:999px;font-weight:500}
+.accept{background:var(--accent);color:var(--on-accent)}
+.decline{background:oklch(1 0 0 / .08)}
+/* "You're watching together": two drops meet, merge, and set into glass. */
+.together{position:absolute;left:50%;top:28px;width:0;height:64px;z-index:9;pointer-events:none;visibility:hidden}
+.together.on{visibility:visible}
+.party-open .together{left:calc(50% - 186px)}
+.settled .tg-glass,.settled .tg-text{opacity:1}.settled #aA{transform:translateX(-126px)}.settled #aB{transform:translateX(-96px)}.settled .goo{display:none}
+.goo{position:absolute;inset:0;filter:url(#goo)}
+.goo span,.tg-av{position:absolute;top:4px;left:-28px;width:56px;height:56px;border-radius:99px}
+.goo span{background:oklch(0.27 0.01 60 / .96)}
+.tg-glass{position:absolute;top:0;left:-170px;width:340px;height:64px;border-radius:999px;opacity:0}
+.tg-av{display:grid;place-items:center;top:10px;left:-22px;width:44px;height:44px;font-size:16px;box-shadow:0 0 0 3px oklch(0.27 0.01 60)}
+.tg-text{position:absolute;top:0;left:-60px;height:64px;display:flex;flex-direction:column;justify-content:center;white-space:nowrap;opacity:0}
+.tg-text b{font-weight:600;font-size:15px}
+.tg-text span{font-size:12px;color:var(--muted)}
+
+/* ---------- Phone ---------- */
+.m-hero{position:absolute;inset:0 0 auto 0;height:520px}
+.m-hero img{display:block;width:100%;height:100%;object-fit:cover;-webkit-mask-image:linear-gradient(to top,transparent,#000 50%);mask-image:linear-gradient(to top,transparent,#000 50%)}
+.m-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,oklch(0.145 0.006 60 / .6),transparent 60%)}
+.m-top{position:absolute;top:54px;left:16px;right:16px;display:flex;align-items:center;gap:8px;z-index:3}
+.m-info{position:absolute;left:20px;right:20px;top:330px;z-index:3;text-align:center}
+.m-info img{height:76px;max-width:260px;object-fit:contain;margin:0 auto 10px;display:block}
+.m-info .meta{justify-content:center;font-size:13px}
+.m-actions{display:flex;gap:10px;justify-content:center}
+.m-row{position:absolute;left:20px;top:560px;display:flex;gap:10px;z-index:2}
+.m-row div{width:104px;height:156px;border-radius:12px}
+.tabbar{position:absolute;left:20px;right:20px;bottom:28px;height:64px;padding:4px;z-index:5;display:flex;touch-action:none}
+.tabbar>button{flex:1;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:500;color:var(--muted);border-radius:999px}
+.tabbar>button i{font-size:22px}
+.tabbar>button[aria-current=page]{color:var(--fg)}
+.tabbar .lens{top:4px;height:56px}
+.home-ind{position:absolute;bottom:8px;left:50%;translate:-50% 0;width:134px;height:5px;border-radius:99px;background:oklch(1 0 0 / .6);z-index:6}
+
+/* ---------- Sound palette ---------- */
+.cues{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.cue{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:12px;background:color-mix(in oklch,var(--foreground,#fff) 5%,transparent);text-align:left}
+.cue:active{transform:scale(.98)}
+.cue i{font-size:18px;margin-top:1px;color:var(--muted-foreground,#aaa)}
+.cue b{display:block;font-weight:500;font-size:13px;color:var(--foreground,#eee)}
+.cue span{display:block;font-size:12px;line-height:17px;color:var(--muted-foreground,#999)}
+.cue.silent{opacity:.6;cursor:default}
+.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px 20px;font-size:13px;line-height:19px;color:var(--muted-foreground,#aaa)}
+.rules b{color:var(--foreground,#eee);font-weight:500}
+
+/* Direction B: glass on everything, to see what it costs. */
+.all-glass .hero{padding:24px 28px 28px;margin:-24px -28px;border-radius:32px}
+.all-glass .poster .info{background:none}
+.all-glass .rail h2{display:inline-flex;padding:4px 16px;border-radius:999px}
+
+@media (prefers-reduced-motion:reduce){
+  .hero-bg img.on{animation:none}
+  .poster{transition:flex-basis 1ms}
+  .press:active{transform:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- Gooey: blur, then sharpen the alpha so overlapping shapes melt into one. -->
+  <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/><feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter>
+</svg>
+<div id="lenses" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"></div>
+
+<div class="doc">
+  <div class="bar">
+    <div class="seg" role="group" aria-label="Direction">
+      <button data-dir="a" aria-pressed="true">A · Glass on floating controls</button>
+      <button data-dir="b" aria-pressed="false">B · Glass on everything</button>
+    </div>
+    <span class="grow"></span>
+    <button class="chip" id="soundBtn"><i class="ph ph-speaker-high"></i><span>Sound on</span></button>
+  </div>
+
+  <div class="label"><b>Home</b> 1280 × 820 · hover a poster, switch Home ↔ Library, change slides, press My list, then Play</div>
+  <div class="fit" data-w="1280" data-h="820">
+    <div class="stage desk" id="desk">
+      <div class="hero-bg" id="heroBg"></div>
+      <div class="scrim-b"></div><div class="scrim-l"></div>
+
+      <nav class="nav">
+        <span class="wm">krida<span>.</span></span>
+        <div class="glass pill seg-glass refract" data-lens>
+          <span class="lens"></span>
+          <button class="press" aria-current="page">Home</button>
+          <button class="press">Library</button>
+        </div>
+        <div class="glass pill search refract">
+          <i class="ph ph-magnifying-glass"></i><span class="t">Search movies, shows, people</span><span class="kbd">/</span>
+          <button class="browse press"><i class="ph ph-squares-four"></i>Browse</button>
+        </div>
+        <button class="glass g-btn press"><i class="ph ph-popcorn"></i>Party</button>
+        <button class="glass pill me press"><span class="av" style="width:34px;height:34px;background:oklch(0.78 0.12 145)">K</span>Ana<i class="ph ph-caret-down"></i></button>
+      </nav>
+
+      <div class="hero" id="hero">
+        <div class="swap" id="heroText">
+          <div class="eyebrow"><i class="ph-fill ph-sparkle"></i><span id="hEyebrow"></span></div>
+          <div class="logo" id="hLogo"></div>
+          <div class="meta" id="hMeta"></div>
+          <p class="desc" id="hDesc"></p>
+        </div>
+        <div class="actions">
+          <button class="btn-play press" id="playBtn"><i class="ph-fill ph-play"></i>Play</button>
+          <button class="glass g-btn press" id="listBtn" data-on="false"><span class="morph"><i class="ph ph-plus"></i><i class="ph-bold ph-check"></i></span><span>My list</span></button>
+          <button class="glass g-icon press" aria-label="More info"><i class="ph ph-info"></i></button>
+        </div>
+      </div>
+
+      <div class="sources glass thick" id="sources" role="dialog" aria-label="Choose a source">
+        <header><b>Choose a source</b><button class="g-icon press" id="srcClose" aria-label="Close" style="width:36px;height:36px;font-size:18px"><i class="ph ph-x"></i></button></header>
+        <div id="srcBody"></div>
+      </div>
+
+      <div class="dots"><div class="glass pill seg-glass" data-lens id="dots"><span class="lens"></span></div></div>
+      <button class="glass g-icon press mute" aria-label="Unmute trailer"><i class="ph ph-speaker-slash"></i></button>
+
+      <section class="rail">
+        <h2><span>Top picks for you</span><small>Updated 2 h ago</small></h2>
+        <div class="row" id="row"></div>
+      </section>
+
+      <div class="toast glass" id="toast"><span id="toastIcon"></span><span class="msg" id="toastMsg"></span><span id="toastAct"></span></div>
+    </div>
+  </div>
+  <p class="note">Glass is only the layer that floats over artwork: nav, the search field, secondary buttons, the slide switcher, sheets and toasts. Artwork, rows and Play stay solid, so the picture still leads and marigold still means "the main thing". The nav pill and search field bend the artwork at their edges (Chrome); other browsers get the same frosted glass without the bend.</p>
+
+  <div class="label"><b>Player</b> 1280 × 720 · drag the timeline, pause, open Party and send a message</div>
+  <div class="try">
+    <button class="chip" id="simInvite"><i class="ph ph-envelope-simple"></i>Ben invites you</button>
+    <button class="chip" id="simJoin"><i class="ph ph-users-three"></i>Ben joins (watching together)</button>
+  </div>
+  <div class="fit" data-w="1280" data-h="720">
+    <div class="stage play" id="player">
+      <img class="frame" src="https://images.metahub.space/background/large/tt15239678/img" alt="">
+      <div class="vgrad"></div>
+      <div class="ptop">
+        <button class="glass g-icon press refract" aria-label="Back"><i class="ph ph-arrow-left"></i></button>
+        <div class="glass pill ptitle">Dune: Part Two <span>· 2024</span></div>
+      </div>
+      <div class="together" id="together" aria-live="polite">
+        <div class="tg-glass glass"></div>
+        <div class="goo"><span id="gA"></span><span id="gB"></span><span id="gP" style="opacity:0"></span></div>
+        <span class="tg-av av" id="aA" style="background:oklch(0.78 0.12 145)">K</span>
+        <span class="tg-av av" id="aB" style="background:oklch(0.78 0.12 260)">S</span>
+        <div class="tg-text" id="tgText"><b>You’re watching together</b><span>Ben joined · in sync at 1:12:04</span></div>
+      </div>
+      <div class="invite glass thick" id="invite" role="alertdialog" aria-label="Party invite">
+        <div class="top"><span class="av" style="width:40px;height:40px;background:oklch(0.78 0.12 260)">S</span><div><b>Ben invited you</b><div class="cap">The Bear · S3 E1 · Tomorrow</div></div></div>
+        <div class="acts"><button class="decline press" id="decline">Not now</button><button class="accept press" id="accept">Join party</button></div>
+      </div>
+      <div class="controls glass refract" id="controls">
+        <button class="g-icon press" id="pp" data-on="false" aria-label="Pause"><span class="morph"><i class="ph-fill ph-pause"></i><i class="ph-fill ph-play"></i></span></button>
+        <button class="g-icon press" aria-label="Back 10 seconds"><i class="ph ph-arrow-counter-clockwise"></i></button>
+        <button class="g-icon press" aria-label="Forward 10 seconds"><i class="ph ph-arrow-clockwise"></i></button>
+        <span class="time tab" id="time">1:12:04</span>
+        <div class="scrub" id="scrub"><div class="track"><div class="buf" style="width:58%"></div><div class="fill" id="fill"></div><div class="knob" id="knob"></div></div></div>
+        <span class="time tab">2:46:10</span>
+        <button class="g-icon press" aria-label="Volume"><i class="ph ph-speaker-high"></i></button>
+        <button class="g-icon press" aria-label="Subtitles"><i class="ph ph-subtitles"></i></button>
+        <button class="g-icon press" id="partyBtn" aria-label="Party"><i class="ph ph-popcorn"></i></button>
+        <button class="g-icon press" aria-label="Full screen"><i class="ph ph-corners-out"></i></button>
+      </div>
+      <aside class="party glass thick" id="party">
+        <header><b>Party</b><button class="g-icon press" id="partyClose" aria-label="Close Party" style="width:40px;height:40px;font-size:18px"><i class="ph ph-x"></i></button></header>
+        <div class="people">
+          <div class="person"><span class="av" style="width:32px;height:32px;background:oklch(0.78 0.12 145)">K</span><div class="s">Ana <span class="cap">You · host</span></div></div>
+          <div class="person"><span class="av" style="width:32px;height:32px;background:oklch(0.78 0.12 260)">S</span><div class="s">Ben <span class="cap">Watching · in sync</span></div></div>
+        </div>
+        <div class="chat" id="chat">
+          <div class="ev">Ben joined · 9:41 PM</div>
+          <div class="bub">the sandworm scene is next 👀</div>
+          <div class="bub me">don’t spoil it</div>
+        </div>
+        <form class="compose" id="compose"><input id="msg" placeholder="Message" autocomplete="off" aria-label="Message"><button class="send press" aria-label="Send"><i class="ph-bold ph-arrow-up"></i></button></form>
+      </aside>
+    </div>
+  </div>
+  <p class="note">The player is where glass pays off most: one capsule of controls over a moving picture, the Party panel beside it, nothing opaque on the film. The invite stays until answered (chime). Joining is the one moment that gets the full liquid treatment: two drops meet, merge and set into glass, with the C-E-G join chord.</p>
+
+  <div class="label"><b>Phone</b> 390 × 780 · tap a tab, or press and drag the lens along the bar</div>
+  <div class="phone-wrap">
+    <div class="fit phone-fit" data-w="390" data-h="780" style="border-radius:28px">
+      <div class="stage phone" id="phone">
+        <div class="m-hero"><img src="https://images.metahub.space/background/large/tt2788316/img" alt=""></div>
+        <div class="m-top"><span class="wm" style="font-size:20px;flex:1">krida<span>.</span></span>
+          <button class="glass g-icon press" aria-label="Party"><i class="ph ph-popcorn"></i></button>
+          <span class="glass pill" style="padding:4px;display:flex"><span class="av" style="width:36px;height:36px;background:oklch(0.78 0.12 145)">K</span></span></div>
+        <div class="m-info"><img src="https://images.metahub.space/logo/medium/tt2788316/img" alt="Shōgun">
+          <div class="meta"><span class="score"><em>IMDb</em>8.6</span>·<span>2024</span>·<span>Drama</span></div>
+          <div class="m-actions"><button class="btn-play press" style="height:44px"><i class="ph-fill ph-play"></i>Play</button><button class="glass g-btn press" data-on="false" data-toggle-list><span class="morph"><i class="ph ph-plus"></i><i class="ph-bold ph-check"></i></span>My list</button></div></div>
+        <div class="m-row"><div class="img" style="background-image:url(https://images.metahub.space/poster/medium/tt11126994/img)"></div><div class="img" style="background-image:url(https://images.metahub.space/poster/medium/tt0245429/img)"></div><div class="img" style="background-image:url(https://images.metahub.space/poster/medium/tt14452776/img)"></div><div class="img" style="background-image:url(https://images.metahub.space/poster/medium/tt8178634/img)"></div></div>
+        <nav class="tabbar glass pill refract" id="tabbar" data-lens>
+          <span class="lens"></span>
+          <button aria-current="page"><i class="ph-fill ph-house"></i>Home</button>
+          <button><i class="ph ph-magnifying-glass"></i>Search</button>
+          <button><i class="ph ph-books"></i>Library</button>
+          <button><i class="ph ph-popcorn"></i>Party</button>
+        </nav>
+        <span class="home-ind"></span>
+      </div>
+    </div>
+    <p class="note" style="flex:1;min-width:220px">On phones the tab bar becomes a floating glass capsule over the artwork. The lens is a drop of glass: its leading edge moves first and the trailing edge catches up, so it stretches in flight and settles round. Drag it and it follows your finger, then snaps to the nearest tab. With reduced motion it simply fades to the new tab.</p>
+  </div>
+
+  <div class="label"><b>Sound</b> · tap to hear each cue (synthesized, no files; gains 0.01 to 0.06)</div>
+  <div class="cues" id="cues"></div>
+  <div class="rules">
+    <p><b>Glass only floats.</b> It is for controls that sit over artwork or video. Never glass on glass, never glass for text you read at length.</p>
+    <p><b>Play stays marigold.</b> The one accent still marks the main action; glass buttons are always secondary.</p>
+    <p><b>Liquid where shape changes.</b> The lens, widening posters, toasts and the release of a press use one spring. Hover, tabs' text and the timeline stay instant.</p>
+    <p><b>Sound confirms, never informs.</b> Every cue matches something you can see. Tabs, hover, play/pause and seeking stay silent; the Sounds switch in Settings mutes all of it.</p>
+    <p><b>Fallbacks.</b> Reduced transparency swaps glass for the solid overlay surface; reduced motion turns springs into short fades.</p>
+    <p><b>Cost.</b> backdrop-filter over 4K video is real GPU work: at most three glass layers on the player, and the controls hide while you watch.</p>
+  </div>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Fit real-size screens into the column ---------- */
+function fitAll() {
+  for (const f of $$(".fit")) {
+    const w = +f.dataset.w, h = +f.dataset.h, s = Math.min(1, f.clientWidth / w);
+    const st = f.firstElementChild;
+    st.style.transform = `scale(${s})`;
+    f.style.height = h * s + "px";
+    f.dataset.s = s;
+  }
+}
+new ResizeObserver(fitAll).observe(document.body);
+fitAll();
+const scaleOf = (el) => +el.closest(".fit").dataset.s || 1;
+
+/* ---------- Sound (same building blocks as src/lib/sound.ts) ---------- */
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+let soundOn = store.get("krida.mock.sound") !== "off";
+let ac = null;
+function audio() {
+  if (!soundOn) return null;
+  try { ac ??= new AudioContext(); if (ac.state === "suspended") ac.resume(); return ac; } catch { return null; }
+}
+function tone(c, t0, { type = "sine", frequency, to, at = 0, gain, decay = 0.18 }) {
+  const s = t0 + at, o = c.createOscillator(), a = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(frequency, s);
+  if (to) o.frequency.exponentialRampToValueAtTime(to, s + decay * 0.6);
+  a.gain.setValueAtTime(0, s); a.gain.linearRampToValueAtTime(gain, s + 0.003); a.gain.exponentialRampToValueAtTime(0.0001, s + decay);
+  o.connect(a).connect(c.destination); o.start(s); o.stop(s + decay + 0.02);
+}
+function tap(c, t0, { at = 0, gain = 0.03, frequency = 2600, decay = 0.018 } = {}) {
+  const s = t0 + at, n = Math.ceil(c.sampleRate * (decay + 0.01)), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(), f = c.createBiquadFilter(), a = c.createGain();
+  src.buffer = b; f.type = "bandpass"; f.frequency.value = frequency;
+  a.gain.setValueAtTime(gain, s); a.gain.exponentialRampToValueAtTime(0.0001, s + decay);
+  src.connect(f).connect(a).connect(c.destination); src.start(s); src.stop(s + decay + 0.01);
+}
+/* Glass has inharmonic overtones: a quiet partial at 2.76× the note is what makes a tone sound like glass, not a beep. */
+const glassNote = (c, t, f, at, gain, decay) => {
+  tone(c, t, { frequency: f, at, gain, decay });
+  tone(c, t, { frequency: f * 2.76, at, gain: gain * 0.16, decay: decay * 0.5 });
+};
+const play = (fn) => { const c = audio(); if (c) fn(c, c.currentTime + 0.005); };
+const SFX = {
+  drop: () => play((c, t) => { tone(c, t, { frequency: 480, to: 1250, gain: 0.05, decay: 0.11 }); tone(c, t, { frequency: 2500, at: 0.04, gain: 0.01, decay: 0.08 }); tap(c, t, { gain: 0.015, frequency: 3000 }); }),
+  undrop: () => play((c, t) => { tone(c, t, { frequency: 1100, to: 420, gain: 0.045, decay: 0.12 }); tap(c, t, { gain: 0.015, frequency: 1800 }); }),
+  ready: () => play((c, t) => { glassNote(c, t, 880, 0, 0.04, 0.3); glassNote(c, t, 1318.5, 0.06, 0.035, 0.34); }),
+  invite: () => play((c, t) => { glassNote(c, t, 659.25, 0, 0.055, 0.4); glassNote(c, t, 880, 0.08, 0.045, 0.45); }),
+  join: () => play((c, t) => { [523.25, 659.25, 783.99].forEach((f, i) => glassNote(c, t, f, i * 0.06, 0.045, 0.32)); tone(c, t, { frequency: 2093, at: 0.2, gain: 0.008, decay: 0.3 }); }),
+  send: () => play((c, t) => [783.99, 1046.5, 1318.5].forEach((f, i) => tone(c, t, { frequency: f, at: i * 0.035, gain: 0.03 - i * 0.006, decay: 0.12 }))),
+  message: () => play((c, t) => glassNote(c, t, 987.77, 0, 0.035, 0.16)),
+};
+const soundBtn = $("#soundBtn");
+function paintSound() {
+  soundBtn.querySelector("span").textContent = soundOn ? "Sound on" : "Sound off";
+  soundBtn.querySelector("i").className = "ph " + (soundOn ? "ph-speaker-high" : "ph-speaker-slash");
+}
+soundBtn.onclick = () => { soundOn = !soundOn; store.set("krida.mock.sound", soundOn ? "on" : "off"); paintSound(); };
+paintSound();
+
+const cues = [
+  ["drop", "ph-drop", "Added", "My list, a suggestion, a link copied. A drop rising into place."],
+  ["undrop", "ph-drop-half-bottom", "Removed", "The same drop, falling. Undo is in the toast."],
+  ["ready", "ph-play-circle", "Stream ready", "After a wait you may have looked away from. Two glass notes."],
+  ["invite", "ph-envelope-simple", "Invite", "A rising fourth on glass. Rare, so it can ring a little longer."],
+  ["join", "ph-users-three", "Watching together", "C-E-G with a glass shimmer. The one moment with ceremony."],
+  ["send", "ph-paper-plane-tilt", "Message sent", "A quick rising run, quieter as it climbs."],
+  ["message", "ph-chat-circle", "Message received", "One soft glass blip, quieter than anything you trigger."],
+  [null, "ph-speaker-none", "Silent on purpose", "Tabs, hover, play/pause, seeking, opening sheets."],
+];
+$("#cues").innerHTML = cues.map(([k, icon, name, when]) =>
+  `<button class="cue${k ? "" : " silent"}" ${k ? `data-cue="${k}"` : "disabled"}><i class="ph ${icon}"></i><div><b>${name}</b><span>${when}</span></div></button>`).join("");
+$("#cues").onclick = (e) => { const b = e.target.closest("[data-cue]"); if (b) { const was = soundOn; soundOn = true; SFX[b.dataset.cue](); soundOn = was; } };
+
+/* ---------- Pointer light on glass ---------- */
+document.addEventListener("pointermove", (e) => {
+  const g = e.target.closest?.(".glass");
+  if (!g) return;
+  const r = g.getBoundingClientRect();
+  g.style.setProperty("--mx", ((e.clientX - r.left) / r.width) * 100 + "%");
+  g.style.setProperty("--my", ((e.clientY - r.top) / r.height) * 100 + "%");
+});
+
+/* ---------- Refraction: a lens map per glass size (Chromium supports SVG filters in backdrop-filter) ---------- */
+const chromium = !!navigator.userAgentData?.brands?.some((b) => /Chromium/.test(b.brand));
+let lensId = 0;
+function lensMap(w, h, r, band) {
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const ctx = cv.getContext("2d"), img = ctx.createImageData(w, h), d = img.data;
+  const sdf = (x, y) => { const qx = Math.abs(x - w / 2) - (w / 2 - r), qy = Math.abs(y - h / 2) - (h / 2 - r);
+    return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r; };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const px = x + 0.5, py = y + 0.5, e = -sdf(px, py), i = (y * w + x) * 4;
+    let dx = 0, dy = 0;
+    if (e > 0 && e < band) {
+      const t = 1 - e / band, m = t * t * t;
+      let nx = sdf(px + 1, py) - sdf(px - 1, py), ny = sdf(px, py + 1) - sdf(px, py - 1);
+      const l = Math.hypot(nx, ny) || 1; dx = -(nx / l) * m; dy = -(ny / l) * m;
+    }
+    d[i] = 128 + dx * 127; d[i + 1] = 128 + dy * 127; d[i + 2] = 128; d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv.toDataURL();
+}
+function refract(el) {
+  if (!chromium) return;
+  const w = el.offsetWidth, h = el.offsetHeight;
+  if (!w || !h) return;
+  const r = Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || h / 2, h / 2);
+  const id = "lens" + lensId++;
+  $("#lenses").insertAdjacentHTML("beforeend",
+    `<svg width="0" height="0"><filter id="${id}" x="0" y="0" width="${w}" height="${h}" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feImage href="${lensMap(w, h, r, Math.min(22, h * 0.42))}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="m"/>
+      <feDisplacementMap in="SourceGraphic" in2="m" scale="${Math.round(h * 0.55)}" xChannelSelector="R" yChannelSelector="G"/></filter></svg>`);
+  el.style.setProperty("--lens", `url(#${id})`);
+}
+if (chromium) $$(".refract").forEach(refract); else $$(".refract").forEach((el) => el.classList.remove("refract"));
+
+/* ---------- Springs ---------- */
+class Spring {
+  constructor(x, k, c) { this.x = x; this.v = 0; this.target = x; this.k = k; this.c = c; }
+  step(dt) { const a = -this.k * (this.x - this.target) - this.c * this.v; this.v += a * dt; this.x += this.v * dt; }
+  get done() { return Math.abs(this.x - this.target) < 0.2 && Math.abs(this.v) < 0.5; }
+}
+/* A liquid lens: two edges on two springs. The leading edge is stiffer, so the drop stretches in flight
+   and settles round; it gets a little thinner while stretched, like a drop would. */
+function makeLens(container, { onSelect } = {}) {
+  const lens = $(".lens", container), items = $$(":scope > button", container);
+  const L = new Spring(0, 700, 44), R = new Spring(0, 700, 44);
+  let raf = 0, last = 0, cur = Math.max(0, items.findIndex((b) => b.getAttribute("aria-current") === "page"));
+  const rest = () => lens.offsetHeight;
+  function render() {
+    const w = R.x - L.x, base = items[cur].offsetWidth;
+    const stretch = Math.max(0, w - base) / base;
+    lens.style.transform = `translateX(${L.x}px) scaleY(${1 - Math.min(0.14, stretch * 0.22)})`;
+    lens.style.width = Math.max(rest(), w) + "px";
+  }
+  function tick(now) {
+    const dt = Math.min(0.032, (now - last) / 1000); last = now;
+    for (let i = 0; i < 2; i++) { L.step(dt / 2); R.step(dt / 2); }
+    render();
+    raf = L.done && R.done ? 0 : requestAnimationFrame(tick);
+  }
+  function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }
+  function go(i, { instant = false, silent = false } = {}) {
+    const b = items[i], l = b.offsetLeft, r = l + b.offsetWidth;
+    const right = l > L.target;
+    (right ? R : L).k = 720; (right ? R : L).c = 44;      // leading edge
+    (right ? L : R).k = 260; (right ? L : R).c = 30;      // trailing edge
+    L.target = l; R.target = r;
+    if (instant || reduce) {
+      L.x = l; R.x = r; L.v = R.v = 0;
+      if (reduce && !instant) { lens.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150 }); }
+      render();
+    } else kick();
+    items.forEach((it, j) => (j === i ? it.setAttribute("aria-current", "page") : it.removeAttribute("aria-current")));
+    if (cur !== i && !silent) onSelect?.(i);
+    cur = i;
+  }
+  items.forEach((b, i) => b.addEventListener("click", () => go(i)));
+  // Keyboard: arrow keys move between items.
+  container.addEventListener("keydown", (e) => {
+    const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (d) { const n = (cur + d + items.length) % items.length; items[n].focus(); go(n); }
+  });
+  requestAnimationFrame(() => go(cur, { instant: true }));
+  addEventListener("resize", () => go(cur, { instant: true }));
+  return { go, items, L, R, kick, get cur() { return cur; } };
+}
+
+/* ---------- Desktop Home ---------- */
+const slides = [
+  { id: "tt15239678", eyebrow: "Top pick for you", title: "Dune: Part Two", meta: ["2024", "2h 46m", "Sci-fi"], imdb: "8.5", rt: "92%", desc: "Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family." },
+  { id: "tt2788316", eyebrow: "Because you watched Arcane", title: "Shōgun", meta: ["2024", "10 episodes", "Drama"], imdb: "8.6", rt: "99%", desc: "A mysterious European ship is found marooned in a nearby fishing village, and with it a man who could tip the balance of power." },
+  { id: "tt13238346", eyebrow: "For you and Ben", title: "Past Lives", meta: ["2023", "1h 46m", "Romance"], imdb: "7.8", rt: "95%", desc: "Nora and Hae Sung, two deeply connected childhood friends, are wrested apart, then reunited for one fateful week two decades later." },
+  { id: "tt11126994", eyebrow: "Still watching · S2 E4", title: "Arcane", meta: ["2021", "2 seasons", "Animation"], imdb: "9.0", rt: "100%", desc: "Amid the stark discord of twin cities Piltover and Zaun, two sisters fight on rival sides of a war between magic technologies." },
+];
+const bg = $("#heroBg");
+bg.innerHTML = slides.map((s, i) => `<img src="https://images.metahub.space/background/large/${s.id}/img" alt="" class="${i ? "" : "on"}">`).join("");
+function paintSlide(i) {
+  const s = slides[i];
+  $("#hEyebrow").textContent = s.eyebrow;
+  $("#hLogo").innerHTML = `<img src="https://images.metahub.space/logo/medium/${s.id}/img" alt="${s.title}" onerror="this.outerHTML='<h1>${s.title}</h1>'">`;
+  $("#hMeta").innerHTML = `<span class="score"><em>IMDb</em>${s.imdb}</span><span class="score" style="font-weight:500"><i class="ph-fill ph-drop" style="color:oklch(0.7 0.17 25)"></i>${s.rt}</span><span>·</span>${s.meta.map((m) => `<span>${m}</span>`).join("<span>·</span>")}`;
+  $("#hDesc").textContent = s.desc;
+}
+paintSlide(0);
+const dots = $("#dots");
+dots.insertAdjacentHTML("beforeend", slides.map((s, i) => `<button class="press" aria-label="${s.title}"${i ? "" : ' aria-current="page"'}></button>`).join(""));
+makeLens(dots, {
+  onSelect(i) {
+    $$("img", bg).forEach((im, j) => im.classList.toggle("on", j === i));
+    const t = $("#heroText");
+    t.classList.add("out");
+    setTimeout(() => { paintSlide(i); t.classList.remove("out"); }, 130);
+  },
+});
+makeLens($(".nav [data-lens]"));
+
+const list = $("#listBtn");
+for (const b of [list, ...$$("[data-toggle-list]")]) b.addEventListener("click", () => {
+  const on = b.dataset.on !== "true"; b.dataset.on = on;
+  if (b === list) b.lastElementChild.textContent = on ? "In my list" : "My list";
+  on ? SFX.drop() : SFX.undrop();
+});
+
+/* Posters widen in place after a short hover intent, and close faster than they open. */
+const picks = ["tt1856101", "tt0245429", "tt8178634", "tt11280740", "tt14452776", "tt5311514", "tt0816692", "tt15398776", "tt2788316", "tt13238346"];
+const names = ["Blade Runner 2049", "Spirited Away", "RRR", "Severance", "The Bear", "Your Name", "Interstellar", "Oppenheimer", "Shōgun", "Past Lives"];
+$("#row").innerHTML = picks.map((id, i) => `<div class="poster" tabindex="0">
+  <div class="img" style="background-image:url(https://images.metahub.space/poster/medium/${id}/img)"></div>
+  <div class="img bd" style="background-image:url(https://images.metahub.space/background/medium/${id}/img)"></div>
+  <div class="info info-solid"><span class="ttl">${names[i]}</span><span class="mini-play"><i class="ph-fill ph-play"></i></span></div></div>`).join("");
+let hoverT;
+for (const p of $$(".poster")) {
+  const open = () => { clearTimeout(hoverT); hoverT = setTimeout(() => { $$(".poster.open").forEach((o) => o !== p && close(o)); p.classList.remove("closing"); p.classList.add("open"); }, 280); };
+  const close = (el = p) => { if (el.classList.contains("open")) { el.classList.add("closing"); el.classList.remove("open"); } };
+  p.addEventListener("pointerenter", open);
+  p.addEventListener("pointerleave", () => { clearTimeout(hoverT); close(); });
+  p.addEventListener("focus", open); p.addEventListener("blur", () => close());
+}
+
+/* Play → sources → status toasts → ready. */
+const sources = $("#sources"), body = $("#srcBody"), toast = $("#toast");
+const rows = [
+  ["4K", true, "2160p · Dolby Vision · Atmos", "18.4 GB · WEB-DL"],
+  ["4K", false, "2160p · HDR10", "14.1 GB · BluRay"],
+  ["1080p", false, "1080p · 5.1", "6.2 GB · WEB-DL"],
+  ["720p", false, "720p · Stereo", "2.1 GB · WEB-DL"],
+];
+function placeSources() {
+  const pb = $("#playBtn"), s = scaleOf(pb), hr = $("#desk").getBoundingClientRect(), r = pb.getBoundingClientRect();
+  sources.style.left = (r.left - hr.left) / s + "px";
+  sources.style.top = "auto";
+  sources.style.bottom = 820 - (r.top - hr.top) / s + 12 + "px";
+}
+$("#playBtn").onclick = () => {
+  placeSources();
+  body.innerHTML = `<div class="finding"><div><div class="goo-spin"><span></span><span></span><span></span></div>Finding sources…</div></div>`;
+  sources.classList.add("open");
+  setTimeout(() => {
+    if (!sources.classList.contains("open")) return;
+    body.innerHTML = rows.map(([q, best, a, b], i) => `<button class="src press" data-i="${i}" style="animation:rise 320ms var(--ease-snappy) ${i * 40}ms both">
+      <span class="q${best ? " best" : ""}">${q}</span><span class="d"><div>${a}</div><div class="cap">${b}</div></span><span class="ok"><i class="ph-fill ph-lightning"></i>Cached</span></button>`).join("");
+  }, 900);
+};
+$("#srcClose").onclick = () => sources.classList.remove("open");
+document.addEventListener("keydown", (e) => e.key === "Escape" && sources.classList.remove("open"));
+body.onclick = (e) => {
+  if (!e.target.closest(".src")) return;
+  sources.classList.remove("open");
+  const steps = [["spin", "Adding to TorBox…"], ["spin", "Starting stream…"]];
+  steps.forEach(([ic, m], i) => setTimeout(() => showToast(ic, m), i * 900));
+  setTimeout(() => { showToast("ok", "Dune: Part Two is ready", "Open player"); SFX.ready(); }, 1900);
+};
+let toastT;
+function showToast(icon, msg, act) {
+  $("#toastIcon").innerHTML = icon === "spin" ? `<span class="spin" style="display:block"></span>` : `<i class="ph-fill ph-check-circle" style="font-size:20px;color:var(--success);display:block"></i>`;
+  $("#toastMsg").textContent = msg;
+  $("#toastAct").innerHTML = act ? `<button class="btn-play press" style="height:40px;font-size:14px;padding:0 16px" id="openPlayer">${act}</button>` : `<span style="width:10px;display:block"></span>`;
+  toast.classList.add("show");
+  clearTimeout(toastT);
+  if (act) { $("#openPlayer").onclick = () => { toast.classList.remove("show"); $("#player").closest(".fit").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }); }; toastT = setTimeout(() => toast.classList.remove("show"), 6000); }
+}
+
+/* Direction toggle. */
+$$("[data-dir]").forEach((b) => b.onclick = () => {
+  $$("[data-dir]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  const all = b.dataset.dir === "b";
+  $("#desk").classList.toggle("all-glass", all);
+  $("#hero").classList.toggle("glass", all);
+  $(".rail h2").classList.toggle("glass", all);
+  $$(".poster .info").forEach((i) => { i.classList.toggle("glass", all); i.classList.toggle("info-solid", !all); });
+  $$(".poster").forEach((p) => p.classList.toggle("glass", all));
+  $$(".btn-play").forEach((p) => p.classList.toggle("glass", all));
+});
+
+/* ---------- Player ---------- */
+const player = $("#player");
+let pos = 0.434, dur = 9970;
+const fmt = (s) => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}`; };
+function paintPos() { $("#fill").style.width = pos * 100 + "%"; $("#knob").style.left = pos * 100 + "%"; $("#time").textContent = fmt(pos * dur); }
+paintPos();
+const scrub = $("#scrub");
+const seek = (e) => { const r = $(".track", scrub).getBoundingClientRect(); pos = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); paintPos(); };
+scrub.addEventListener("pointerdown", (e) => { scrub.setPointerCapture(e.pointerId); scrub.classList.add("drag"); seek(e); });
+scrub.addEventListener("pointermove", (e) => scrub.classList.contains("drag") && seek(e));
+scrub.addEventListener("pointerup", () => scrub.classList.remove("drag"));
+const pp = $("#pp");
+let playing = true;
+pp.onclick = () => { playing = !playing; pp.dataset.on = !playing; pp.setAttribute("aria-label", playing ? "Pause" : "Play"); };
+setInterval(() => { if (playing && !scrub.classList.contains("drag")) { pos = Math.min(1, pos + 1 / dur); paintPos(); } }, 1000);
+const setParty = (open) => player.classList.toggle("party-open", open);
+$("#partyBtn").onclick = () => setParty(!player.classList.contains("party-open"));
+$("#partyClose").onclick = () => setParty(false);
+$("#compose").onsubmit = (e) => {
+  e.preventDefault();
+  const v = $("#msg").value.trim(); if (!v) return;
+  $("#chat").insertAdjacentHTML("beforeend", `<div class="bub me new"></div>`);
+  $("#chat").lastElementChild.textContent = v; $("#msg").value = ""; SFX.send();
+  setTimeout(() => { $("#chat").insertAdjacentHTML("beforeend", `<div class="bub new" style="transform-origin:0 100%">😂 ok ok</div>`); SFX.message(); }, 1400);
+};
+
+const invite = $("#invite");
+$("#simInvite").onclick = () => { invite.classList.add("show"); SFX.invite(); };
+$("#decline").onclick = () => invite.classList.remove("show");
+$("#accept").onclick = () => { invite.classList.remove("show"); setTimeout(together, 160); };
+$("#simJoin").onclick = () => together();
+
+/* Two drops slide together, melt into one (gooey filter), stretch into a capsule, then set into real glass. */
+let running = [], doneT;
+function together() {
+  const tg = $("#together"), gA = $("#gA"), gB = $("#gB"), gP = $("#gP"), aA = $("#aA"), aB = $("#aB"), txt = $("#tgText"), gl = $(".tg-glass", tg);
+  running.forEach((a) => a.cancel()); clearTimeout(doneT);
+  tg.classList.add("on");
+  const finish = () => { running.forEach((a) => a.cancel()); running = []; tg.classList.remove("on", "settled"); };
+  if (reduce) {
+    tg.classList.add("settled");
+    running = [tg.animate([{ opacity: 0 }, { opacity: 1, offset: 0.06 }, { opacity: 1, offset: 0.94 }, { opacity: 0 }], { duration: 3600, fill: "both" })];
+    running[0].onfinish = finish; SFX.join(); return;
+  }
+  const E = "cubic-bezier(0.23,1,0.32,1)", SP = getComputedStyle(document.documentElement).getPropertyValue("--ease-spring").trim();
+  // Phase two waits with fill "forwards", so it doesn't hold its first frame over phase one.
+  const later = (duration, delay, easing = SP) => ({ duration, delay, easing, fill: "forwards" });
+  const blob = (el, from, to) => el.animate([
+    { transform: `translateX(${from}px) scale(.2)`, opacity: 0 },
+    { transform: `translateX(${from}px) scale(1)`, opacity: 1, offset: 0.25 },
+    { transform: `translateX(${to}px) scale(1)`, opacity: 1 }], { duration: 760, easing: E, fill: "both" });
+  running = [
+    blob(gA, -120, -14), blob(gB, 120, 14), blob(aA, -120, -14), blob(aB, 120, 14),
+    gP.animate([{ opacity: 1, width: "56px", transform: "translateX(0)" }, { opacity: 1, width: "340px", transform: "translateX(-142px)" }], later(520, 640)),
+    aA.animate([{ transform: "translateX(-14px)" }, { transform: "translateX(-126px)" }], later(520, 680)),
+    aB.animate([{ transform: "translateX(14px)" }, { transform: "translateX(-96px)" }], later(520, 700)),
+    gl.animate([{ opacity: 0 }, { opacity: 1 }], later(260, 1060, E)),
+    txt.animate([{ opacity: 0, filter: "blur(4px)", transform: "translateX(-6px)" }, { opacity: 1, filter: "blur(0)", transform: "none" }], later(320, 900, E)),
+    // Exit: quieter and much faster than the entrance.
+    tg.animate([{ opacity: 1, filter: "blur(0)" }, { opacity: 0, filter: "blur(2px)" }], { duration: 180, delay: 3600, easing: "ease-in", fill: "forwards" }),
+  ];
+  running.at(-1).onfinish = finish;
+  doneT = setTimeout(SFX.join, 600);
+}
+
+/* ---------- Phone tab bar: tap or drag the lens ---------- */
+const tb = $("#tabbar");
+const tl = makeLens(tb, { onSelect: (i) => tl.items.forEach((b, j) => b.querySelector("i").classList.replace(j === i ? "ph" : "ph-fill", j === i ? "ph-fill" : "ph")) });
+let dragging = false, moved = false, downX = 0, grabX = 0;
+tb.addEventListener("pointerdown", (e) => {
+  if (reduce) return;
+  dragging = true; moved = false; downX = e.clientX; tb.setPointerCapture(e.pointerId);
+  const x = (e.clientX - tb.getBoundingClientRect().left) / scaleOf(tb);
+  grabX = x - tl.L.x;
+  if (grabX < 0 || grabX > tl.R.x - tl.L.x) grabX = (tl.R.x - tl.L.x) / 2;
+});
+tb.addEventListener("pointermove", (e) => {
+  if (!dragging || (!moved && Math.abs(e.clientX - downX) < 6)) return;
+  moved = true;
+  const s = scaleOf(tb), x = (e.clientX - tb.getBoundingClientRect().left) / s, w = tl.items[0].offsetWidth;
+  const left = Math.max(4, Math.min(tb.offsetWidth - 4 - w, x - grabX));
+  tl.L.target = left; tl.R.target = left + w; tl.L.k = tl.R.k = 900; tl.L.c = tl.R.c = 50; tl.kick();
+});
+tb.addEventListener("pointerup", (e) => {
+  if (!dragging) return; dragging = false;
+  // A tap goes to the tab under the finger; a drag goes to the tab nearest the lens.
+  const center = moved ? (tl.L.target + tl.R.target) / 2 : (e.clientX - tb.getBoundingClientRect().left) / scaleOf(tb);
+  let best = 0, bd = 1e9;
+  tl.items.forEach((b, i) => { const c = b.offsetLeft + b.offsetWidth / 2, d = Math.abs(c - center); if (d < bd) { bd = d; best = i; } });
+  tl.go(best);
+});
+</script>
+</body></html>

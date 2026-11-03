@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Parties work; six rough edges fixed</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f7f7f5; --surface: #ebebe7; --text: #1c1c1e; --text-2: #46464b;
+  --line: #d3d3ce; --accent: #0d6b63; --accent-soft: #d7ece9; --code-bg: #ebebe7;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #151517; --surface: #232327; --text: #ececee; --text-2: #c2c2c8; --line: #3a3a40; --accent: #6cc9bd; --accent-soft: #1d3a37; --code-bg: #232327; }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color: var(--text); }
+body { margin: 0; font: 1.0625rem/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 54rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+p, li { max-width: 55ch; text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; }
+h1 { font-size: 2.75rem; margin: 0 0 0.75rem; letter-spacing: -0.015em; max-width: 18ch; }
+h2 { font-size: 1.5rem; margin: 3.5rem 0 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+h3 { font-size: 1.0625rem; margin: 2.25rem 0 0.4rem; }
+.lede { color: var(--text-2); margin: 0 0 1.5rem; }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.875em; background: var(--code-bg); padding: 0.08em 0.3em; border-radius: 4px; }
+a { color: var(--accent); }
+.fix { color: var(--accent); font-weight: 600; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9375rem; }
+th, td { text-align: left; padding: 0.5rem 1rem 0.5rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--text-2); }
+td:first-child { white-space: nowrap; font-weight: 500; }
+figure { margin: 1rem 0 1.5rem; }
+figcaption { font-size: 0.875rem; color: var(--text-2); margin-top: 0.5rem; max-width: 55ch; }
+img.shot { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid var(--line); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.phone-wide { display: grid; grid-template-columns: 15rem 1fr; gap: 1rem; align-items: start; }
+@media (max-width: 40rem) { .pair, .phone-wide { grid-template-columns: 1fr; } h1 { font-size: 1.875rem; } }
+ol.findings { padding-left: 1.4rem; margin: 0; }
+ol.findings li { margin: 0.4rem 0; }
+ul.plain { padding-left: 1.2rem; }
+ul.plain li { margin: 0.35rem 0; }
+ul.plain strong, ol.findings strong { font-weight: 500; }
+details { border-top: 1px solid var(--line); }
+details:last-of-type { border-bottom: 1px solid var(--line); }
+summary { padding-block: 0.7rem; cursor: pointer; font-weight: 600; }
+details > div { padding-bottom: 1rem; }
+.step { font-weight: 600; color: var(--text-2); font-size: 0.875rem; }
+::selection { background: var(--accent-soft); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media print {
+  :root { color-scheme: light; --bg: #fff; --surface: #eee; --text: #111; --text-2: #333; --line: #ccc; --accent: #0d6b63; --accent-soft: #e2f0ee; --code-bg: #eee; }
+  figure, img { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+}
+</style>
+</head>
+<body>
+<main data-type="teach">
+
+<h1>Parties work; six rough edges fixed</h1>
+<p class="lede">Two screens stayed within 0.04&nbsp;s of each other, every step below worked in a real browser, and production logged no party errors in the last 14&nbsp;days. Six small things were wrong, and all six are fixed:</p>
+<ol class="findings">
+  <li><strong>A tap on the phone paused everyone.</strong> Now it only brings up the controls.</li>
+  <li><strong>Back to picking was one tap with no undo.</strong> Now it asks while someone else is watching.</li>
+  <li><strong>One sentence named the wrong film.</strong> Now it reads “Ben said no to switching to …”.</li>
+  <li><strong>Joining a friend’s film didn’t ask him.</strong> Now he gets Let in or Not now.</li>
+  <li><strong>“Watch with Ben” chimed on his phone at once.</strong> Now the invite waits 4&nbsp;s behind Undo.</li>
+  <li><strong>On a sideways phone the panel hid the middle of the film.</strong> Now it keeps to the edge, narrower.</li>
+</ol>
+
+<h2>Playback fixes: tap, stop, wording</h2>
+
+<h3>1. A tap on the phone paused the film for everyone</h3>
+<p>Tapping the middle of the picture to bring up the controls also paused the film, and the other person saw “Ben paused”. It happened 2 times out of 2.</p>
+<div class="phone-wide" style="grid-template-columns:1.4fr 1fr">
+  <figure><img class="shot" src="img/ux-b-phone-player.jpg" width="1200" height="554" alt="Phone held sideways, paused at 0:13 with the play button in the middle after one tap."><figcaption>Before: the phone after one tap on the middle, paused.</figcaption></figure>
+  <figure><img class="shot" src="img/ux-a-chat-over-video.jpg" width="1200" height="750" alt="Desktop player paused with a pill: Regress-QA-two paused."><figcaption>Before: the laptop at the same moment.</figcaption></figure>
+</div>
+<p>The tap brought up the controls as the finger lifted, and the browser then turned that same tap into a click on the pause button that had just appeared.</p>
+<p><span class="fix">Fixed:</span> the picture now cancels the click a tap leaves behind (<code>touch.ts</code>). The phone touch test now taps the middle too; that check failed before the fix and passes after it.</p>
+
+<h3>2. Back to picking asks first</h3>
+<p>It used to stop the film on every screen in one tap and drop your friend on Home. Now you get a question first while anyone else is watching; alone, it still goes straight back.</p>
+<figure><img class="shot" src="img/ux-back-to-picking.jpg" width="1200" height="713" alt="Dialog over the player: Stop for everyone? Regress-QA-two is watching. It stops on every screen and you all pick something new. Keep watching, Back to picking."><figcaption>After: “Stop for everyone?” with Keep watching and Back to picking.</figcaption></figure>
+<p>This asks you, not Ben. It catches the accidental tap without making him answer a prompt mid-film.</p>
+
+<h3>3. The “no” to a switch names the right film</h3>
+<p>After Ben turned down a switch, you read “Ben wants to keep watching” above the film he had just refused. It now reads “Ben said no to switching to” above that film.</p>
+<div class="pair">
+  <figure><img class="shot" src="img/06-switch-declined.jpg" width="1200" height="750" alt="Before: Regress-QA-one wants to keep watching, Master and Commander."><figcaption>Before: reads as if he wants that film.</figcaption></figure>
+  <figure><img class="shot" src="img/ux-switch-declined-after.jpg" width="1200" height="713" alt="After: Regress-QA-one said no to switching to Animals. Switch anyway, Keep watching."><figcaption>After: says what he said no to.</figcaption></figure>
+</div>
+
+<h2>Joining and phone fixes</h2>
+
+<h3>4. Joining someone watching alone asks first</h3>
+<p>Before, one tap dropped you into Ben’s film and he only saw “Ana joined”. Now the button says “Ask to join”, and Ben gets Let in or Not now over his film; a party he started is still open to join directly.</p>
+<figure><img class="shot" src="img/ux-knock.jpg" width="1200" height="713" alt="Player with a notification: Regress-QA-one wants to join you, Master and Commander, Let in, Not now."><figcaption>Ben’s screen. Let in takes you straight into his film, in step; Not now tells you so.</figcaption></figure>
+
+<h3>5. “Watch with Ben” waits 4 seconds for Undo</h3>
+<p>The party starts at once and the panel opens, but the invite goes out only after 4&nbsp;s. Undo in that time and he never hears of it.</p>
+<figure><img class="shot" src="img/ux-inviting.jpg" width="1200" height="713" alt="Home with the Party panel open and a toast: Inviting Regress-QA-two, Undo."><figcaption>“Inviting Ben” with Undo, beside the new party.</figcaption></figure>
+
+<h3>6. The sideways panel keeps the middle of the film clear</h3>
+<p>On a phone held sideways the panel now sits at the right edge and is 300&nbsp;px wide, down from 372 over the middle. It covers about a third of the picture instead of half, and none of its middle.</p>
+<figure style="max-width:34rem"><img class="shot" src="img/ux-sideways-panel.jpg" width="1200" height="554" alt="Phone held sideways with the Party panel at the right edge and the middle of the picture visible."><figcaption>The Party panel on a sideways phone, at the edge.</figcaption></figure>
+
+<h2>How joining works now</h2>
+<p>The popcorn button (the dock on a laptop, the Party tab on a phone) changes with who’s on. One tap does this:</p>
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">It says</th><th scope="col">One tap</th></tr></thead>
+  <tbody>
+    <tr><td>Watch with Ben</td><td>Starts an empty party and opens the panel; the invite goes out after 4&nbsp;s unless you Undo. With more than one other profile, a sheet asks who.</td></tr>
+    <tr><td>Ben is watching Dune. Ask to join</td><td>He’s watching alone: asks him. Let in takes you into his film; Not now or no answer in 10&nbsp;minutes says so. Private mode hides this.</td></tr>
+    <tr><td>Ben is in a party. Join</td><td>A party is meant to be joined: you’re in at once.</td></tr>
+    <tr><td>Party</td><td>You’re in one: it opens or closes the panel.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Other ways in: Join on an invite, a copied party link, or Watch together on a title page. If the party is still picking, the panel opens where you are; if it’s watching, you go straight into the player.</p>
+
+<h2>How a party goes</h2>
+<p>Desktop is Ana, the phone is Ben. The film is a test video standing in for Dune.</p>
+
+<h3>Start: one press, no title needed</h3>
+<p>The popcorn in the dock says “Watch with Ben”. One press starts the party, and the invite follows 4&nbsp;s later.</p>
+<p>On his phone a toast arrives with a soft chime and stays until he answers. The Party tab reads Join.</p>
+<div class="phone-wide">
+  <figure><img class="shot" src="img/ux-b-phone-invite.jpg" width="520" height="1125" alt="Phone home page with a toast: Regress-QA-one invited you to a party. Nothing picked yet. You'll choose together. Join, Not now."><figcaption>The invite on the phone.</figcaption></figure>
+  <figure><img class="shot" src="img/ux-a-title-picking.jpg" width="1200" height="750" alt="Dune title page with the Party panel docked right. Under the description: Picking with Regress-QA-two. Suggest puts it on the table, and it starts when you're both in. Buttons: Suggest, Play now."><figcaption>Picking: the panel docks beside any page, and Suggest leads on title pages.</figcaption></figure>
+</div>
+
+<h3>Pick together: suggest, then both say “I’m in”</h3>
+<p>You pick by browsing the app as usual, and a line on each title page explains the rule in place. Suggesting puts the title “on the table” in both panels.</p>
+<div class="phone-wide">
+  <figure><img class="shot" src="img/ux-b-phone-table.jpg" width="520" height="1125" alt="Phone Party sheet: On the table 1, Dune: Part Two, suggested, waiting for you, I'm in."><figcaption>Ben’s phone: one big “I’m in”.</figcaption></figure>
+  <figure><img class="shot" src="img/ux-b-phone-countdown.jpg" width="520" height="1125" alt="Phone Party sheet: Dune: Part Two, Starting in 3, Cancel." style="max-width:15rem"><figcaption>Both in: “Starting in 3” with Cancel, then both land in the player.</figcaption></figure>
+</div>
+
+<h3>Watch: who did what is always named</h3>
+<p>Every play, pause or skip shows a pill at the top naming who did it. Chat shows over the picture at the bottom left, and reactions rise on the right with a sound.</p>
+<div class="pair">
+  <figure><img class="shot" src="img/04-player-panel.jpg" width="1200" height="750" alt="Desktop player with the Party panel open, a chat message, a floating reaction and a pill: Regress-QA-two pressed play."><figcaption>Laptop: the panel, a reaction and “pressed play”.</figcaption></figure>
+  <figure><img class="shot" src="img/ux-b-phone-friend-browsing.jpg" width="1200" height="554" alt="Phone held sideways with the Party panel: You're watching, Regress-QA-one is browsing; chat; the reaction board."><figcaption>Phone sideways, before fix 6: the panel sat over the middle of the picture.</figcaption></figure>
+</div>
+
+<h3>A slow connection: both pictures wait</h3>
+<p>If one of you stalls, both pictures stop and a pill says who you’re waiting for. After 20&nbsp;s at most, the party carries on without them, so one bad connection can’t freeze the night.</p>
+<figure><img class="shot" src="img/waiting-a.jpg" width="1200" height="713" alt="Player paused with a pill: Waiting for Regress-QA-two to catch up."><figcaption>In the test both carried on in step afterwards, 0.7&nbsp;s apart.</figcaption></figure>
+
+<h3>Changing the film asks first</h3>
+<p>Pressing Play on another title mid-film asks the other person. A thin bar drains across Switch now over 30&nbsp;s.</p>
+<figure><img class="shot" src="img/05-switch-asked.jpg" width="1200" height="750" alt="Prompt over the player: Regress-QA-two wants to switch to Master and Commander. Switch now, Keep watching."><figcaption>What Ana sees when Ben asks to switch.</figcaption></figure>
+
+<h3>Step out and come back</h3>
+<p>Back takes you browsing while the other person keeps watching. The panel shows what’s on with a play button back in, and the friend’s panel says you’re browsing.</p>
+<figure><img class="shot" src="img/ux-a-stepped-out.jpg" width="1200" height="750" alt="Dune title page with the Party panel: You're browsing, Regress-QA-two is watching; Paused, 1 min left, Dune: Part Two with a play button; chat below."><figcaption>Browsing mid-film: the party follows you in the panel.</figcaption></figure>
+
+<h2>The look fits the brief</h2>
+<ul class="plain">
+  <li><strong>Calm and cinematic.</strong> The artwork carries the colour; glass only floats (panel, pills, capsules), never stacked.</li>
+  <li><strong>The conversation reads first.</strong> Events are small grey lines, chat is bubbles, and the time sits between them once.</li>
+  <li><strong>Sound is saved for rare moments:</strong> the invite chime and reactions.</li>
+  <li><strong>Copy explains the rule where you need it</strong>: “Suggest puts it on the table, and it starts when you’re both in.”</li>
+</ul>
+
+<h2>Fine as designed</h2>
+<ul class="plain">
+  <li>Anyone can pause, seek or pick; there’s no host in charge of the remote.</li>
+  <li>A party always plays at 1×; hold-for-2× works only alone.</li>
+  <li>Closing the tab leaves you “away”, and you’re counted out after 10&nbsp;minutes. A party with nobody watching ends after 30.</li>
+  <li>Auto-skip of intros happens only if both of you have it on.</li>
+</ul>
+
+<h2>How this was checked</h2>
+<p>On <code>main</code> at <code>0f76956</code>, 27 Oct 2026, on the QA app: two profiles, a laptop-sized browser and a phone-sized one with touch, and a one-minute test video. <a href="party-guide.html">The technical guide</a> has the internals.</p>
+<details><summary>Ran: the flow on laptop and phone, all checks passed</summary><div>
+<p>Invite, join, suggest, “I’m in”, countdown, both playing, chat and reactions both ways, the party menu, and stepping out with the way back. The sync test passed 14 of 14 checks, including the wait for a slow connection.</p>
+</div></details>
+<details><summary>Ran: the phone tap, 2 of 2 paused the party before the fix</summary><div>
+<p>Controls hidden, one tap at the centre of a sideways phone: once at 0:13, right after the intro skip, and once at 0:26 with nothing on screen. Both times the video paused and the controls appeared.</p>
+</div></details>
+<details><summary>Ran after all six fixes: join 13 of 13, touch 59 of 59, sync 18 of 18, unit tests 605 of 605, regress 40 of 40</summary><div>
+<p>The new join test covers Undo (B hears nothing), the invite 4&nbsp;s later, a knock turned down, and a knock let in that lands A in B’s film 0.02&nbsp;s apart. The phone touch test now also taps the middle (that check failed before fix 1) and checks the sideways panel leaves the middle clear. The sync test checks the “said no to switching to” line and Back to picking’s question. Unit tests cover knocks: let in, no, take-back, a room that ended, replacing, and running out. Typecheck, lint and the import rules pass, and the regression gate found all 40 screens unchanged.</p>
+<p>The join test caught a real bug on the way: Undo could leave every later “Inviting” toast paused, so the next invite never went out. The invite now runs on its own 4-second timer.</p>
+<p>One problem was already on <code>main</code> before these changes: run the sync test straight after the phone touch test, and the party’s film never starts. A fresh QA app passes. It reproduces on unchanged <code>main</code> too; not fixed here.</p>
+</div></details>
+<details><summary>Read: 14 days of production failure logs, nothing from parties</summary><div>
+<p>Most lines are slow catalog lookups. One error unrelated to parties appeared twice on 25 Oct on the watch page: “devicePixelRatio is not defined”, from the picture-fit code in <code>touch.ts</code>.</p>
+</div></details>
+<details><summary>Not checked: real phones, real streams, the apps</summary><div>
+<p>The tap issue was seen in Chrome’s phone mode, not on an iPhone or Android phone. Real TorBox files, Krida for Windows and the Android app in a party weren’t run here.</p>
+</div></details>
+
+</main>
+<script>
+addEventListener("beforeprint", () => document.querySelectorAll("details").forEach((d) => { d.dataset.wasOpen = d.open; d.open = true; }));
+addEventListener("afterprint", () => document.querySelectorAll("details").forEach((d) => (d.open = d.dataset.wasOpen === "true")));
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "What the Krida site may ask of the app: mpv, events, full screen, updates and signing in through the browser.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["https://krida-open.vercel.app/*", "http://127.0.0.1:*/*", "http://localhost:*/*"]
+  },
+  "permissions": [
+    "core:event:default",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-is-fullscreen",
+    "allow-mpv-load",
+    "allow-mpv-warm",
+    "allow-mpv-seek",
+    "allow-mpv-set",
+    "allow-mpv-stop",
+    "allow-mpv-frame-light",
+    "allow-update-status",
+    "allow-update-check",
+    "allow-update-restart",
+    "allow-sign-in-listen",
+    "allow-sign-in-open",
+    "allow-open-fullscreen",
+    "allow-set-open-fullscreen"
+  ]
+}

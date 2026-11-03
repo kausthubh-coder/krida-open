@@ -1,0 +1,708 @@
+{
+ "note": "Real titles from https://krida-open.vercel.app/api/rows on 2026-10-12, frozen so every regress run seeds the same library.",
+ "movies": [
+  {
+   "id": "tt31049299",
+   "type": "movie",
+   "name": "Animals",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/354728610/s332/img"
+  },
+  {
+   "id": "tt1131734",
+   "type": "movie",
+   "name": "Jennifer's Body",
+   "year": "2009",
+   "poster": "https://images.justwatch.com/poster/249771502/s332/img"
+  },
+  {
+   "id": "tt23289160",
+   "type": "movie",
+   "name": "Godzilla Minus One",
+   "year": "2023",
+   "poster": "https://images.justwatch.com/poster/313783206/s332/img"
+  },
+  {
+   "id": "tt4550098",
+   "type": "movie",
+   "name": "Nocturnal Animals",
+   "year": "2016",
+   "poster": "https://images.justwatch.com/poster/2471672/s332/img"
+  },
+  {
+   "id": "tt0120791",
+   "type": "movie",
+   "name": "Practical Magic",
+   "year": "1998",
+   "poster": "https://images.justwatch.com/poster/11005490/s332/img"
+  },
+  {
+   "id": "tt35003538",
+   "type": "movie",
+   "name": "EPiC: Elvis Presley in Concert",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/340347222/s332/img"
+  },
+  {
+   "id": "tt0840361",
+   "type": "movie",
+   "name": "The Town",
+   "year": "2010",
+   "poster": "https://images.justwatch.com/poster/153749975/s332/img"
+  },
+  {
+   "id": "tt14539740",
+   "type": "movie",
+   "name": "Godzilla X Kong: The New Empire",
+   "year": "2024",
+   "poster": "https://images.justwatch.com/poster/313527913/s332/img"
+  },
+  {
+   "id": "tt0144084",
+   "type": "movie",
+   "name": "American Psycho",
+   "year": "2000",
+   "poster": "https://images.justwatch.com/poster/266322991/s332/img"
+  },
+  {
+   "id": "tt1045658",
+   "type": "movie",
+   "name": "Silver Linings Playbook",
+   "year": "2012",
+   "poster": "https://images.justwatch.com/poster/175462642/s332/img"
+  },
+  {
+   "id": "tt1262426",
+   "type": "movie",
+   "name": "Wicked",
+   "year": "2024",
+   "poster": "https://images.justwatch.com/poster/311698709/s332/img"
+  },
+  {
+   "id": "tt10327252",
+   "type": "movie",
+   "name": "The Forever Purge",
+   "year": "2021",
+   "poster": "https://images.justwatch.com/poster/249687953/s332/img"
+  },
+  {
+   "id": "tt1276104",
+   "type": "movie",
+   "name": "Looper",
+   "year": "2012",
+   "poster": "https://images.justwatch.com/poster/49738196/s332/img"
+  },
+  {
+   "id": "tt29028515",
+   "type": "movie",
+   "name": "Wasteman",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/344231304/s332/img"
+  },
+  {
+   "id": "tt15239678",
+   "type": "movie",
+   "name": "Dune: Part Two",
+   "year": "2024",
+   "poster": "https://images.justwatch.com/poster/312362420/s332/img"
+  },
+  {
+   "id": "tt2184339",
+   "type": "movie",
+   "name": "The Purge",
+   "year": "2013",
+   "poster": "https://images.justwatch.com/poster/302307685/s332/img"
+  },
+  {
+   "id": "tt4786282",
+   "type": "movie",
+   "name": "Lights Out",
+   "year": "2016",
+   "poster": "https://images.justwatch.com/poster/921112/s332/img"
+  },
+  {
+   "id": "tt0086250",
+   "type": "movie",
+   "name": "Scarface",
+   "year": "1983",
+   "poster": "https://images.justwatch.com/poster/155270304/s332/img"
+  },
+  {
+   "id": "tt2975578",
+   "type": "movie",
+   "name": "The Purge: Anarchy",
+   "year": "2014",
+   "poster": "https://images.justwatch.com/poster/196455660/s332/img"
+  },
+  {
+   "id": "tt31514146",
+   "type": "movie",
+   "name": "I Swear",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/336487621/s332/img"
+  },
+  {
+   "id": "tt0325710",
+   "type": "movie",
+   "name": "The Last Samurai",
+   "year": "2003",
+   "poster": "https://images.justwatch.com/poster/308805990/s332/img"
+  },
+  {
+   "id": "tt0468569",
+   "type": "movie",
+   "name": "The Dark Knight",
+   "year": "2008",
+   "poster": "https://images.justwatch.com/poster/49345763/s332/img"
+  },
+  {
+   "id": "tt0433383",
+   "type": "movie",
+   "name": "Good Night, and Good Luck.",
+   "year": "2005",
+   "poster": "https://images.justwatch.com/poster/324360985/s332/img"
+  },
+  {
+   "id": "tt28607951",
+   "type": "movie",
+   "name": "Anora",
+   "year": "2024",
+   "poster": "https://images.justwatch.com/poster/323065528/s332/img"
+  },
+  {
+   "id": "tt36150957",
+   "type": "movie",
+   "name": "Don't Look Back in Anger",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/354336566/s332/img"
+  },
+  {
+   "id": "tt14230458",
+   "type": "movie",
+   "name": "Poor Things",
+   "year": "2023",
+   "poster": "https://images.justwatch.com/poster/309120615/s332/img"
+  },
+  {
+   "id": "tt46060457",
+   "type": "movie",
+   "name": "The Swan: Behind the Mirror",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/355029989/s332/img"
+  },
+  {
+   "id": "tt1600196",
+   "type": "movie",
+   "name": "The Drop",
+   "year": "2014",
+   "poster": "https://images.justwatch.com/poster/307372430/s332/img"
+  },
+  {
+   "id": "tt0099487",
+   "type": "movie",
+   "name": "Edward Scissorhands",
+   "year": "1990",
+   "poster": "https://images.justwatch.com/poster/180540969/s332/img"
+  },
+  {
+   "id": "tt30825738",
+   "type": "movie",
+   "name": "Star Wars: The Mandalorian and Grogu",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/336088085/s332/img"
+  },
+  {
+   "id": "tt29355505",
+   "type": "movie",
+   "name": "Toy Story 5",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/346646489/s332/img"
+  },
+  {
+   "id": "tt10872600",
+   "type": "movie",
+   "name": "Spider-Man: No Way Home",
+   "year": "2021",
+   "poster": "https://images.justwatch.com/poster/349167628/s332/img"
+  },
+  {
+   "id": "tt32654916",
+   "type": "movie",
+   "name": "Soulm8te",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/355302107/s332/img"
+  },
+  {
+   "id": "tt8036976",
+   "type": "movie",
+   "name": "Send Help",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/342979231/s332/img"
+  },
+  {
+   "id": "tt0156887",
+   "type": "movie",
+   "name": "Perfect Blue",
+   "year": "1997",
+   "poster": "https://images.justwatch.com/poster/306600306/s332/img"
+  },
+  {
+   "id": "tt0758746",
+   "type": "movie",
+   "name": "Friday the 13th",
+   "year": "2009",
+   "poster": "https://images.justwatch.com/poster/167962752/s332/img"
+  },
+  {
+   "id": "tt0311113",
+   "type": "movie",
+   "name": "Master and Commander: The Far Side of the World",
+   "year": "2003",
+   "poster": "https://images.justwatch.com/poster/334141805/s332/img"
+  },
+  {
+   "id": "tt0078748",
+   "type": "movie",
+   "name": "Alien",
+   "year": "1979",
+   "poster": "https://images.justwatch.com/poster/8543836/s332/img"
+  },
+  {
+   "id": "tt0107120",
+   "type": "movie",
+   "name": "Hocus Pocus",
+   "year": "1993",
+   "poster": "https://images.justwatch.com/poster/158050840/s332/img"
+  },
+  {
+   "id": "tt3659388",
+   "type": "movie",
+   "name": "The Martian",
+   "year": "2015",
+   "poster": "https://images.justwatch.com/poster/344669530/s332/img"
+  }
+ ],
+ "shows": [
+  {
+   "id": "tt35934755",
+   "type": "series",
+   "name": "Below",
+   "year": "2026–",
+   "poster": "https://images.justwatch.com/poster/354781830/s332/img"
+  },
+  {
+   "id": "tt21097264",
+   "type": "series",
+   "name": "East of Eden",
+   "year": "2026",
+   "poster": "https://images.justwatch.com/poster/345990721/s332/img"
+  },
+  {
+   "id": "tt4934214",
+   "type": "series",
+   "name": "Taskmaster",
+   "year": "2015–",
+   "poster": "https://images.justwatch.com/poster/300892477/s332/img"
+  },
+  {
+   "id": "tt7587890",
+   "type": "series",
+   "name": "The Rookie",
+   "year": "2018–",
+   "poster": "https://images.justwatch.com/poster/109005818/s332/img"
+  },
+  {
+   "id": "tt13210838",
+   "type": "series",
+   "name": "The Gentlemen",
+   "year": "2024–",
+   "poster": "https://images.justwatch.com/poster/312658395/s332/img"
+  },
+  {
+   "id": "tt11712058",
+   "type": "series",
+   "name": "Mayor of Kingstown",
+   "year": "2021–",
+   "poster": "https://images.justwatch.com/poster/338092074/s332/img"
+  },
+  {
+   "id": "tt0472954",
+   "type": "series",
+   "name": "It's Always Sunny in Philadelphia",
+   "year": "2005–",
+   "poster": "https://images.justwatch.com/poster/337819821/s332/img"
+  },
+  {
+   "id": "tt0203259",
+   "type": "series",
+   "name": "Law & Order: Special Victims Unit",
+   "year": "1999–",
+   "poster": "https://images.justwatch.com/poster/355120582/s332/img"
+  },
+  {
+   "id": "tt36743307",
+   "type": "series",
+   "name": "Inside The Circle",
+   "year": "2026–",
+   "poster": "https://images.justwatch.com/poster/354990681/s332/img"
+  },
+  {
+   "id": "tt17491088",
+   "type": "series",
+   "name": "The Diplomat",
+   "year": "2023–",
+   "poster": "https://images.justwatch.com/poster/304992451/s332/img"
+  },
+  {
+   "id": "tt2861424",
+   "type": "series",
+   "name": "Rick and Morty",
+   "year": "2013–",
+   "poster": "https://images.justwatch.com/poster/300655827/s332/img"
+  },
+  {
+   "id": "tt1442449",
+   "type": "series",
+   "name": "Spartacus",
+   "year": "2010–2013",
+   "poster": "https://images.justwatch.com/poster/195305370/s332/img"
+  },
+  {
+   "id": "tt1842530",
+   "type": "series",
+   "name": "Unforgettable",
+   "year": "2011–2016",
+   "poster": "https://images.justwatch.com/poster/306909728/s332/img"
+  },
+  {
+   "id": "tt1839578",
+   "type": "series",
+   "name": "Person of Interest",
+   "year": "2011–2016",
+   "poster": "https://images.justwatch.com/poster/288245349/s332/img"
+  },
+  {
+   "id": "tt32499579",
+   "type": "series",
+   "name": "Haunted Hotel",
+   "year": "2025–",
+   "poster": "https://images.justwatch.com/poster/334355553/s332/img"
+  },
+  {
+   "id": "tt2085059",
+   "type": "series",
+   "name": "Black Mirror",
+   "year": "2011–",
+   "poster": "https://images.justwatch.com/poster/329426599/s332/img"
+  },
+  {
+   "id": "tt12324366",
+   "type": "series",
+   "name": "Percy Jackson and the Olympians",
+   "year": "2023–",
+   "poster": "https://images.justwatch.com/poster/309999240/s332/img"
+  },
+  {
+   "id": "tt2805096",
+   "type": "series",
+   "name": "Chicago P.D.",
+   "year": "2014–",
+   "poster": "https://images.justwatch.com/poster/336837754/s332/img"
+  },
+  {
+   "id": "tt44877899",
+   "type": "series",
+   "name": "Outside",
+   "year": "2026–",
+   "poster": "https://images.justwatch.com/poster/350514030/s332/img"
+  },
+  {
+   "id": "tt4236770",
+   "type": "series",
+   "name": "Yellowstone",
+   "year": "2018–2024",
+   "poster": "https://images.justwatch.com/poster/317252620/s332/img"
+  },
+  {
+   "id": "tt14824792",
+   "type": "series",
+   "name": "Ted",
+   "year": "2024–2026",
+   "poster": "https://images.justwatch.com/poster/311254337/s332/img"
+  },
+  {
+   "id": "tt0460627",
+   "type": "series",
+   "name": "Bones",
+   "year": "2005–2017",
+   "poster": "https://images.justwatch.com/poster/176074237/s332/img"
+  },
+  {
+   "id": "tt10574558",
+   "type": "series",
+   "name": "Midnight Mass",
+   "year": "2021",
+   "poster": "https://images.justwatch.com/poster/250459353/s332/img"
+  },
+  {
+   "id": "tt2467372",
+   "type": "series",
+   "name": "Brooklyn Nine-Nine",
+   "year": "2013–2021",
+   "poster": "https://images.justwatch.com/poster/279139483/s332/img"
+  },
+  {
+   "id": "tt36303968",
+   "type": "series",
+   "name": "Furious",
+   "year": "2026–",
+   "poster": "https://images.justwatch.com/poster/348297009/s332/img"
+  },
+  {
+   "id": "tt0364845",
+   "type": "series",
+   "name": "NCIS",
+   "year": "2003–",
+   "poster": "https://images.justwatch.com/poster/312315765/s332/img"
+  },
+  {
+   "id": "tt1844624",
+   "type": "series",
+   "name": "American Horror Story",
+   "year": "2011–",
+   "poster": "https://images.justwatch.com/poster/307082535/s332/img"
+  },
+  {
+   "id": "tt7472896",
+   "type": "series",
+   "name": "Mr Inbetween",
+   "year": "2018–2021",
+   "poster": "https://images.justwatch.com/poster/143350045/s332/img"
+  },
+  {
+   "id": "tt40197357",
+   "type": "series",
+   "name": "Scrubs",
+   "year": "2026–",
+   "poster": "https://images.justwatch.com/poster/338300263/s332/img"
+  },
+  {
+   "id": "tt14452776",
+   "type": "series",
+   "name": "The Bear",
+   "year": "2022–2026",
+   "poster": "https://images.justwatch.com/poster/346903971/s332/img"
+  },
+  {
+   "id": "tt1520211",
+   "type": "series",
+   "name": "The Walking Dead",
+   "year": "2010–2022",
+   "poster": "https://images.justwatch.com/poster/317780596/s332/img"
+  },
+  {
+   "id": "tt14218830",
+   "type": "series",
+   "name": "Abbott Elementary",
+   "year": "2021–",
+   "poster": "https://images.justwatch.com/poster/337910033/s332/img"
+  },
+  {
+   "id": "tt0285403",
+   "type": "series",
+   "name": "Scrubs",
+   "year": "2001–2010",
+   "poster": "https://images.justwatch.com/poster/179234265/s332/img"
+  },
+  {
+   "id": "tt36064406",
+   "type": "series",
+   "name": "Coven Academy",
+   "year": "2026–",
+   "poster": "https://images.justwatch.com/poster/348408700/s332/img"
+  },
+  {
+   "id": "tt13875494",
+   "type": "series",
+   "name": "Tracker",
+   "year": "2024–",
+   "poster": "https://images.justwatch.com/poster/311327470/s332/img"
+  },
+  {
+   "id": "tt1442437",
+   "type": "series",
+   "name": "Modern Family",
+   "year": "2009–2020",
+   "poster": "https://images.justwatch.com/poster/150848985/s332/img"
+  },
+  {
+   "id": "tt2654620",
+   "type": "series",
+   "name": "The Strain",
+   "year": "2014–2017",
+   "poster": "https://images.justwatch.com/poster/21074466/s332/img"
+  },
+  {
+   "id": "tt0386676",
+   "type": "series",
+   "name": "The Office",
+   "year": "2005–2013",
+   "poster": "https://images.justwatch.com/poster/305242125/s332/img"
+  },
+  {
+   "id": "tt0402711",
+   "type": "series",
+   "name": "Boston Legal",
+   "year": "2004–2008",
+   "poster": "https://images.justwatch.com/poster/340530275/s332/img"
+  },
+  {
+   "id": "tt7908628",
+   "type": "series",
+   "name": "What We Do in the Shadows",
+   "year": "2019–2024",
+   "poster": "https://images.justwatch.com/poster/273060035/s332/img"
+  }
+ ],
+ "anime": [
+  {
+   "id": "kitsu:50520",
+   "type": "series",
+   "name": "I'm a Witch Who's Crush Requested a Love Potion",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/50520/poster_image/medium-320a169ffd0364561686eea194fb478c.jpeg"
+  },
+  {
+   "id": "kitsu:50743",
+   "type": "series",
+   "name": "Temppal: Item no Chikara",
+   "year": "2026-",
+   "poster": "https://media.kitsu.app/anime/50743/poster_image/medium-1a837035d58dbb65014578644e768ce7.jpeg"
+  },
+  {
+   "id": "kitsu:50607",
+   "type": "series",
+   "name": "Tensei Goblin Dakedo Shitsumon Aru?",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/50607/poster_image/medium-4823c8cf6490fd1ddc93b307466ae6c5.jpeg"
+  },
+  {
+   "id": "kitsu:12",
+   "type": "series",
+   "name": "One Piece",
+   "year": "1999-",
+   "poster": "https://media.kitsu.app/anime/poster_images/12/medium.jpg"
+  },
+  {
+   "id": "kitsu:50024",
+   "type": "series",
+   "name": "Black Clover Season 2",
+   "year": "2026-",
+   "poster": "https://media.kitsu.app/anime/50024/poster_image/medium-e88c922ec7c862c44ace1ca0d6fb9e37.jpeg"
+  },
+  {
+   "id": "kitsu:13209",
+   "type": "series",
+   "name": "Black Clover",
+   "year": "2017-2021",
+   "poster": "https://media.kitsu.app/anime/poster_images/13209/medium.jpg"
+  },
+  {
+   "id": "kitsu:50497",
+   "type": "series",
+   "name": "Dragon Ball Super: Beerus",
+   "year": "2026"
+  },
+  {
+   "id": "kitsu:49752",
+   "type": "series",
+   "name": "Blue Box Season 2",
+   "year": "2026-",
+   "poster": "https://media.kitsu.app/anime/49752/poster_image/medium-79aaffbaf779659742f08be95b1a9c31.jpeg"
+  },
+  {
+   "id": "kitsu:49437",
+   "type": "series",
+   "name": "As a Reincarnated Aristocrat, I'll Use My Appraisal Skill to Rise in the World Season 3",
+   "year": "2026-",
+   "poster": "https://media.kitsu.app/anime/49437/poster_image/medium-e99b49e9abffcb318cd97db23e652373.jpeg"
+  },
+  {
+   "id": "kitsu:50021",
+   "type": "series",
+   "name": "The Apothecary Diaries Season 3",
+   "year": "2026-",
+   "poster": "https://images.metahub.space/poster/small/tt26743760/img"
+  },
+  {
+   "id": "kitsu:49877",
+   "type": "series",
+   "name": "Even the Student Council Has Its Holes!",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/49877/poster_image/medium-1c95eba36f7140eb1cad0c9eefb4a00c.jpeg"
+  },
+  {
+   "id": "kitsu:51011",
+   "type": "series",
+   "name": "Shinja Zero no Megami-sama to Hajimeru Isekai Kouryaku",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/51011/poster_image/medium-62d8fca62a8b5161d6de135d2c27536a.jpeg"
+  },
+  {
+   "id": "kitsu:51005",
+   "type": "series",
+   "name": "Reborn as a Space Mercenary: I Woke Up Piloting the Strongest Starship!",
+   "year": "2026-",
+   "poster": "https://media.kitsu.app/anime/51005/poster_image/medium-79f56c4a9a52934ccae3155fa241f5c2.jpeg"
+  },
+  {
+   "id": "kitsu:49002",
+   "type": "series",
+   "name": "Mushoku Tensei: Jobless Reincarnation Season 3",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/49002/poster_image/medium-cc3eaf73a267ee6707cdf04dd100a23f.jpeg"
+  },
+  {
+   "id": "kitsu:50990",
+   "type": "series",
+   "name": "I'm Dating a Dark Summoner",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/50990/poster_image/medium-c1f491e6d4001ab27fadb028896f049a.jpeg"
+  },
+  {
+   "id": "kitsu:49746",
+   "type": "series",
+   "name": "Re:ZERO -Starting Life in Another World- Season 4",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/49746/poster_image/medium-31b47768cfba201928ddf80a36ed1543.jpeg"
+  },
+  {
+   "id": "kitsu:49235",
+   "type": "series",
+   "name": "That Time I Got Reincarnated as a Slime Season 4",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/49235/poster_image/medium-11c40782c83914e8e94c41cfbfcd9c70.jpeg"
+  },
+  {
+   "id": "kitsu:49883",
+   "type": "series",
+   "name": "Aoashi 2nd Season",
+   "year": "2026-",
+   "poster": "https://media.kitsu.app/anime/49883/poster_image/medium-5ed0865eba2fcb5365aaea86556a1c78.jpeg"
+  },
+  {
+   "id": "kitsu:244",
+   "type": "series",
+   "name": "Bleach",
+   "year": "2004-2012",
+   "poster": "https://media.kitsu.app/anime/poster_images/244/medium.jpg"
+  },
+  {
+   "id": "kitsu:50471",
+   "type": "series",
+   "name": "Firefly Wedding",
+   "year": "2026",
+   "poster": "https://media.kitsu.app/anime/50471/poster_image/medium-758398643f679d5dfa2e240831bd4aaa.jpeg"
+  }
+ ]
+}

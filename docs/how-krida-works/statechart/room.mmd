@@ -1,0 +1,64 @@
+---
+title: "A room, from Play to picture"
+---
+stateDiagram-v2
+  state "Legend" as legend {
+    lg0: start
+    lg1: prep
+    lg2: good
+    lg3: bad
+    lg4: end
+    lg5: Breaks ASpinnerHasAJobBehindIt
+    lg6: Path to the ASpinnerHasAJobBehindIt bug
+  }
+  class lg0 tan
+  class lg1 blue
+  class lg2 teal
+  class lg3 orange
+  class lg4 purple
+  class lg5 breaks
+  class lg6 bugPath
+  s0: Picking
+  s1: Finding sources
+  s2: Room closed
+  s3: Watching
+  s4: Adding to TorBox
+  s5: Spinning, nothing behind it
+  s6: This stream couldn't start
+  s7: The stream stopped loading
+  s8: Starting stream
+  [*] --> s0
+  s0 --> s1: you press Play
+  s1 --> s3: a stream is already prepared
+  s1 --> s4: sources found
+  s1 --> s5: the job dies without a word
+  s1 --> s6: no copy works
+  s3 --> s0: you go back to picking
+  s3 --> s1: you choose a source or something else goes on
+  s3 --> s2: everyone leaves
+  s3 --> s7: the video stops loading
+  s4 --> s6: no copy works
+  s4 --> s5: the job dies without a word
+  s4 --> s8: a copy reaches TorBox
+  s5 --> s1: you choose a source
+  s6 --> s0: you go back to picking
+  s6 --> s1: you choose a source or you press Refresh sources
+  s7 --> s3: you reload
+  s7 --> s1: you choose a source
+  s8 --> s3: TorBox starts the stream
+  s8 --> s6: no copy works
+  s8 --> s5: the job dies without a word
+  classDef breaks fill:#ffecee,stroke:#e72e3b,stroke-width:2.5px,color:#cd2834
+  class s0 tan
+  class s0 bugPath
+  class s1 blue
+  class s1 bugPath
+  class s2 purple
+  class s3 teal
+  class s4 blue
+  class s5 blue
+  class s5 breaks
+  class s5 bugPath
+  class s6 orange
+  class s7 orange
+  class s8 blue

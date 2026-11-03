@@ -1,0 +1,310 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+:root{
+  --k-page:oklch(0.145 0.006 60);--k-surface:oklch(0.18 0.007 60);--k-raised:oklch(0.215 0.008 60);--k-overlay:oklch(0.25 0.009 60);
+  --k-line:oklch(1 0 0 / .09);--k-fg:oklch(0.95 0.005 60);--k-muted:oklch(0.76 0.01 60);--k-faint:oklch(0.6 0.012 60);
+  --k-accent:oklch(0.82 0.14 75);--k-on-accent:oklch(0.2 0.03 60);--k-success:oklch(0.74 0.14 150);
+  --k-shadow:inset 0 1px 0 0 oklch(1 0 0/.04),inset 0 0 0 1px oklch(1 0 0/.05),0 0 0 1px oklch(0 0 0/.2),0 2px 2px 0 oklch(0 0 0/.12),0 4px 4px 0 oklch(0 0 0/.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--foreground)}
+.mock{margin:0 0 36px}
+.cap{font-size:15px;font-weight:600;margin-bottom:4px}
+.note{font-size:13px;line-height:1.5;color:var(--muted-foreground);margin-bottom:12px;max-width:680px}
+.fit{width:100%;overflow:hidden;border-radius:var(--radius,12px)}
+.screen{width:1280px;background:var(--k-page);color:var(--k-fg);font-size:14px;line-height:20px;position:relative;overflow:hidden}
+.disp{font-family:Fraunces,Georgia,serif}
+.tab{font-variant-numeric:tabular-nums}
+/* nav */
+.nav{height:64px;display:flex;align-items:center;gap:28px;padding:0 48px}
+.nav .logo{font-family:Fraunces;font-weight:700;font-size:20px;letter-spacing:-.02em}
+.nav a{color:var(--k-muted);font-weight:500}.nav a.on{color:var(--k-fg)}
+.nav .r{margin-left:auto;display:flex;gap:10px;align-items:center}
+.pill{height:36px;padding:0 14px 0 6px;border-radius:99px;background:oklch(1 0 0/.08);display:flex;align-items:center;gap:8px;font-weight:500}
+.av{width:24px;height:24px;border-radius:99px;display:grid;place-items:center;font-size:11px;font-weight:600;color:oklch(0.2 0.03 60)}
+.av.s{background:oklch(0.72 0.13 150)}.av.k{background:oklch(0.72 0.14 40)}
+/* art */
+.art{position:relative;overflow:hidden;background:linear-gradient(160deg,oklch(0.24 0.02 60),oklch(0.17 0.01 40));border-radius:12px;outline:1px solid oklch(1 0 0/.1);outline-offset:-1px}
+.art>span{position:absolute;inset:0;display:grid;place-items:center;padding:10px;text-align:center;font-family:Fraunces;font-size:15px;color:var(--k-muted)}
+.art>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.poster{aspect-ratio:2/3}.wide{aspect-ratio:16/9}
+/* rows */
+.rowh{display:flex;align-items:baseline;gap:12px;padding:0 48px;margin-bottom:12px}
+.rowh h2{font-size:20px;line-height:28px;font-weight:600;letter-spacing:-.01em}
+.rowh .why{color:var(--k-faint)}
+.rowh .all{margin-left:auto;color:var(--k-muted);font-weight:500;display:flex;align-items:center;gap:4px}
+.rail{display:flex;gap:16px;padding:0 48px;overflow:hidden;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 48px),transparent)}
+.card{flex:none;width:168px}
+.card .t{margin-top:8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .s{font-size:12px;line-height:16px;color:var(--k-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:6px;align-items:center}
+.star{color:var(--k-accent)}
+.s b{font-weight:500;color:var(--k-muted)}
+.block{padding:28px 0 8px}
+/* top 10 */
+.t10{flex:none;display:flex;align-items:flex-end}
+.t10 .n{font-family:Fraunces;font-weight:700;font-size:200px;line-height:.74;letter-spacing:-.06em;color:var(--k-page);-webkit-text-stroke:2px oklch(0.6 0.012 60);margin-right:-26px;position:relative;z-index:0}
+.t10 .art{width:168px;z-index:1;box-shadow:-10px 0 24px -8px oklch(0 0 0/.7)}
+/* together */
+.tg{flex:none;width:340px}
+.tg .art{aspect-ratio:16/9}
+.tg .grad{position:absolute;inset:0;background:linear-gradient(to top,oklch(0 0 0/.8),transparent 60%)}
+.tg .logo{position:absolute;left:14px;bottom:14px;max-width:55%;max-height:46px;object-fit:contain;object-position:left bottom;inset:auto auto 14px 14px;width:auto;height:auto}
+.tg .who{position:absolute;right:12px;bottom:12px;display:flex}
+.tg .who .av{width:26px;height:26px;box-shadow:0 0 0 2px oklch(0 0 0/.6)}.tg .who .av+.av{margin-left:-6px}
+.tg .t{margin-top:8px;font-weight:500}.tg .s{font-size:12px;color:var(--k-faint)}
+/* seed anchor */
+.seed{flex:none;width:168px;position:relative}
+.seed .art{filter:brightness(.45) saturate(.8)}
+.seed .lbl{position:absolute;inset:auto 12px 14px 12px}
+.seed .lbl small{display:block;font-size:12px;color:var(--k-muted)}
+.seed .lbl b{font-family:Fraunces;font-size:22px;line-height:26px;font-weight:600}
+/* search */
+.sbar{height:60px;border-radius:99px;background:var(--k-surface);box-shadow:var(--k-shadow);display:flex;align-items:center;gap:12px;padding:0 10px 0 22px;font-size:18px;color:var(--k-faint)}
+.sbar i{font-size:22px;color:var(--k-muted)}.sbar .kbd{margin-left:auto;font-size:12px;color:var(--k-faint);border:1px solid var(--k-line);border-radius:6px;padding:1px 7px}
+.sbar.typed{color:var(--k-fg);background:var(--k-raised)}
+.recent{display:flex;gap:18px;color:var(--k-muted);margin-top:14px;padding-left:22px}
+.recent span{display:flex;gap:6px;align-items:center}.recent i{color:var(--k-faint)}
+.sh{font-size:20px;line-height:28px;font-weight:600;letter-spacing:-.01em;margin-bottom:12px;display:flex;align-items:baseline;gap:12px}
+.sh small{font-size:14px;font-weight:400;color:var(--k-faint)}
+.genres{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.gt{aspect-ratio:16/9;border-radius:12px;position:relative;overflow:hidden;outline:1px solid oklch(1 0 0/.1);outline-offset:-1px;background:var(--k-surface)}
+.gt img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.85)}
+.gt::after{content:"";position:absolute;inset:0;background:linear-gradient(200deg,transparent 30%,oklch(0.1 0.01 60/.88))}
+.gt b{position:absolute;left:14px;bottom:10px;z-index:1;font-family:Fraunces;font-size:21px;font-weight:600;letter-spacing:-.01em}
+.langs{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.lt{height:84px;border-radius:12px;background:var(--k-surface);box-shadow:var(--k-shadow);padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.lt .g{font-size:28px;line-height:32px;color:var(--k-fg);font-weight:500}
+.lt .e{color:var(--k-faint);font-size:12px}
+.lt::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 100% 0%,oklch(0.5 0.08 var(--h)/.28),transparent 60%)}
+.decs{display:flex;gap:8px}
+.chip{height:36px;padding:0 14px;border-radius:99px;background:oklch(1 0 0/.06);color:var(--k-muted);display:flex;align-items:center;gap:6px;font-weight:500}
+.chip.on{background:var(--k-fg);color:var(--k-page)}
+.toplist{display:grid;grid-template-columns:1fr 1fr;column-gap:40px}
+.tl{display:flex;align-items:center;gap:14px;height:72px;border-bottom:1px solid var(--k-line)}
+.tl .rk{width:22px;font-family:Fraunces;font-size:20px;color:var(--k-faint);text-align:right}
+.tl .art{width:40px;border-radius:6px}
+.tl .m{font-size:12px;color:var(--k-faint)}
+.tl .up{margin-left:auto;font-size:12px;color:var(--k-success)}
+/* results */
+.filters{display:flex;gap:4px;align-items:center;margin-top:18px}
+.seg{display:flex;background:oklch(1 0 0/.06);border-radius:99px;padding:3px}
+.seg span{height:32px;padding:0 14px;border-radius:99px;display:flex;align-items:center;gap:6px;color:var(--k-muted);font-weight:500}
+.seg span.on{background:var(--k-overlay);color:var(--k-fg);box-shadow:var(--k-shadow)}
+.seg em{font-style:normal;color:var(--k-faint);font-size:12px}
+.best{display:grid;grid-template-columns:620px 1fr;gap:32px}
+.hero{position:relative;border-radius:20px;overflow:hidden;aspect-ratio:16/9;outline:1px solid oklch(1 0 0/.1);outline-offset:-1px}
+.hero>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero .sc{position:absolute;inset:0;background:linear-gradient(to top,oklch(0.12 0.006 60/.95),oklch(0.12 0.006 60/.2) 65%,transparent)}
+.hero .in{position:absolute;left:24px;right:24px;bottom:22px;display:flex;flex-direction:column;gap:10px}
+.hero .lg{max-height:64px;max-width:60%;object-fit:contain;object-position:left}
+.eyb{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--k-accent)}
+.facts{display:flex;gap:8px;color:var(--k-muted);align-items:center}
+.btns{display:flex;gap:10px;margin-top:4px}
+.btn{height:44px;padding:0 20px 0 16px;border-radius:99px;display:flex;align-items:center;gap:8px;font-weight:500;background:oklch(1 0 0/.12)}
+.btn.p{background:var(--k-accent);color:var(--k-on-accent)}
+.btn.w{background:var(--k-fg);color:var(--k-page)}
+.also .row{display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--k-line)}
+.also .art{width:48px;border-radius:8px}
+.also .m{font-size:12px;color:var(--k-faint)}
+.also .row .go{margin-left:auto;color:var(--k-faint);font-size:18px}
+.person{display:flex;gap:12px;align-items:center;padding:12px;border-radius:12px;background:var(--k-surface);box-shadow:var(--k-shadow);margin-top:14px}
+.person .pp{width:48px;height:48px;border-radius:99px;background:linear-gradient(160deg,oklch(0.4 0.03 60),oklch(0.25 0.02 40));display:grid;place-items:center;font-family:Fraunces;font-size:18px}
+.grid7{display:grid;grid-template-columns:repeat(7,1fr);gap:24px 16px}
+.badge{position:absolute;top:8px;left:8px;z-index:2;font-size:12px;font-weight:500;background:oklch(0 0 0/.65);padding:1px 8px;border-radius:99px;display:flex;gap:4px;align-items:center;backdrop-filter:blur(8px)}
+.badge.r{left:auto;right:8px}
+/* library */
+.libtop{display:flex;align-items:flex-end;gap:24px;padding:24px 48px 0}
+.libtop h1{font-size:28px;line-height:36px;font-weight:600;letter-spacing:-.02em}
+.kp{display:flex;gap:28px;margin-left:auto}
+.kp div{display:flex;flex-direction:column}.kp b{font-size:20px;line-height:28px;font-weight:600}.kp small{font-size:12px;color:var(--k-faint)}
+.wrapb{margin:20px 48px 0;height:176px;border-radius:20px;position:relative;overflow:hidden;background:radial-gradient(80% 140% at 0% 100%,oklch(0.36 0.09 40/.55),transparent 60%),radial-gradient(60% 120% at 40% 0%,oklch(0.34 0.08 300/.35),transparent 60%),var(--k-surface);box-shadow:var(--k-shadow);display:flex;align-items:center;padding:0 32px}
+.wrapb .tx{display:flex;flex-direction:column;gap:8px;max-width:560px;position:relative;z-index:2}
+.wrapb h3{font-family:Fraunces;font-size:32px;line-height:36px;font-weight:600;letter-spacing:-.02em}
+.wrapb p{color:var(--k-muted);font-size:15px}
+.wrapb .col{position:absolute;right:40px;top:-30px;display:flex;gap:12px;transform:rotate(-8deg)}
+.wrapb .col .art{width:96px}
+.wrapb .col .c2{margin-top:40px}
+.tabs{display:flex;gap:28px;padding:0 48px;margin-top:24px;border-bottom:1px solid var(--k-line);align-items:center}
+.tabs>span{height:44px;display:flex;align-items:center;gap:6px;color:var(--k-muted);font-weight:500;position:relative}
+.tabs>span em{font-style:normal;color:var(--k-faint);font-size:12px}
+.tabs>span.on{color:var(--k-fg)}.tabs>span.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--k-fg);border-radius:2px}
+.tabs .tools{margin-left:auto;display:flex;gap:8px}
+.tabs .tools .chip{height:32px}
+.watching{display:grid;grid-template-columns:repeat(4,1fr);gap:24px 16px;padding:20px 48px 28px}
+.wc .art{aspect-ratio:16/9}
+.wc .bar{position:absolute;left:12px;right:12px;bottom:10px;height:4px;border-radius:9px;background:oklch(1 0 0/.2);z-index:2}
+.wc .bar i{display:block;height:100%;border-radius:9px;background:var(--k-accent)}
+.wc .sc{position:absolute;inset:0;background:linear-gradient(to top,oklch(0 0 0/.65),transparent 50%);z-index:1}
+.wc .t{margin-top:8px;font-weight:500;display:flex;gap:8px;align-items:center}
+.wc .s{font-size:12px;color:var(--k-faint)}
+.src{font-size:11px;font-weight:500;color:var(--k-faint);border:1px solid var(--k-line);border-radius:99px;padding:0 6px;line-height:16px}
+.month{display:flex;align-items:baseline;gap:10px;padding:0 48px;margin:22px 0 12px}
+.month h3{font-size:16px;line-height:24px;font-weight:600}.month small{color:var(--k-faint)}
+.mgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:20px 16px;padding:0 48px}
+/* wrapped stories */
+.stories{display:flex;gap:18px;padding:32px 48px;align-items:flex-start}
+.story{flex:none;width:222px;height:420px;border-radius:20px;position:relative;overflow:hidden;padding:22px 20px;display:flex;flex-direction:column;box-shadow:var(--k-shadow)}
+.story .bars{display:flex;gap:4px;margin-bottom:22px}.story .bars i{flex:1;height:3px;border-radius:9px;background:oklch(1 0 0/.25)}.story .bars i.d{background:oklch(1 0 0/.9)}
+.story .k{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:oklch(1 0 0/.6)}
+.story h4{font-family:Fraunces;font-weight:600;letter-spacing:-.02em;font-size:24px;line-height:28px;margin-top:10px}
+.story .big{font-family:Fraunces;font-weight:700;font-size:92px;line-height:.9;letter-spacing:-.05em;margin-top:auto}
+.story p{color:oklch(1 0 0/.72);font-size:14px;line-height:20px;margin-top:10px}
+.st1{background:radial-gradient(120% 70% at 20% 100%,oklch(0.5 0.16 40/.75),transparent 60%),radial-gradient(90% 60% at 100% 0%,oklch(0.42 0.12 300/.6),transparent 60%),oklch(0.16 0.02 30)}
+.st2{background:radial-gradient(100% 60% at 50% 110%,oklch(0.38 0.14 25/.8),transparent 65%),oklch(0.12 0.01 20)}
+.st3{background:radial-gradient(100% 70% at 0% 0%,oklch(0.42 0.08 220/.55),transparent 60%),oklch(0.15 0.01 230)}
+.st4{background:radial-gradient(80% 50% at 20% 30%,oklch(0.55 0.13 40/.55),transparent 60%),radial-gradient(80% 50% at 80% 70%,oklch(0.55 0.12 150/.5),transparent 60%),oklch(0.15 0.01 60)}
+.st5{background:linear-gradient(170deg,oklch(0.3 0.09 290),oklch(0.16 0.03 260))}
+.heat{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:auto}
+.heat i{aspect-ratio:1;border-radius:3px}
+.hl{display:flex;justify-content:space-between;font-size:10px;color:oklch(1 0 0/.5);margin-top:6px}
+.drop{display:flex;align-items:flex-end;gap:8px;height:150px;margin-top:auto}
+.drop div{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.drop i{width:100%;border-radius:6px 6px 2px 2px;background:oklch(1 0 0/.22)}
+.drop i.x{background:oklch(0.7 0.17 25)}
+.drop small{font-size:11px;color:oklch(1 0 0/.55)}
+.venn{position:relative;height:120px;margin-top:auto}
+.venn .c{position:absolute;top:0;width:120px;height:120px;border-radius:99px;mix-blend-mode:screen}
+.venn .a{left:10px;background:oklch(0.6 0.15 40/.6)}.venn .b{left:72px;background:oklch(0.6 0.13 150/.6)}
+.venn b{position:absolute;left:72px;top:40px;width:58px;width:40px;text-align:center;font-family:Fraunces;font-size:26px}
+.aura{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.aura .tags{display:flex;flex-wrap:wrap;gap:6px}.aura .tags span{font-size:12px;padding:2px 10px;border-radius:99px;background:oklch(1 0 0/.12)}
+.minis{display:flex;margin-top:14px}.minis .art{width:56px;border-radius:8px;margin-right:-14px;box-shadow:0 4px 12px oklch(0 0 0/.5)}
+/* stats */
+.dash{padding:20px 48px 32px;display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.panel{background:var(--k-surface);box-shadow:var(--k-shadow);border-radius:16px;padding:18px 20px}
+.panel h4{font-size:14px;font-weight:500;color:var(--k-muted);margin-bottom:12px;display:flex;justify-content:space-between}
+.panel h4 small{color:var(--k-faint);font-weight:400}
+.kpi b{font-size:28px;line-height:36px;font-weight:600;letter-spacing:-.02em;display:block}
+.kpi small{font-size:12px;color:var(--k-faint)}
+.kpi .d{font-size:12px;color:var(--k-success)}
+.insight{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--k-line)}
+.insight:first-of-type{border-top:0;padding-top:0}
+.insight i{font-size:20px;color:var(--k-accent);margin-top:1px}
+.insight p{color:var(--k-fg)}.insight p span{color:var(--k-faint)}
+.gbar{display:flex;align-items:center;gap:10px;margin:7px 0}
+.gbar label{width:84px;color:var(--k-muted)}
+.gbar .tr{flex:1;height:10px;border-radius:9px;background:oklch(1 0 0/.06)}
+.gbar .tr i{display:block;height:100%;border-radius:9px;background:oklch(0.82 0.14 75/var(--o,1))}
+.gbar b{width:40px;text-align:right;font-weight:500}
+.ppl{display:flex;gap:14px}
+.ppl div{display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;text-align:center;font-size:12px;color:var(--k-muted)}
+.ppl .pp{width:56px;height:56px;border-radius:99px;background:linear-gradient(160deg,oklch(0.42 0.03 60),oklch(0.24 0.02 40));display:grid;place-items:center;font-family:Fraunces;font-size:18px;color:var(--k-fg)}
+.months{display:flex;align-items:flex-end;gap:10px;height:120px}
+.months div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:2px}
+.months i{display:block;border-radius:3px}
+.months small{font-size:11px;color:var(--k-faint);text-align:center;margin-top:6px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--k-faint);margin-top:10px}
+.legend span{display:flex;gap:6px;align-items:center}.legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+</style></head>
+<body>
+<div id="app"></div>
+<script>
+const P=(id,t)=>`<div class="art poster"><span>${t}</span><img src="https://images.metahub.space/poster/medium/${id}/img" onerror="this.remove()"></div>`;
+const B=(id,t)=>`<span>${t}</span><img src="https://images.metahub.space/background/medium/${id}/img" onerror="this.remove()">`;
+const L=(id)=>`https://images.metahub.space/logo/medium/${id}/img`;
+const nav=(on)=>`<div class="nav"><span class="logo">krida.</span><a class="${on==0?'on':''}">Home</a><a class="${on==1?'on':''}">Search</a><a class="${on==2?'on':''}">Library</a><div class="r"><span class="pill"><span class="av s">S</span>Watch with Ben</span><span class="pill"><span class="av k">K</span>Ana</span></div></div>`;
+const card=(id,t,s)=>`<div class="card">${P(id,t)}<p class="t">${t}</p><p class="s">${s}</p></div>`;
+const r=(v)=>`<i class="ph-fill ph-star star"></i><b class="tab">${v}</b>`;
+
+const top10=[["tt4574334","Stranger Things"],["tt10986410","Ted Lasso"],["tt1190634","The Boys"],["tt5875444","Slow Horses"],["tt13706018","Spy x Family"],["tt0388629","One Piece"],["tt11280740","Severance"]];
+const together=[["tt11126994","Arcane","Both of you rated Arcane 9+"],["tt9362722","Spider-Man: Across the Spider-Verse","Ben loved it · you haven’t seen it"],["tt22248376","Frieren","Like Vinland Saga, which you both finished"],["tt2788316","Shōgun","You both binge historical dramas"]];
+const because=[["tt0816692","Interstellar","2014 · ",8.7],["tt1160419","Dune","2021 · ",8.0],["tt15398776","Oppenheimer","2023 · ",8.3],["tt1375666","Inception","2010 · ",8.8],["tt7366338","Chernobyl","2019 · ",9.3],["tt5753856","Dark","2017 · ",8.7]];
+
+const home=`<div class="screen" style="height:1150px">${nav(0)}
+<div class="block"><div class="rowh"><h2>Top 10 shows on Netflix today</h2><span class="why">Updated this morning</span></div>
+<div class="rail" style="gap:8px">${top10.map((x,i)=>`<div class="t10"><span class="n">${i+1}</span>${P(x[0],x[1])}</div>`).join("")}</div></div>
+<div class="block"><div class="rowh"><h2>For you and Ben</h2><span class="why">From what you both rate highly</span><span class="all">Start a party <i class="ph ph-caret-right"></i></span></div>
+<div class="rail">${together.map(x=>`<div class="tg"><div class="art">${B(x[0],x[1])}<div class="grad"></div><img class="logo" src="${L(x[0])}" onerror="this.remove()"><div class="who"><span class="av k">K</span><span class="av s">S</span></div></div><p class="t">${x[1]}</p><p class="s">${x[2]}</p></div>`).join("")}</div></div>
+<div class="block"><div class="rail"><div class="seed">${P("tt15239678","Dune: Part Two")}<div class="lbl"><small>Because you loved</small><b>Dune: Part Two</b></div></div>${because.map(x=>card(x[0],x[1],`${x[2]}${r(x[3])}`)).join("")}</div></div>
+</div>`;
+
+const genres=[["Action","tt0468569"],["Comedy","tt0386676"],["Horror","tt7784604"],["Sci-Fi","tt0816692"],["Romance","tt5311514"],["Thriller","tt6751668"],["Crime","tt0903747"],["Fantasy","tt0944947"],["Anime","tt2560140"],["Drama","tt7660850"],["Mystery","tt5753856"],["Documentary","tt5491994"]];
+const langs=[["తెలుగు","Telugu",40],["हिन्दी","Hindi",60],["தமிழ்","Tamil",25],["മലയാളം","Malayalam",150],["한국어","Korean",250],["日本語","Japanese",350]];
+const trend=[["tt9362722","Spider-Man: Brand New Day","Movie · 2026","+12"],["tt4574334","Stranger Things","Show · 2016–2025",""],["tt8178634","RRR","Movie · 2022","+4"],["tt0388629","One Piece","Show · 1999–",""],["tt5875444","Slow Horses","Show · 2022–","+2"],["tt7784604","Hereditary","Movie · 2018",""],["tt12343534","Jujutsu Kaisen","Show · 2020–","+7"],["tt2788316","Shōgun","Show · 2024–",""]];
+const searchIdle=`<div class="screen" style="height:1080px">${nav(1)}
+<div style="padding:28px 48px 0;max-width:1024px">
+<div class="sbar"><i class="ph ph-magnifying-glass"></i>Movies, shows, people, or “telugu comedy”<span class="kbd">/</span></div>
+<div class="recent"><span><i class="ph ph-clock-counter-clockwise"></i>telugu comedy</span><span><i class="ph ph-clock-counter-clockwise"></i>Mandaadi</span><span><i class="ph ph-clock-counter-clockwise"></i>attack on titan</span><span><i class="ph ph-clock-counter-clockwise"></i>toxic</span><span style="color:var(--k-faint)">Clear</span></div></div>
+<div style="padding:36px 48px 0"><div class="sh">Browse by genre</div><div class="genres">${genres.map(g=>`<div class="gt"><img src="https://images.metahub.space/background/medium/${g[1]}/img" onerror="this.remove()"><b>${g[0]}</b></div>`).join("")}</div></div>
+<div style="padding:32px 48px 0"><div class="sh">Languages <small>Tap two to mix them, like Telugu + Comedy</small></div><div class="langs">${langs.map(l=>`<div class="lt" style="--h:${l[2]}"><span class="g">${l[0]}</span><span class="e">${l[1]}</span></div>`).join("")}</div>
+<div class="decs" style="margin-top:16px">${["2020s","2010s","2000s","90s","80s","Older"].map(d=>`<span class="chip">${d}</span>`).join("")}</div></div>
+<div style="padding:32px 48px 0"><div class="sh">Trending this week <small>TMDB, refreshed daily</small></div><div class="toplist">${trend.map((t,i)=>`<div class="tl"><span class="rk">${i+1}</span>${P(t[0],t[1]).replace('class="art poster"','class="art poster" style="width:40px;border-radius:6px"')}<div><p style="font-weight:500">${t[1]}</p><p class="m">${t[2]}</p></div>${t[3]?`<span class="up"><i class="ph ph-arrow-up"></i> ${t[3]}</span>`:""}</div>`).join("")}</div></div>
+</div>`;
+
+const more=[["tt1160419","Dune","2021 · Movie","watched"],["tt10466872","Dune: Prophecy","2024 · Show",""],["tt0087182","Dune","1984 · Movie",""],["tt1935156","Jodorowsky’s Dune","2013 · Movie",""],["tt0142032","Frank Herbert’s Dune","2000 · Show",""],["tt0816692","Interstellar","2014 · Movie",""],["tt1856101","Blade Runner 2049","2017 · Movie",""]];
+const searchRes=`<div class="screen" style="height:1130px">${nav(1)}
+<div style="padding:28px 48px 0;max-width:1024px"><div class="sbar typed"><i class="ph ph-magnifying-glass"></i>dune<span style="margin-left:auto;width:32px;height:32px;display:grid;place-items:center;border-radius:99px;color:var(--k-muted)"><i class="ph ph-x" style="font-size:18px"></i></span></div>
+<div class="filters"><div class="seg"><span class="on">All <em>23</em></span><span>Movies <em>14</em></span><span>Shows <em>9</em></span></div></div></div>
+<div style="padding:28px 48px 0"><div class="best">
+<div class="hero"><img src="https://images.metahub.space/background/large/tt15239678/img" onerror="this.remove()"><div class="sc"></div><div class="in"><span class="eyb">Top result</span><img class="lg" src="${L("tt15239678")}" onerror="this.outerHTML='<b class=disp style=font-size:40px>Dune: Part Two</b>'"><div class="facts">${r(8.5)}<span>· 2024 · Movie · 2 h 46 m · Sci-Fi</span></div><div class="btns"><span class="btn p"><i class="ph-fill ph-play"></i>Play</span><span class="btn"><i class="ph ph-plus"></i>My list</span><span class="btn"><i class="ph ph-users"></i>Watch with Ben</span></div></div></div>
+<div class="also"><div class="sh" style="font-size:16px;margin-bottom:4px">Also matching</div>
+${more.slice(0,4).map(m=>`<div class="row">${P(m[0],m[1]).replace('class="art poster"','class="art poster" style="width:48px;border-radius:8px"')}<div><p style="font-weight:500">${m[1]}</p><p class="m">${m[2]}${m[3]?' · <span style="color:var(--k-accent)">Watched</span>':''}</p></div><i class="ph ph-caret-right go"></i></div>`).join("")}
+<div class="person"><div class="pp">DV</div><div><p style="font-weight:500">Denis Villeneuve</p><p class="m" style="font-size:12px;color:var(--k-faint)">Director · 11 titles</p></div><i class="ph ph-caret-right" style="margin-left:auto;color:var(--k-faint)"></i></div>
+</div></div></div>
+<div style="padding:32px 48px 0"><div class="sh">More results</div><div class="grid7">${more.slice(4).concat([["tt3397884","Sicario","2015 · Movie",""],["tt0083658","Blade Runner","1982 · Movie",""],["tt0062622","2001: A Space Odyssey","1968 · Movie",""],["tt2543164","Arrival","2016 · Movie",""]]).map(m=>`<div class="card" style="width:auto"><div style="position:relative">${m[3]?'<span class="badge"><i class="ph-bold ph-check" style="color:var(--k-accent)"></i>Watched</span>':''}${P(m[0],m[1])}</div><p class="t">${m[1]}</p><p class="s">${m[2]}</p></div>`).join("")}</div></div>
+</div>`;
+
+const watching=[["tt0388629","One Piece","S1 E1092 · 18 min left",.7,"Simkl"],["tt2560140","Attack on Titan","S1 E7 · 12 min left",.55,""],["tt0386676","The Office","S2 E3 · Up next",0,""],["tt0988824","Gintama","E1 of 201 · 9 min left",.2,"Simkl"],["tt12343534","Jujutsu Kaisen","S2 E14 · 4 min left",.9,""],["tt10233448","Vinland Saga","S2 E2 · 20 min left",.15,""],["tt14452776","The Bear","S3 E4 · Up next",0,""],["tt3032476","Better Call Saul","S4 E9 · 31 min left",.3,"Simkl"]];
+const library=`<div class="screen" style="height:960px">${nav(2)}
+<div class="libtop"><h1>Library</h1><div class="kp"><div><b class="tab">214 h</b><small>watched this year</small></div><div><b class="tab">38</b><small>finished</small></div><div><b class="tab">7.4</b><small>your average score</small></div></div></div>
+<div class="wrapb"><div class="tx"><span class="eyb">New · Your Krida Wrapped</span><h3>2026, so far</h3><p>A 9-day One Piece binge, a 2 a.m. horror habit, and the one film you and Ben will never agree on.</p><div style="display:flex;gap:10px;margin-top:6px"><span class="btn w"><i class="ph-fill ph-play"></i>Play your Wrapped</span><span class="btn">See your stats</span></div></div>
+<div class="col"><div>${P("tt0388629","One Piece")}</div><div class="c2">${P("tt7784604","Hereditary")}</div><div>${P("tt2560140","AoT")}</div><div class="c2">${P("tt15239678","Dune")}</div><div>${P("tt0386676","Office")}</div></div></div>
+<div class="tabs"><span class="on">Watching <em>8</em></span><span>My list <em>34</em></span><span>Watched <em>212</em></span><span>Stats</span><div class="tools"><div class="seg"><span class="on">All</span><span>Movies</span><span>Shows</span></div><span class="chip"><i class="ph ph-sort-ascending"></i>Recent</span></div></div>
+<div class="watching">${watching.map(w=>`<div class="wc"><div class="art">${B(w[0],w[1])}<div class="sc"></div>${w[3]?`<div class="bar"><i style="width:${w[3]*100}%"></i></div>`:""}</div><p class="t">${w[1]}${w[4]?'<span class="src">Simkl</span>':''}</p><p class="s">${w[2]}</p></div>`).join("")}</div>
+</div>`;
+
+const sep=[["tt15239678","Dune: Part Two",9],["tt7784604","Hereditary",8],["tt8178634","RRR",10],["tt1457767","The Conjuring",6],["tt6751668","Parasite",9],["tt5052448","Get Out",8],["tt11280740","Severance S2",8],["tt9362722","Across the Spider-Verse",9]];
+const aug=[["tt8772262","Midsommar",7],["tt0386676","The Office",9,"3×"],["tt1396484","It",5],["tt7286456","Joker",7],["tt14452776","The Bear S3",""],["tt0245429","Spirited Away",10],["tt1877830","The Batman",8],["tt4154796","Avengers: Endgame",7]];
+const wcard=(x)=>`<div class="card" style="width:auto"><div style="position:relative">${x[2]!==""?`<span class="badge r"><i class="ph-fill ph-star star"></i><span class="tab">${x[2]}</span></span>`:''}${x[3]?`<span class="badge"><i class="ph ph-repeat"></i>${x[3]}</span>`:''}${P(x[0],x[1])}</div><p class="t">${x[1]}</p></div>`;
+const watched=`<div class="screen" style="height:930px">${nav(2)}
+<div class="tabs" style="margin-top:8px"><span>Watching <em>8</em></span><span>My list <em>34</em></span><span class="on">Watched <em>212</em></span><span>Stats</span><div class="tools"><div class="seg"><span class="on">All</span><span>Movies</span><span>Shows</span></div><span class="chip"><i class="ph ph-sort-ascending"></i>Recent</span><span class="chip"><i class="ph ph-star"></i>Unrated 14</span></div></div>
+<div class="month"><h3>September 2026</h3><small class="tab">8 titles · 31 h</small></div><div class="mgrid">${sep.map(wcard).join("")}</div>
+<div class="month"><h3>August 2026</h3><small class="tab">11 titles · 44 h</small></div><div class="mgrid">${aug.map(wcard).join("")}</div>
+</div>`;
+
+const heat=Array.from({length:84},(_,i)=>{const h=i%12,d=Math.floor(i/12);let v=(h>=8?(h-7)/5:0)*(d>=4?1:.6);if(h==11)v=1;if(h<2)v=.05;v=Math.min(1,v+((i*37)%7)/30);return `<i style="background:oklch(${0.25+v*0.45} ${0.03+v*0.14} 25 / ${0.25+v*0.75})${h==11&&d==5?';box-shadow:0 0 12px oklch(0.7 0.17 25)':''}"></i>`}).join("");
+const stories=`<div class="screen" style="height:484px;background:oklch(0.11 0.005 60)"><div class="stories">
+<div class="story st1"><div class="bars"><i class="d"></i><i></i><i></i><i></i><i></i><i></i></div><span class="k">2026, so far</span><h4>You gave Krida 214 hours.</h4><span class="big tab">8.9</span><p>days of your life. Most of it on Sunday nights, most of that on One Piece.</p></div>
+<div class="story st2"><div class="bars"><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i></div><span class="k">Your clock</span><h4>Your 2 a.m. genre is horror.</h4><p>After midnight you press Play on horror 3× more than anything else. In daylight, never.</p><div class="heat">${heat}</div><div class="hl"><span>6 pm</span><span>9 pm</span><span>midnight</span><span>3 am</span></div></div>
+<div class="story st3"><div class="bars"><i class="d"></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i></div><span class="k">The pattern</span><h4>You quit thrillers at episode 3.</h4><p>Five shows. Same exit. Slow Horses is the only one that made it past.</p><div class="drop">${[90,70,22,18,16,15].map((h,i)=>`<div><i class="${i==2?'x':''}" style="height:${h}%"></i><small>E${i+1}</small></div>`).join("")}</div></div>
+<div class="story st4"><div class="bars"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i></i><i></i></div><span class="k">You and Ben</span><h4>You agree 73% of the time.</h4><p>Except Dhurandhar. You gave it a 10. Ben gave it a 4.</p><div class="venn"><div class="c a"></div><div class="c b"></div><b class="tab">23</b></div><p style="text-align:center;margin-top:6px;font-size:12px">titles you’ve both finished</p></div>
+<div class="story st5"><div class="bars"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i></i></div><span class="k">Your viewer type</span><h4>The Midnight Isekai Scholar</h4><div class="aura"><div class="minis">${["tt22248376","tt13293588","tt2560140","tt12343534"].map(id=>P(id,"")).join("")}</div><p>Reincarnated heroes, long arcs, lights off. You rate hard: 1.2 points below Ben on average.</p><div class="tags"><span>62% anime</span><span>Night owl</span><span>Harsh critic</span><span>Finisher</span></div></div></div>
+</div></div>`;
+
+const mon=["Apr","May","Jun","Jul","Aug","Sep"].map((m,i)=>{const a=[10,14,22,30,18,26][i],b=[12,8,10,6,14,9][i],c=[4,6,3,8,10,6][i];return `<div><i style="height:${c*2.2}px;background:oklch(0.6 0.012 60)"></i><i style="height:${b*2.2}px;background:oklch(0.65 0.1 250)"></i><i style="height:${a*2.2}px;background:var(--k-accent)"></i><small>${m}</small></div>`}).join("");
+const stats=`<div class="screen" style="height:820px">${nav(2)}
+<div class="tabs" style="margin-top:8px"><span>Watching <em>8</em></span><span>My list <em>34</em></span><span>Watched <em>212</em></span><span class="on">Stats</span><div class="tools"><div class="seg"><span>30 days</span><span class="on">2026</span><span>All time</span></div></div></div>
+<div class="dash">
+<div class="panel kpi" style="grid-column:span 3"><b class="tab">214 h</b><small>watched</small> <span class="d">· +38 h vs 2025</span></div>
+<div class="panel kpi" style="grid-column:span 3"><b class="tab">1,284</b><small>episodes · 31 movies</small></div>
+<div class="panel kpi" style="grid-column:span 3"><b class="tab">71%</b><small>of shows you start, you finish</small></div>
+<div class="panel kpi" style="grid-column:span 3"><b class="tab">7.4 <span style="font-size:16px;color:var(--k-faint);font-weight:500">vs 8.6</span></b><small>your average score vs Ben’s</small></div>
+<div class="panel" style="grid-column:span 5;grid-row:span 2"><h4>Things Krida noticed <small>updated nightly</small></h4>
+<div class="insight"><i class="ph ph-moon-stars"></i><p>Horror only happens after midnight. <span>14 of 15 horror starts were between 12 and 3 a.m.</span></p></div>
+<div class="insight"><i class="ph ph-door-open"></i><p>You leave thrillers at episode 3. <span>5 shows dropped there this year.</span></p></div>
+<div class="insight"><i class="ph ph-repeat"></i><p>The Office is your comfort show. <span>You came back to it 3 times, always after a 9+ week.</span></p></div>
+<div class="insight"><i class="ph ph-lightning"></i><p>Longest binge: 9 days of One Piece. <span>142 episodes, Aug 3 to Aug 11.</span></p></div>
+<div class="insight"><i class="ph ph-users-three"></i><p>Florence Pugh is in 3 things you rated 8+. <span>You’ve never searched her name.</span></p></div>
+</div>
+<div class="panel" style="grid-column:span 4"><h4>Hours by month <small>2026</small></h4><div class="months">${mon}</div><div class="legend"><span><i style="background:var(--k-accent)"></i>Anime</span><span><i style="background:oklch(0.65 0.1 250)"></i>Shows</span><span><i style="background:oklch(0.6 0.012 60)"></i>Movies</span></div></div>
+<div class="panel" style="grid-column:span 3"><h4>Top genres</h4>${[["Anime",62,1],["Action",41,.8],["Drama",33,.65],["Horror",18,.5],["Comedy",12,.4]].map(g=>`<div class="gbar"><label>${g[0]}</label><div class="tr"><i style="width:${g[1]}%;--o:${g[2]}"></i></div><b class="tab">${g[1]}%</b></div>`).join("")}</div>
+<div class="panel" style="grid-column:span 7"><h4>People you keep watching <small>by titles finished</small></h4><div class="ppl">${[["DV","Denis Villeneuve",4],["SS","Steven Spielberg",4],["RJ","Rian Johnson",3],["SR","S. S. Rajamouli",3],["SC","Steve Carell",3],["FP","Florence Pugh",3],["AA","Ari Aster",2]].map(p=>`<div><span class="pp">${p[0]}</span>${p[1]}<b class="tab" style="color:var(--k-faint);font-weight:400">${p[2]}</b></div>`).join("")}</div></div>
+</div></div>`;
+
+const sec=(cap,note,html)=>`<section class="mock"><p class="cap">${cap}</p><p class="note">${note}</p><div class="fit">${html}</div></section>`;
+document.getElementById("app").innerHTML=
+sec("1 · Home rows","Each row says why it exists. Top 10 posters match the other rows’ size. <i>For you and Ben</i> switches to wide cards with both avatars and a shared reason. <i>Because you loved</i> opens with the seed title. Subtitles show a score instead of a bare year.",home)+
+sec("2 · Search, before typing","One wide field with a / shortcut and recents as a quiet line of text. Genres become artwork tiles, languages show their own script, and decades shrink to one short row. A compact Trending list replaces the rails copied from Home.",searchIdle)+
+sec("3 · Search, results","A top result with Play, My list and Watch with Ben. Also matching sits next to it, then the person, then everything else in a grid. One filter with counts.",searchRes)+
+sec("4 · Library: Watching","Stats and the Wrapped entry sit up top. Underline tabs, with type filter and sort on the right. Watching switches to wide cards with progress and where you left off. A Simkl tag marks titles that came from Simkl.",library)+
+sec("5 · Library: Watched","Grouped by month like a diary, with hours per month. Your score sits in the corner and rewatches show a count. An Unrated filter shows what you haven’t scored yet.",watched)+
+sec("6 · Wrapped: the story","Full-screen cards you tap through, one fact per card. This is the novelty spend: Fraunces, color washes and small charts. It plays once per period, then lives under Stats.",stories)+
+sec("7 · Library: Stats","The same insights, kept up to date. Four numbers, a nightly “Things Krida noticed” list, hours by month, top genres, and the people you keep watching.",stats);
+function fit(){document.querySelectorAll(".fit").forEach(f=>{const s=f.firstElementChild;const z=f.clientWidth/1280;s.style.zoom=z;});}
+fit();addEventListener("resize",fit);
+</script>
+</body></html>

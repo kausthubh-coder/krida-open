@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>How Krida works, from Play to picture</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #faf9f7; --surface: #f0eee9; --raised: #e7e4de; --line: #d9d5ce;
+  --text: #1c1b19; --text-2: #46433e; --text-3: #66625b;
+  --key: #1c1b19; --good: #2f6b3a; --code-bg: #efece6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161514; --surface: #201f1d; --raised: #2a2826; --line: #3a3835;
+    --text: #ecebe7; --text-2: #c4c1bb; --text-3: #a29e97;
+    --key: #f4f3f0; --good: #8fcf98; --code-bg: #24221f;
+  }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color: var(--text); }
+body { margin: 0; font: 1.0625rem/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+main { max-width: 52rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+p, li, dd { max-width: 55ch; text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; }
+h1 { font-size: 2.05rem; font-weight: 650; margin: 0 0 0.75rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; font-weight: 650; margin: 3.5rem 0 0.75rem; }
+h3 { font-size: 1.2rem; font-weight: 650; margin: 2rem 0 0.5rem; }
+.lede { font-size: 1.2rem; color: var(--text-2); margin: 0 0 2rem; max-width: 56ch; }
+.step { color: var(--text-3); font-weight: 500; margin-right: 0.35em; font-variant-numeric: tabular-nums; }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.85rem; line-height: 1.5; background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+pre code { background: none; padding: 0; font-size: inherit; }
+a { color: inherit; text-underline-offset: 0.2em; }
+figure { margin: 1.5rem 0 2rem; }
+figcaption { color: var(--text-2); font-size: 0.95rem; margin-top: 0.6rem; max-width: 55ch; }
+figure img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #0f0e0d; }
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.shots figure { margin: 0; }
+svg { display: block; width: 100%; height: auto; }
+svg text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.chart { width: min(100vw - 2rem, 90rem); margin-inline: calc(50% - min(50vw - 1rem, 45rem)); overflow-x: auto; }
+.chart img { min-width: 1100px; background: none; border: 0; }
+.chart.chart-tall { width: auto; margin-inline: 0; }
+.chart.chart-tall img { min-width: 620px; }
+.chart figcaption { margin-inline: auto; }
+.diagram { overflow-x: auto; }
+.diagram svg { min-width: 640px; }
+dl.terms { display: grid; grid-template-columns: max-content 1fr; gap: 0.6rem 1.25rem; margin: 1rem 0; }
+dl.terms dt { font-weight: 650; }
+dl.terms dd { margin: 0; color: var(--text-2); }
+.loading { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 1.25rem 0 0.5rem; border-top: 2px solid var(--key); }
+.loading div { padding: 0.75rem 1rem 0 0; }
+.loading b { display: block; font-weight: 650; margin-bottom: 0.3rem; }
+.loading span { color: var(--text-2); font-size: 0.95rem; display: block; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.55rem 0.75rem 0.55rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 650; color: var(--text-2); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.wide { overflow-x: auto; }
+details { border-top: 1px solid var(--line); margin: 0; }
+details:last-of-type { border-bottom: 1px solid var(--line); }
+summary { cursor: pointer; padding-block: 0.75rem; min-height: 44px; font-weight: 600; }
+details > div { padding: 0 0 1rem; }
+.checks { margin: 1rem 0; }
+.mistake { margin: 1rem 0; padding: 1rem 1.25rem; background: var(--surface); border-radius: 8px; }
+.mistake p { margin: 0.4rem 0; }
+.note { color: var(--text-2); font-size: 0.95rem; }
+::selection { background: var(--raised); }
+:focus-visible { outline: 2px solid var(--key); outline-offset: 2px; }
+@media (max-width: 40rem) {
+  h1 { font-size: 1.7rem; }
+  .shots { grid-template-columns: 1fr; }
+  .loading { grid-template-columns: 1fr; border-top: 0; }
+  .loading div { border-top: 2px solid var(--key); padding: 0.6rem 0 0.9rem; }
+  dl.terms { grid-template-columns: 1fr; gap: 0.2rem; }
+  dl.terms dd { margin-bottom: 0.6rem; }
+}
+@media print {
+  :root { color-scheme: light; --bg: #fff; --surface: #f3f1ed; --raised: #e7e4de; --line: #d9d5ce; --text: #1c1b19; --text-2: #46433e; --text-3: #66625b; --key: #1c1b19; --code-bg: #f3f1ed; }
+  main { max-width: none; padding: 0; }
+  figure, table, pre, .mistake { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+  .diagram svg { min-width: 0; }
+  .chart { width: auto; margin-inline: 0; }
+  .chart img { min-width: 0; }
+}
+</style>
+</head>
+<body>
+<main data-type="teach">
+
+<h1>How Krida works, from Play to picture</h1>
+<p class="lede">The page you see runs in your browser. It asks Vercel for anything that's the same for everyone, asks Convex for anything that's yours, and gets the film itself straight from TorBox.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 760 420" role="img" aria-labelledby="map-t">
+  <title id="map-t">The browser talks to Vercel for public data and to Convex for private data and streams. Convex talks to the profile's stream addons, TorBox's API and Simkl. Video segments come from TorBox's CDN straight to the browser.</title>
+  <defs>
+    <marker id="map-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--text-3)"/></marker>
+    <marker id="map-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--key)"/></marker>
+  </defs>
+  <g font-size="14" fill="var(--text)">
+    <!-- Browser -->
+    <rect x="10" y="160" width="170" height="92" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="95" y="194" text-anchor="middle" font-weight="650" font-size="15">Your browser</text>
+    <text x="95" y="214" text-anchor="middle" fill="var(--text-2)" font-size="12.5">React page + hls.js</text>
+    <text x="95" y="232" text-anchor="middle" fill="var(--text-2)" font-size="12.5">copy of your tables</text>
+
+    <!-- Vercel -->
+    <rect x="290" y="20" width="200" height="80" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="390" y="52" text-anchor="middle" font-weight="650" font-size="15">Vercel /api</text>
+    <text x="390" y="72" text-anchor="middle" fill="var(--text-2)" font-size="12.5">same answer for everyone</text>
+    <text x="390" y="89" text-anchor="middle" fill="var(--text-2)" font-size="12.5">12 endpoints, CDN-cached</text>
+
+    <!-- Convex -->
+    <rect x="290" y="166" width="200" height="80" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="390" y="198" text-anchor="middle" font-weight="650" font-size="15">Convex</text>
+    <text x="390" y="218" text-anchor="middle" fill="var(--text-2)" font-size="12.5">profiles, rooms, your lists</text>
+    <text x="390" y="235" text-anchor="middle" fill="var(--text-2)" font-size="12.5">holds the TorBox key</text>
+
+    <!-- TorBox CDN -->
+    <rect x="290" y="320" width="200" height="72" rx="8" fill="var(--surface)" stroke="var(--key)" stroke-width="2"/>
+    <text x="390" y="351" text-anchor="middle" font-weight="650" font-size="15">TorBox CDN</text>
+    <text x="390" y="371" text-anchor="middle" fill="var(--text-2)" font-size="12.5">the video segments</text>
+
+    <!-- Outside services -->
+    <rect x="600" y="20" width="150" height="80" rx="8" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
+    <text x="675" y="48" text-anchor="middle" font-size="13">TMDB, MDBList,</text>
+    <text x="675" y="66" text-anchor="middle" font-size="13">Cinemeta, IMDb,</text>
+    <text x="675" y="84" text-anchor="middle" font-size="13">Addon catalogs</text>
+    <rect x="600" y="140" width="150" height="56" rx="8" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
+    <text x="675" y="164" text-anchor="middle" font-size="13">Stream addons</text>
+    <text x="675" y="182" text-anchor="middle" font-size="13">+ TorBox API</text>
+    <rect x="600" y="216" width="150" height="40" rx="8" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/>
+    <text x="675" y="241" text-anchor="middle" font-size="13">Simkl</text>
+
+    <!-- Arrows -->
+    <path d="M180,180 C230,150 240,80 288,64" fill="none" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#map-a)"/>
+    <text x="60" y="116" font-size="12" fill="var(--text-2)">search, rows,</text>
+    <text x="60" y="131" font-size="12" fill="var(--text-2)">ratings, artwork</text>
+    <line x1="180" y1="206" x2="287" y2="206" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#map-a)"/>
+    <line x1="289" y1="222" x2="182" y2="222" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#map-a)"/>
+    <text x="234" y="198" text-anchor="middle" font-size="12" fill="var(--text-2)">writes</text>
+    <text x="234" y="238" text-anchor="middle" font-size="12" fill="var(--text-2)">live updates</text>
+    <path d="M288,354 C230,350 170,320 150,256" fill="none" stroke="var(--key)" stroke-width="2.5" marker-end="url(#map-k)"/>
+    <text x="146" y="306" text-anchor="end" font-size="12.5" fill="var(--text)" font-weight="600">video bytes</text>
+    <text x="146" y="322" text-anchor="end" font-size="12" fill="var(--text-2)">(no key needed)</text>
+    <line x1="490" y1="60" x2="597" y2="60" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#map-a)"/>
+    <line x1="490" y1="190" x2="597" y2="170" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#map-a)"/>
+    <text x="542" y="166" text-anchor="middle" font-size="12" fill="var(--text-2)">find, add</text>
+    <line x1="490" y1="226" x2="597" y2="236" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#map-a)"/>
+    <text x="542" y="252" text-anchor="middle" font-size="12" fill="var(--text-2)">history</text>
+  </g>
+</svg>
+<figcaption>The thick line is the one that carries the film. It never passes through Krida's own servers, so they never pay for video bandwidth and never hand the TorBox key to a browser.</figcaption>
+</figure>
+
+<p>This guide follows one evening: sign in, browse, press Play, then watch with a friend. Each step names the files that do the work.</p>
+<p>Screenshots come from the QA app run from this repo on <time datetime="2026-11-02">2 Nov 2026</time>, with real catalog data and a stand-in test video.</p>
+
+<h2>Five words the rest depends on</h2>
+<dl class="terms">
+  <dt>Profile</dt><dd>One person's account: a name, a password and their own tables (history, Plan to watch, ratings, plays). There are two, plus temporary guest profiles.</dd>
+  <dt>Title</dt><dd>A movie, show or anime, named by its IMDb id (<code>tt…</code>). An anime also has a Kitsu id; <code>convex/lib/titleIds.ts</code> treats both as one title.</dd>
+  <dt>Source</dt><dd>One file of a title that one of the profile's stream addons found, such as a 1080p WEB-DL of 2.1&nbsp;GB. Krida keeps up to 150 per title.</dd>
+  <dt>Stream</dt><dd>A source that TorBox has turned into an HLS playlist the browser can play. Convex keeps it in the <code>streams</code> table.</dd>
+  <dt>Room</dt><dd>Where playback happens. Every Play makes one, alone or in a party. It holds the title, the stream and one shared clock.</dd>
+</dl>
+
+<h2>First, a guess</h2>
+<p>You press Play on a film. Which computer sends the film's bytes to your browser: Vercel, Convex or TorBox?</p>
+<details class="checks"><summary>Answer: TorBox's CDN, and why</summary><div>
+<p>Convex hands your browser a playlist, a short text file listing the video's segments. Each line points at TorBox's CDN, which needs no account key, so the browser downloads the segments directly. Vercel never sees the film. If you guessed Convex, step 6 shows the one small file it does pass along.</p>
+</div></details>
+
+<h2><span class="step">1</span>Sign-in gives you a token</h2>
+<p>The profile gate lists both profiles. Picking one and typing its password calls <code>profiles.signIn</code>.</p>
+<figure>
+<a href="how-krida-works/gate.jpg"><img src="how-krida-works/gate.jpg" width="1200" height="750" alt="The Krida profile gate asking who's watching, with two QA profiles"></a>
+<figcaption>The gate. Each profile has its own password; a guest joins with a link instead.</figcaption>
+</figure>
+<ul>
+  <li>Convex hashes the password with PBKDF2 (SHA-256, 100,000 rounds, a salt per profile) and compares it in constant time.</li>
+  <li>Five wrong tries lock the profile for 5 minutes.</li>
+  <li>On success it makes a random 32-byte token, stores only its SHA-256 hash in <code>sessions</code>, and returns the token.</li>
+  <li>The browser keeps the token in <code>localStorage</code> and sends it with every query and mutation. <code>requireProfile</code> in <code>convex/lib/auth.ts</code> turns it back into a profile.</li>
+</ul>
+
+<h2><span class="step">2</span>Home comes from two places</h2>
+<p>Rows that are the same for everyone come from Vercel. Rows that depend on you are worked out from your own data.</p>
+<figure>
+<a href="how-krida-works/home.jpg"><img src="how-krida-works/home.jpg" width="1200" height="750" alt="Krida Home with a Continue watching banner for Yellowstone and the dock at the bottom"></a>
+<figcaption>Home for a QA profile. The banner is Continue watching, built from its own plays. It has no picks yet, so Home offers "Make Krida yours".</figcaption>
+</figure>
+<div class="wide"><table>
+<caption class="note" style="text-align:left;caption-side:bottom;padding-top:0.5rem">Where each kind of Home row comes from.</caption>
+<thead><tr><th scope="col">Row</th><th scope="col">Built by</th><th scope="col">Refreshed</th></tr></thead>
+<tbody>
+<tr><td>Trending, catalogs, genres</td><td><code>/api/rows</code> on Vercel (<code>server/catalogs.ts</code>)</td><td>At most every 6&nbsp;h per row</td></tr>
+<tr><td>Continue watching, Plan to watch, Simkl rows</td><td>The browser, from your synced tables (<code>src/data/rows.ts</code>)</td><td>As soon as a row changes</td></tr>
+<tr><td>Top picks, Because you watched, genre rows, For you and a friend</td><td>Browser builds your taste, <code>POST /api/recs</code> scores it, <code>recs.save</code> keeps it</td><td>A minute after your taste changes, or when picks are 6&nbsp;h old</td></tr>
+<tr><td>What a friend has been watching</td><td>Convex, <code>convex/catalogs.ts</code></td><td>Live; hidden by Private mode</td></tr>
+</tbody></table></div>
+<p class="note">How picks are scored is in <code>docs/recommendations.md</code>.</p>
+
+<h2><span class="step">3</span>The browser keeps your lists</h2>
+<p>Each browser keeps a copy of your seven own tables in IndexedDB, so the Library, poster badges and Home rows read nothing from the database.</p>
+<figure class="diagram">
+<svg viewBox="0 0 760 170" role="img" aria-labelledby="sync-t">
+  <title id="sync-t">A mutation writes a row; a trigger notes it in the changes table; the browser pulls only changes since its cursor and saves them to IndexedDB.</title>
+  <defs><marker id="sync-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--text-3)"/></marker></defs>
+  <g font-size="13.5" fill="var(--text)">
+    <rect x="10" y="40" width="150" height="70" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="85" y="70" text-anchor="middle" font-weight="650">You rate a film 8</text>
+    <text x="85" y="90" text-anchor="middle" font-size="12" fill="var(--text-2)">a mutation</text>
+    <rect x="205" y="40" width="160" height="70" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="285" y="70" text-anchor="middle" font-weight="650">feedback row</text>
+    <text x="285" y="90" text-anchor="middle" font-size="12" fill="var(--text-2)">written in Convex</text>
+    <rect x="410" y="40" width="160" height="70" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+    <text x="490" y="70" text-anchor="middle" font-weight="650">changes row</text>
+    <text x="490" y="90" text-anchor="middle" font-size="12" fill="var(--text-2)">noted by a trigger</text>
+    <rect x="615" y="40" width="135" height="70" rx="8" fill="var(--surface)" stroke="var(--key)" stroke-width="2"/>
+    <text x="682" y="70" text-anchor="middle" font-weight="650">every browser</text>
+    <text x="682" y="90" text-anchor="middle" font-size="12" fill="var(--text-2)">pulls 1 row</text>
+    <line x1="160" y1="75" x2="202" y2="75" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#sync-a)"/>
+    <line x1="365" y1="75" x2="407" y2="75" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#sync-a)"/>
+    <line x1="570" y1="75" x2="612" y2="75" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#sync-a)"/>
+    <text x="490" y="140" text-anchor="middle" font-size="12" fill="var(--text-2)">sync.pull: "what changed since my cursor?"</text>
+  </g>
+</svg>
+<figcaption>A rating costs every device one row, not a re-read of the whole library.</figcaption>
+</figure>
+<ul>
+  <li>Every mutation is built from <code>convex/functions.ts</code>. Its trigger writes one row per changed document into <code>changes</code>; a lint rule stops anyone bypassing it.</li>
+  <li><code>sync.pull</code> returns rows changed since the browser's cursor; <code>src/data/sync.tsx</code> merges them into the copy.</li>
+  <li>Your own change shows at once as an optimistic patch, until the server's row arrives.</li>
+  <li>Changes are kept 30 days. A copy older than that downloads everything again (<code>sync.snapshot</code>).</li>
+</ul>
+
+<h2><span class="step">4</span>Title data never touches Convex</h2>
+<p>A title's plot, cast, episodes and IMDb score come from Cinemeta, which the browser asks directly. Search, artwork and the other scores come from Vercel functions, and Vercel's CDN caches their answers.</p>
+<p>Endpoints that spend a paid allowance (title ratings from MDBList, More like this, picks, timeline frames) first check your Krida session against Convex (<code>server/session.ts</code>). Everything else is public.</p>
+<div class="shots">
+<figure>
+<a href="how-krida-works/search-results.jpg"><img src="how-krida-works/search-results.jpg" width="1200" height="750" alt="Search results for Animals, with a top result and four more matches"></a>
+<figcaption>Search for "Animals": <code>/api/search</code> asks TMDB. "Plan to watch" on Nocturnal Animals comes from your own synced copy.</figcaption>
+</figure>
+<figure>
+<a href="how-krida-works/title-movie.jpg"><img src="how-krida-works/title-movie.jpg" width="1200" height="750" alt="The title page for Lights Out with Play, Trailer, Watched and a 6 out of 10 rating"></a>
+<figcaption>A title page. Watched and 6/10 are your own rows; IMDb 6.3 is Cinemeta's. MDBList's scores are missing because the live <code>/api/title</code> refuses a QA session.</figcaption>
+</figure>
+</div>
+<p>Opening a title page also asks Convex to fetch its source list in the background (<code>sources.warm</code>). Resting the pointer on Play for 300&nbsp;ms goes further and prepares the whole stream (<code>rooms.warm</code>), so the click usually starts at once.</p>
+
+<h2><span class="step">5</span>Play builds the stream</h2>
+<p>Play calls <code>rooms.create</code>, which makes a room and schedules <code>engine.prepare</code>. The player opens at <code>/watch/&lt;room&gt;</code> and shows each step as the backend reaches it.</p>
+<div class="loading" role="list">
+  <div role="listitem"><b>Finding sources…</b><span>Convex asks the profile's enabled stream addons for this title's files at once (only those whose types and id prefixes fit; in a party, the host's), merges them (cached 20&nbsp;min per account and set of addons) and ranks them for your languages and screen. If none answers, it asks once more after 2&nbsp;s, then uses the last list it has.</span></div>
+  <div role="listitem"><b>Adding to TorBox…</b><span>It follows the best source's redirects until it knows TorBox's torrent and file id. A copy gets 15&nbsp;s before the next one is tried, up to 4.</span></div>
+  <div role="listitem"><b>Starting stream…</b><span>TorBox <code>createstream</code> returns a playlist token. Convex saves a <code>streams</code> row and marks the room ready.</span></div>
+</div>
+<p class="note">These are the exact messages from <code>convex/engine.ts</code>; a copy that fails adds "That copy didn't work. Trying another."</p>
+<p>An account on another debrid service (Real-Debrid, AllDebrid, Premiumize…) skips TorBox: after finding sources, "Asking your debrid service…" follows the addon's link to the file itself (<code>resolveDirect</code>), and the stream is that link. Krida for Mac and Windows plays it in mpv; a browser plays it straight from the link when it's MP4 or WebM it has codecs for (and picks those copies first), and otherwise the room offers the desktop app, the players this device opens links in, the link itself and a playlist (<code>playsIn.ts</code>, <code>elsewhere.tsx</code>). Parties stay on TorBox.</p>
+<div class="shots">
+<figure>
+<a href="how-krida-works/player.jpg"><img src="how-krida-works/player.jpg" width="1200" height="750" alt="The Krida player paused at 0:30 on a color-bar test video, with two control capsules"></a>
+<figcaption>The player, paused at 0:30 on the stand-in test video.</figcaption>
+</figure>
+<figure>
+<a href="how-krida-works/player-sources.jpg"><img src="how-krida-works/player-sources.jpg" width="1200" height="750" alt="The Choose a source sheet: Krida's pick 1080p WEB-DL playing, plus 4K and 720p"></a>
+<figcaption>Change source: the same ranking the backend used, with Krida's pick first.</figcaption>
+</figure>
+</div>
+<p>A stream is reused: the same title for the same languages and screen starts at once for 3&nbsp;h, and after that one TorBox call restarts it. A daily cron sweeps streams nobody started for 30 days.</p>
+<p>If you pick a source, later episodes of that show try the same kind of copy first (<code>room.binge</code>). If every copy fails, the error says what happened to each and can offer "Play in 720p".</p>
+
+<h2><span class="step">6</span>The video skips Krida's servers</h2>
+<p>The browser's hls.js asks Convex for the playlist. Convex fetches it from TorBox with the account key, rewrites it, and hands back a version with no key in it.</p>
+<figure class="diagram">
+<svg viewBox="0 0 760 300" role="img" aria-labelledby="hls-t">
+  <title id="hls-t">The browser asks Convex for the playlist with its session token; Convex asks TorBox with the account key; Convex returns a rewritten playlist; the browser then loads every segment directly from TorBox's CDN.</title>
+  <defs>
+    <marker id="hls-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--text-3)"/></marker>
+    <marker id="hls-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--key)"/></marker>
+  </defs>
+  <g font-size="13.5" fill="var(--text)">
+    <text x="90" y="24" text-anchor="middle" font-weight="650">Browser</text>
+    <text x="380" y="24" text-anchor="middle" font-weight="650">Convex /hls/playlist.m3u8</text>
+    <text x="670" y="24" text-anchor="middle" font-weight="650">TorBox</text>
+    <line x1="90" y1="36" x2="90" y2="290" stroke="var(--line)" stroke-width="2"/>
+    <line x1="380" y1="36" x2="380" y2="200" stroke="var(--line)" stroke-width="2"/>
+    <text x="380" y="222" text-anchor="middle" font-size="12" fill="var(--text-2)">not involved below</text>
+    <line x1="670" y1="36" x2="670" y2="290" stroke="var(--line)" stroke-width="2"/>
+
+    <line x1="92" y1="62" x2="376" y2="62" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#hls-a)"/>
+    <text x="235" y="55" text-anchor="middle" font-size="12.5">?s=stream &amp;t=your session</text>
+    <line x1="382" y1="102" x2="666" y2="102" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#hls-a)"/>
+    <text x="525" y="95" text-anchor="middle" font-size="12.5">playlist.m3u8 ?token=TorBox key</text>
+    <line x1="668" y1="136" x2="384" y2="136" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#hls-a)"/>
+    <text x="525" y="129" text-anchor="middle" font-size="12.5">segment list</text>
+    <text x="388" y="162" font-size="12" fill="var(--text-2)">makes paths absolute, strips token=</text>
+    <line x1="378" y1="186" x2="94" y2="186" stroke="var(--text-3)" stroke-width="1.5" marker-end="url(#hls-a)"/>
+    <text x="235" y="179" text-anchor="middle" font-size="12.5">clean playlist (cached 30 s)</text>
+
+    <line x1="668" y1="248" x2="94" y2="248" stroke="var(--key)" stroke-width="2.5" marker-end="url(#hls-k)"/>
+    <line x1="668" y1="274" x2="94" y2="274" stroke="var(--key)" stroke-width="2.5" marker-end="url(#hls-k)"/>
+    <text x="236" y="240" text-anchor="middle" font-size="12.5" font-weight="600">segment 1, 2, 3 … from TorBox's CDN</text>
+  </g>
+</svg>
+<figcaption>Only a text file passes through Convex. The segments, which are the film, go from TorBox to the browser.</figcaption>
+</figure>
+<p>If TorBox's playlist session has expired, the HTTP action calls <code>createstream</code> again for the same file, saves the new token and retries once (<code>convex/http.ts</code>).</p>
+
+<h2>One chart covers every room</h2>
+<p>Every Play, retry, source pick and next episode starts one job, so a room can only be in these 9 states. TLC, a model checker, walked all 180 states of a model of this code and checked three rules in each.</p>
+<figure class="chart">
+<a href="how-krida-works/chart-room.svg"><img src="how-krida-works/chart-room.svg" width="1897" height="907" alt="State chart of a room: Picking, then Finding sources, Adding to TorBox and Starting stream, then Watching. Any preparing step can fail to This stream couldn't start, or the job can die and leave Spinning, nothing behind it. Watching can stop loading, and everyone leaving closes the room."></a>
+<figcaption>The red state breaks a rule, and the blue outlines are the shortest way there. On a phone, scroll it sideways or open it full size.</figcaption>
+</figure>
+<div class="wide"><table>
+<thead><tr><th scope="col">Rule</th><th scope="col">Result</th><th scope="col">How we know</th></tr></thead>
+<tbody>
+<tr><td>What the room shows comes from its newest job</td><td>Holds</td><td>TLC. With the <code>jobId</code> check taken out of the model, it breaks in 3 steps. On the real functions, an old job's <code>setReady</code> and <code>setError</code> change nothing.</td></tr>
+<tr><td>The picture is the title the room is on</td><td>Holds</td><td>TLC, and it breaks the same way with the check taken out.</td></tr>
+<tr><td>A spinner has a job behind it</td><td><b>Breaks</b></td><td>Press Play, then the job dies. On the real functions, the room still said "Finding sources…" after 40 minutes of heartbeats and sweeps.</td></tr>
+</tbody></table></div>
+<p>A job can die with no write, because <code>prepare</code> only reports errors it catches. Nothing restarts it and an open tab keeps the room alive, but "Pick a source myself" stays on screen.</p>
+<p class="note">We haven't seen this in production, and a dead job sends no event for PostHog to count. The likeliest cause is a last copy that hangs, because it has no time limit and Convex ends an action at 10 minutes (from Convex's docs, not tested).</p>
+
+<h3>A warm-up and Play share one build</h3>
+<p>Resting on Play starts a build, and pressing Play waits for it instead of adding the file to TorBox twice. A row in <code>streamBuilds</code> says who is building, and it counts for 3 minutes.</p>
+<figure class="chart chart-tall">
+<a href="how-krida-works/chart-build.svg"><img src="how-krida-works/chart-build.svg" width="950" height="1206" alt="State chart of a warm-up and a press of Play. Play finds a prepared stream, waits on a running build, or builds. After 3 minutes Play takes over the claim, which leads to Two builds of one title."></a>
+<figcaption>Two builds only happen past the 3 minutes, when the first is still running.</figcaption>
+</figure>
+<div class="wide"><table>
+<thead><tr><th scope="col">Rule</th><th scope="col">Result</th><th scope="col">How we know</th></tr></thead>
+<tbody>
+<tr><td>TorBox gets one build of Krida's pick at a time</td><td><b>Breaks</b></td><td>Rest on Play, the warm-up starts, 3 minutes pass, press Play, Play takes over. <code>claimBuild</code> and <code>releaseBuild</code> did exactly this when replayed.</td></tr>
+<tr><td>Play never waits forever</td><td>Holds</td><td>TLC, including a warm-up that dies: its claim runs out at 3 minutes.</td></tr>
+</tbody></table></div>
+<p>This one costs a second add to TorBox. Production ran 53 Play jobs from 30 Oct to 2 Nov, the slowest took 11&nbsp;s, and none passed 3 minutes; warm-ups themselves are not timed.</p>
+
+<h2><span class="step">7</span>A party shares one clock</h2>
+<p>A room stores one anchor: "at server time T, playback was at P seconds, playing or paused". Every player works out where it should be from that, so nobody streams their position to anyone.</p>
+<div class="shots">
+<figure>
+<a href="how-krida-works/party-invite.jpg"><img src="how-krida-works/party-invite.jpg" width="1200" height="750" alt="An invite toast from Regress-QA-one with Join and Not now"></a>
+<figcaption>The friend gets an invite toast that stays until answered.</figcaption>
+</figure>
+<figure>
+<a href="how-krida-works/party-host.jpg"><img src="how-krida-works/party-host.jpg" width="1200" height="750" alt="The Party panel saying both profiles are here, beside Home"></a>
+<figcaption>Both are in. Suggestions ("On the table") and the queue are stored on the room; chat and reactions are rows in <code>messages</code>.</figcaption>
+</figure>
+</div>
+<p>Pressing pause or seeking calls <code>rooms.control</code>, which writes a new anchor and adds one to <code>seq</code>.</p>
+<p>Each player first measures its clock offset to the server (four round trips, keeps the fastest). Then, once a second, <code>useRoomSync</code> in <code>src/features/player/playbackSync.ts</code> compares its video with the anchor.</p>
+<div class="wide"><table>
+<caption class="note" style="text-align:left;caption-side:bottom;padding-top:0.5rem">Anchor: 600&nbsp;s, playing, stamped at 20:00:00. Checked at 20:00:30, so everyone should be at 630&nbsp;s.</caption>
+<thead><tr><th scope="col">Player</th><th scope="col" class="num">Video at</th><th scope="col" class="num">Off by</th><th scope="col">What it does</th></tr></thead>
+<tbody>
+<tr><td>Your laptop</td><td class="num">630.2&nbsp;s</td><td class="num">+0.2&nbsp;s</td><td>Nothing: under 0.35&nbsp;s is in step</td></tr>
+<tr><td>Friend's phone</td><td class="num">629.0&nbsp;s</td><td class="num">−1.0&nbsp;s</td><td>Plays at 1.05× until it catches up</td></tr>
+<tr><td>Friend's laptop</td><td class="num">630.9&nbsp;s</td><td class="num">+0.9&nbsp;s</td><td>Plays at 0.95× until it is back in step</td></tr>
+<tr><td>Someone who just rejoined</td><td class="num">624.0&nbsp;s</td><td class="num">−6.0&nbsp;s</td><td>Jumps to 630&nbsp;s: over 2.5&nbsp;s is too far to nudge</td></tr>
+</tbody></table></div>
+
+<p class="note">Invites, countdowns, holding for buffering and leaving have their own guide: <a href="party/party-guide.html">docs/party/party-guide.html</a>.</p>
+
+<h2>The usual wrong idea</h2>
+<div class="mistake">
+<p><b>"Watching alone skips the room machinery."</b> It doesn't.</p>
+<p>Every Play outside a party calls <code>rooms.create</code> and makes a room of kind <code>solo</code>, with the same anchor, stream and clock as a party. That is why a friend can join you mid-film from Home and land at the right second.</p>
+<p>Alone at 1.5×, the player re-anchors the room every 10&nbsp;s instead of correcting drift, so a reload resumes where you were.</p>
+</div>
+
+<h2><span class="step">8</span>Simkl and the other apps</h2>
+<p>Simkl syncs in both directions. Pulls run when someone opens Krida or comes back to the tab, at most every 10&nbsp;minutes, never on a timer.</p>
+<p>Writes go through one outbox (<code>convex/lib/simklOutbox.ts</code>) that waits 45&nbsp;s and batches. Details: <code>docs/simkl.md</code>.</p>
+<div class="wide"><table>
+<thead><tr><th scope="col">App</th><th scope="col">What it is</th><th scope="col">What differs</th></tr></thead>
+<tbody>
+<tr><td>Web</td><td>The site at krida-open.vercel.app</td><td>Plays TorBox's HLS re-encode in a <code>&lt;video&gt;</code></td></tr>
+<tr><td>Windows and Mac</td><td>Tauri window around the live site (<code>desktop/</code>)</td><td>mpv plays the original file under the page: HEVC 10-bit, Dolby Vision, TrueHD</td></tr>
+<tr><td>Android</td><td>WebView of the live site (<code>android/</code>)</td><td>A bridge adds real brightness, volume, haptics and picture in picture</td></tr>
+<tr><td>Timeline previews</td><td>Cloudflare Worker (<code>workers/frames/</code>)</td><td>Reads keyframes out of TorBox, so Vercel's 10&nbsp;GB a month isn't spent on them</td></tr>
+</tbody></table></div>
+<p>All of them load the same site, so a deploy reaches every app without a new build, and parties mix them freely on one clock.</p>
+<p>Production reports to PostHog from the browser, <code>/api</code> and Convex: errors, replays and timings such as <code>play_build</code>. Details: <code>docs/ops.md</code>.</p>
+
+<h2>Where new code goes</h2>
+<div class="wide"><table>
+<thead><tr><th scope="col">If the thing is…</th><th scope="col">Put it in</th><th scope="col">Because</th></tr></thead>
+<tbody>
+<tr><td>The same for everyone (catalog, ratings, artwork)</td><td><code>api/</code> + <code>server/</code></td><td>The CDN caches it and it never reads the database</td></tr>
+<tr><td>Yours, or has to sync live (lists, rooms, chat)</td><td><code>convex/</code></td><td>Queries update every open tab by themselves</td></tr>
+<tr><td>Needs a secret (TorBox, Simkl)</td><td><code>convex/</code> or <code>server/</code></td><td>Only <code>VITE_</code> variables reach the browser</td></tr>
+<tr><td>Plain logic both sides use</td><td><code>shared/</code></td><td>No React, imports name their <code>.js</code> file</td></tr>
+<tr><td>Something a person does on screen</td><td><code>src/features/&lt;name&gt;/</code></td><td>Other features import it only through its <code>index.ts</code></td></tr>
+</tbody></table></div>
+
+<h2>Check yourself</h2>
+<details><summary>Ben rates a film on his phone. How does his laptop's Library learn it?</summary><div>
+<p>The rating mutation's trigger notes one row in <code>changes</code>. The laptop is subscribed to <code>sync.pull</code>, so Convex re-runs it and sends that single changed row. The laptop merges it into its IndexedDB copy, and the Library redraws from the copy.</p>
+</div></details>
+<details><summary>You rest on Play for half a second, then click. Why does it start faster, and why doesn't TorBox get the file twice?</summary><div>
+<p>After 300&nbsp;ms, <code>rooms.warm</code> starts building the stream. When the click's <code>prepare</code> runs, <code>engine.claimBuild</code> sees a build under way for the same title and viewer and waits for it, showing its step, instead of starting a second build.</p>
+</div></details>
+<details><summary>The job dies during "Adding to TorBox". What does the room do, and how do you get out?</summary><div>
+<p>The room keeps saying "Adding to TorBox" with nothing working on it, and your heartbeats keep it open. "Pick a source myself" starts a new job, and so does going back.</p>
+</div></details>
+<details><summary>In a party your video is 1.8&nbsp;s behind. What happens?</summary><div>
+<p>1.8&nbsp;s is over 0.35&nbsp;s and under 2.5&nbsp;s, so the player plays at 1.05× until it is within 0.35&nbsp;s, then goes back to 1×. No jump.</p>
+</div></details>
+<details><summary>Someone copies a playlist URL out of DevTools and posts it. What did they leak?</summary><div>
+<p>Your Krida session, not the TorBox account. The URL's <code>t=</code> is your session token, so it works for anyone until that session signs out. The TorBox key is never in it: Convex adds the key only to its own request to TorBox and strips <code>token=</code> from every line it returns. Segment links carry TorBox's per-stream presigned token instead.</p>
+</div></details>
+
+<h2>More detail</h2>
+<details><summary>The stream pipeline, function by function</summary><div>
+<ol>
+  <li><code>usePlay</code> (<code>src/features/play/play.ts</code>) calls <code>rooms.create</code> with the title, a start time and your screen type.</li>
+  <li><code>rooms.create</code> checks the token, makes a <code>solo</code> room, adds you as a member and calls <code>startJob</code>, which bumps <code>jobId</code> and schedules <code>engine.prepare</code>.</li>
+  <li><code>prepare</code> loads the room, reads your audio and subtitle languages, and calls <code>sharedStream</code>: reuse a stream under 3&nbsp;h old, wait on a build in progress, restart one from the last 30 days, or build a new one.</li>
+  <li><code>buildStream</code>: <code>loadSources</code> (the stream addons, cached as a file in Convex storage for 20&nbsp;min), <code>rankSources</code>, then for up to 4 candidates (other copies of the same file, then files of the same quality, skipping links known to be gone) <code>resolveToTorbox</code> and <code>createStream</code>. IntroDB's intro, recap and credit times are fetched alongside.</li>
+  <li><code>setReady</code> puts the stream on the room. The player subscribes to <code>rooms.get</code>, sees it, and points hls.js at <code>&lt;convex-site&gt;/hls/playlist.m3u8?s=…&amp;a=…&amp;t=…</code>.</li>
+  <li>If someone presses Play on something else meanwhile, <code>jobId</code> moves on, and the old <code>prepare</code> stops at its next step (<code>Superseded</code>).</li>
+</ol>
+</div></details>
+<details><summary>Scheduled jobs (6 crons in <code>convex/crons.ts</code>)</summary><div>
+<div class="wide"><table>
+<thead><tr><th scope="col">Job</th><th scope="col">When</th></tr></thead>
+<tbody>
+<tr><td>Sweep parties nobody is in</td><td>Every 15&nbsp;min</td></tr>
+<tr><td>Compute Stats and Wrapped</td><td>Daily, 09:00 UTC</td></tr>
+<tr><td>Drop source lists older than 2 days</td><td>Daily, 10:00 UTC</td></tr>
+<tr><td>Drop streams nobody started in 30 days</td><td>Daily, 10:05 UTC</td></tr>
+<tr><td>Forget sync changes older than 30 days</td><td>Daily, 10:10 UTC</td></tr>
+<tr><td>Forget old failure logs</td><td>Daily, 10:15 UTC</td></tr>
+</tbody></table></div>
+<p>None of them calls Simkl; <code>tests/apiSnapshot.test.ts</code> fails if one does.</p>
+</div></details>
+<details><summary>How this guide was checked, and what wasn't</summary><div>
+<ul>
+  <li>Every number and function name was read from the code at commit <code>89e2fb2</code> (main, 2 Nov 2026).</li>
+  <li>Screenshots: the regress walk (<code>scripts/regress/walk.ts</code>) driven against <code>npm run qa -- up</code>, a throwaway local backend with seeded QA profiles. Catalog data and artwork came from the live site's public <code>/api</code>.</li>
+  <li>The player and party screenshots play a one-minute stand-in video from <code>scripts/regress/providers.ts</code>, not a real TorBox stream. Real playback, Simkl sync, and the Windows, Mac and Android apps were not run for this guide.</li>
+  <li>The party table is worked from the thresholds in <code>playbackSync.ts</code> (0.35&nbsp;s, 2.5&nbsp;s, 0.95× and 1.05×), not measured in a live party.</li>
+  <li>The two bug paths and the old-job check were replayed with convex-test on the real functions. The job's death was stood in for by a <code>prepare</code> that never runs; a real crash or 10-minute limit was not triggered.</li>
+  <li>The job count is a read of PostHog's <code>play_build</code> events on 2 Nov. They started on 30 Oct and don't cover warm-ups.</li>
+</ul>
+</div></details>
+<details><summary>What the charts leave out, and how to redraw them</summary><div>
+<p>Leaving out time, invites and switch requests, the notes shown while copies are tried, restarting a stream after 3&nbsp;h, and more than one older job running at once. The room chart draws "something else goes on", going back and leaving only from the states where you would decide them; they are open from every preparing step too.</p>
+<p>The models and rules are in <a href="how-krida-works/statechart/">how-krida-works/statechart/</a>. From that folder, with a new folder for <code>--out</code>:</p>
+<pre><code>~/.claude/skills/statechart/scripts/statechart KridaRoom.tla --config KridaRoom.cfg --view room.view.mjs --out /tmp/room
+~/.claude/skills/statechart/scripts/statechart KridaBuild.tla --config KridaBuild.cfg --view build.view.mjs --out /tmp/build</code></pre>
+</div></details>
+<details><summary>Deeper docs in this repo</summary><div>
+<ul>
+  <li><code>docs/architecture.md</code>: the full file map and API limits.</li>
+  <li><a href="party/party-guide.html">docs/party/party-guide.html</a>: how a party works, step by step.</li>
+  <li><code>docs/product-feel.md</code>: who Krida is for and how it should feel.</li>
+  <li><code>docs/database-reads.md</code>: Convex bandwidth rules, before adding a query.</li>
+  <li><code>docs/recommendations.md</code>, <code>docs/simkl.md</code>, <code>docs/desktop.md</code>, <code>docs/ops.md</code>.</li>
+</ul>
+</div></details>
+
+</main>
+<script>
+addEventListener("beforeprint", () => document.querySelectorAll("details").forEach((d) => { d.dataset.wasOpen = d.open; d.open = true; }));
+addEventListener("afterprint", () => document.querySelectorAll("details").forEach((d) => (d.open = d.dataset.wasOpen === "true")));
+</script>
+</body>
+</html>

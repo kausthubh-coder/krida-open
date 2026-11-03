@@ -1,0 +1,108 @@
+// Subtitles: the options for this file, the one picked (or the title's last choice, or the profile's language), its
+// cues, and the line on screen.
+// Two kinds: the file's own tracks, which mpv draws in Krida for Windows, and subtitle addons' (OpenSubtitles and the
+// profile's own), which Krida draws itself.
+import { useEffect, useMemo, useState } from "react";
+import type { Me } from "../../data/session";
+import { useAddons } from "../../data/addons";
+import type { RoomData } from "../party";
+import type { MpvVideo } from "./desktop";
+import { choiceFor, recallSubtitles, rememberSubtitles, startingSubtitles } from "./subtitleMemory";
+import { bestSubtitles, cuesAt, loadCues, nextCueChange, useSubtitleOptions, type Cue, type FileSubtitle } from "./subtitles";
+
+export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me: Me, mpv: MpvVideo | null) {
+  const m = room.media!;
+  const stream = room.stream!;
+  // Subtitles are indexed by IMDb; anime episodes look them up through their IMDb mapping.
+  const subtitleId = m.ref
+    ? m.ref.season !== undefined && m.ref.episode !== undefined
+      ? `${m.ref.imdbId}:${m.ref.season}:${m.ref.episode}`
+      : m.ref.imdbId
+    : m.videoId;
+  // The viewer's own subtitle addons too (in a party, each person's): by IMDb first, then by the title's own id.
+  const addons = useAddons();
+  const subtitleAddons = useMemo(() => (addons ?? []).map((a) => ({ base: a.url, manifest: a.manifest, enabled: a.enabled })), [addons]);
+  const subs = useSubtitleOptions(m.type, [...new Set([subtitleId, m.videoId])], stream.osHash, stream.size, subtitleAddons);
+  const fileSubs: FileSubtitle[] = useMemo(
+    () => stream.subtitles.map((t, i) => ({ id: `file:${i + 1}`, lang: t.language, title: t.title })),
+    [stream.subtitles],
+  );
+  // The browser plays TorBox's conversion, which drops the file's tracks: only the app can show them.
+  const filePlayable = mpv !== null;
+  const [subPick, setSubPick] = useState<string | null | undefined>(undefined); // undefined = automatic
+  const [subOffset, setSubOffset] = useState(0);
+  const bestIn = (lang: string) => bestSubtitles(lang, filePlayable ? fileSubs : [], subs);
+  // Read once per episode (the player remounts for each stream), so a pick here doesn't change what it starts with.
+  const [remembered] = useState(() => recallSubtitles(me._id, m.imdbId));
+  const autoSub = startingSubtitles(remembered, me.prefs.subLang, filePlayable ? fileSubs : [], subs, me.prefs.subLang2);
+  const subId = subPick === undefined ? autoSub : subPick;
+  /** A pick from the menu or the keyboard, kept for this title's next episode. */
+  const pick = (id: string | null) => {
+    setSubPick(id);
+    const choice = choiceFor(id, fileSubs, subs);
+    if (choice) rememberSubtitles(me._id, m.imdbId, choice);
+  };
+  const subOption = subs?.find((s) => s.id === subId);
+  const fileTrack = filePlayable && subId?.startsWith("file:") ? Number(subId.slice(5)) : null;
+  // mpv keeps its subtitle track from one file to the next, so each file loaded gets this player's choice again.
+  useEffect(() => {
+    if (!mpv) return;
+    const apply = () => mpv.setSubtitles(fileTrack, fileTrack ? subOffset : 0);
+    if (mpv.readyState > 0) apply();
+    mpv.addEventListener("loadedmetadata", apply);
+    return () => mpv.removeEventListener("loadedmetadata", apply);
+  }, [mpv, fileTrack, subOffset]);
+  const [cues, setCues] = useState<Cue[]>([]);
+  const [subError, setSubError] = useState(false);
+  useEffect(() => {
+    setCues([]);
+    setSubError(false);
+    if (!subOption) return;
+    let alive = true;
+    loadCues(subOption.url).then(
+      (c) => alive && setCues(c),
+      () => alive && setSubError(true),
+    );
+    return () => {
+      alive = false;
+    };
+  }, [subOption]);
+  const [cueHtml, setCueHtml] = useState("");
+  useEffect(() => {
+    if (!video || cues.length === 0) {
+      setCueHtml("");
+      return;
+    }
+    // The line changes only where a cue starts or ends, so it's set then, not checked every frame: a loop on every
+    // frame kept the page drawing 60 times a second under a film. The video's own events catch seeks, pauses and
+    // speed changes, and a timer the next change.
+    let timer = 0;
+    let last = "";
+    const update = () => {
+      clearTimeout(timer);
+      const t = video.currentTime - subOffset;
+      const html = cuesAt(cues, t)
+        .map((c) => c.html)
+        .join("<br>");
+      if (html !== last) {
+        last = html;
+        setCueHtml(html);
+      }
+      const next = video.paused ? null : nextCueChange(cues, t);
+      // Just past the change, since a cue shows until its end and from its start. A timer that fires a little early
+      // finds nothing changed and waits out the rest.
+      if (next !== null) timer = window.setTimeout(update, ((next - t) / (video.playbackRate || 1)) * 1000 + 5);
+    };
+    update();
+    const events = ["timeupdate", "seeked", "play", "pause", "ratechange"];
+    for (const e of events) video.addEventListener(e, update);
+    return () => {
+      clearTimeout(timer);
+      for (const e of events) video.removeEventListener(e, update);
+    };
+  }, [video, cues, subOffset]);
+  /** C on the keyboard: off, or back on in this title's language, else yours (English when none is set). */
+  const onLang = (remembered && "lang" in remembered ? remembered.lang : undefined) ?? me.prefs.subLang ?? "eng";
+  const toggle = () => pick(subId ? null : bestIn(onLang));
+  return { subs, fileSubs, filePlayable, subId, setSubPick: pick, toggle, subOffset, setSubOffset, subError, cueHtml };
+}

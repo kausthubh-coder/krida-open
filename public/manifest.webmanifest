@@ -1,0 +1,23 @@
+{
+  "id": "/",
+  "name": "Krida",
+  "short_name": "Krida",
+  "description": "A free, open-source streaming app. Bring your own debrid service and Stremio addons, and watch alone or together.",
+  "start_url": "/sign-in",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "launch_handler": { "client_mode": ["navigate-existing", "auto"] },
+  "background_color": "#151210",
+  "theme_color": "#151210",
+  "categories": ["entertainment"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Search", "url": "/search", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Library", "url": "/library", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

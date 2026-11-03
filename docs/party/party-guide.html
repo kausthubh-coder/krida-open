@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>How a Krida party works</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f7f7f5; --surface: #ebebe7; --raised: #ffffff; --text: #1c1c1e; --text-2: #46464b; --text-3: #5e5e64;
+  --line: #d3d3ce; --accent: #0d6b63; --accent-soft: #d7ece9; --code-bg: #ebebe7;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151517; --surface: #232327; --raised: #2b2b30; --text: #ececee; --text-2: #c2c2c8; --text-3: #a3a3aa;
+    --line: #3a3a40; --accent: #6cc9bd; --accent-soft: #1d3a37; --code-bg: #232327;
+  }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color: var(--text); }
+body { margin: 0; font: 1.0625rem/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 54rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+p, li, dd { max-width: 55ch; text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; }
+h1 { font-size: 2.75rem; margin: 0 0 0.75rem; letter-spacing: -0.015em; max-width: 18ch; }
+h2 { font-size: 1.5rem; margin: 3.5rem 0 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+h3 { font-size: 1.0625rem; margin: 2rem 0 0.5rem; }
+.lede { font-size: 1.0625rem; color: var(--text-2); margin: 0 0 1.75rem; max-width: 55ch; }
+th.num, td.num { text-align: right; padding-right: 1.25rem; }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.875em; background: var(--code-bg); padding: 0.08em 0.3em; border-radius: 4px; }
+a { color: var(--accent); }
+.muted { color: var(--text-2); }
+figure { margin: 1.5rem 0; }
+figcaption { font-size: 0.875rem; color: var(--text-2); margin-top: 0.5rem; max-width: 55ch; }
+img.shot { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid var(--line); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 40rem) { .pair { grid-template-columns: 1fr; } h1 { font-size: 1.875rem; } }
+svg text { font-family: inherit; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+th, td { text-align: left; padding: 0.45rem 0.75rem 0.45rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--text-2); }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+dl.terms { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1.25rem; margin: 1rem 0; }
+dl.terms dt { font-weight: 600; }
+dl.terms dd { margin: 0; }
+@media (max-width: 40rem) { dl.terms { grid-template-columns: 1fr; } dl.terms dd { margin-bottom: 0.6rem; } }
+ol.steps { padding-left: 1.4rem; }
+ol.steps li { margin: 0.35rem 0; }
+details { border-top: 1px solid var(--line); margin: 0; }
+details:last-of-type { border-bottom: 1px solid var(--line); }
+summary { padding-block: 0.7rem; cursor: pointer; font-weight: 600; }
+details > :not(summary) { margin-top: 0; }
+details > div { padding-bottom: 1rem; }
+.check summary { font-weight: 500; }
+.ladder { display: flex; border-radius: 6px; overflow: hidden; font-size: 0.875rem; margin-top: 0.5rem; }
+.ladder > div { padding: 0.6rem 0.7rem; }
+.ladder b { display: block; font-variant-numeric: tabular-nums; }
+.l1 { flex: 1.1; background: var(--surface); }
+.l2 { flex: 2.2; background: var(--accent-soft); }
+.l3 { flex: 1.4; background: var(--raised); border: 1px solid var(--line); }
+@media (max-width: 40rem) { .ladder { flex-direction: column; } }
+.ask { font-size: 1.0625rem; padding: 1rem 1.1rem; background: var(--surface); border-radius: 8px; }
+::selection { background: var(--accent-soft); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media print {
+  :root { color-scheme: light; --bg: #fff; --surface: #eee; --raised: #fff; --text: #111; --text-2: #333; --text-3: #444; --line: #ccc; --accent: #0d6b63; --accent-soft: #e2f0ee; --code-bg: #eee; }
+  figure, table, pre, img { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+}
+</style>
+</head>
+<body>
+<main data-type="teach">
+
+<h1>A party is one shared clock in Convex</h1>
+<p class="lede">Every screen reads the same <code>rooms</code> document. Its <code>playback</code> anchor says “at server time T the film was at P, playing or paused”, and each player works out where it should be from that.</p>
+
+<figure>
+<svg viewBox="0 0 760 330" role="img" aria-labelledby="f-arch" style="width:100%;height:auto">
+  <title id="f-arch">Two browsers send mutations to Convex and get the room back as a live query; Convex schedules the stream engine, which writes progress back to the room</title>
+  <defs>
+    <marker id="ar-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8" fill="var(--text-3)"/></marker>
+    <marker id="ar-b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8" fill="var(--accent)"/></marker>
+  </defs>
+  <g font-size="14" fill="var(--text)">
+    <!-- browsers -->
+    <rect x="0" y="40" width="170" height="74" rx="8" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="85" y="68" text-anchor="middle" font-weight="500">Ana’s browser</text>
+    <text x="85" y="90" text-anchor="middle" font-size="12" fill="var(--text-2)">&lt;video&gt; + useRoomSync</text>
+    <rect x="0" y="216" width="170" height="74" rx="8" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="85" y="244" text-anchor="middle" font-weight="500">Ben’s phone</text>
+    <text x="85" y="266" text-anchor="middle" font-size="12" fill="var(--text-2)">&lt;video&gt; + useRoomSync</text>
+    <!-- convex -->
+    <rect x="250" y="10" width="270" height="310" rx="10" fill="var(--surface)"/>
+    <text x="266" y="34" font-weight="500">Convex</text>
+    <rect x="266" y="46" width="238" height="128" rx="6" fill="var(--raised)" stroke="var(--accent)" stroke-width="1.5"/>
+    <text x="280" y="68" font-weight="500">rooms</text>
+    <text x="280" y="90" font-size="12" fill="var(--text-2)">status, media, suggestions, next</text>
+    <text x="280" y="110" font-size="12" fill="var(--accent)">playback: playing, position,</text>
+    <text x="280" y="126" font-size="12" fill="var(--accent)">anchorAt, seq, by, action</text>
+    <text x="280" y="148" font-size="12" fill="var(--text-2)">switchRequest, stopAfter, credits</text>
+    <rect x="266" y="184" width="238" height="36" rx="6" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="280" y="207" font-size="12">roomMembers <tspan fill="var(--text-2)" font-size="12">lastSeenAt, buffering</tspan></text>
+    <rect x="266" y="228" width="238" height="36" rx="6" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="280" y="251" font-size="12">messages <tspan fill="var(--text-2)" font-size="12">chat, reaction, event</tspan></text>
+    <rect x="266" y="272" width="238" height="36" rx="6" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="280" y="295" font-size="12">invites <tspan fill="var(--text-2)" font-size="12">pending → accepted…</tspan></text>
+    <!-- engine -->
+    <rect x="590" y="56" width="170" height="74" rx="8" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="675" y="86" text-anchor="middle" font-weight="500">engine.prepare</text>
+    <text x="675" y="108" text-anchor="middle" font-size="12" fill="var(--text-2)">action, one per jobId</text>
+    <rect x="590" y="216" width="170" height="74" rx="8" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="675" y="246" text-anchor="middle" font-weight="500">AIOStreams</text>
+    <text x="675" y="268" text-anchor="middle" font-size="12" fill="var(--text-2)">+ TorBox, IntroDB</text>
+    <!-- arrows browser A -->
+    <line x1="170" y1="62" x2="262" y2="62" stroke="var(--text-3)" marker-end="url(#ar-a)"/>
+    <text x="214" y="55" text-anchor="middle" font-size="12" fill="var(--text-2)">mutations</text>
+    <line x1="266" y1="96" x2="174" y2="96" stroke="var(--accent)" marker-end="url(#ar-b)"/>
+    <text x="214" y="114" text-anchor="middle" font-size="12" fill="var(--accent)">live query</text>
+    <!-- arrows browser B -->
+    <line x1="170" y1="238" x2="262" y2="160" stroke="var(--text-3)" marker-end="url(#ar-a)"/>
+    <line x1="266" y1="140" x2="174" y2="264" stroke="var(--accent)" marker-end="url(#ar-b)"/>
+    <!-- engine arrows -->
+    <line x1="504" y1="74" x2="586" y2="74" stroke="var(--text-3)" marker-end="url(#ar-a)"/>
+    <text x="546" y="66" text-anchor="middle" font-size="12" fill="var(--text-2)">startJob</text>
+    <line x1="590" y1="112" x2="508" y2="112" stroke="var(--text-3)" marker-end="url(#ar-a)"/>
+    <text x="548" y="130" text-anchor="middle" font-size="12" fill="var(--text-2)">setStep</text>
+    <text x="548" y="144" text-anchor="middle" font-size="12" fill="var(--text-2)">setReady</text>
+    <line x1="675" y1="130" x2="675" y2="212" stroke="var(--text-3)" marker-end="url(#ar-a)"/>
+    <text x="684" y="176" font-size="12" fill="var(--text-2)">sources, file</text>
+  </g>
+</svg>
+<figcaption>Nobody talks to anybody directly. Every action is a mutation on the room, and every screen redraws from the room that comes back.</figcaption>
+</figure>
+
+<p>Krida has no WebSocket of its own, no peer-to-peer link and no “host’s player is the truth”. Convex’s live query pushes the room to every member within a moment of each write, and that is the whole transport.</p>
+
+<div class="ask">
+<p style="margin:0"><strong>Guess first:</strong> Ben’s phone clock runs 20&nbsp;seconds fast, and he joins 10&nbsp;minutes into a film. Where does his picture start?</p>
+</div>
+<details class="check"><summary>Answer: exactly where yours is</summary><div>
+<p>The player never trusts the device clock. On open it calls <code>rooms.clock</code> four times, keeps the sample with the shortest round trip, and stores <code>offset = server − (t0 + t1) / 2</code>. Then the target is <code>position + (Date.now() + offset − anchorAt) / 1000</code>. The 20&nbsp;seconds cancel out. Before that measure lands it borrows the app-wide offset from <code>serverClock.ts</code>, which most screens have already measured.</p>
+</div></details>
+
+<h2>Five words carry the rest</h2>
+<dl class="terms">
+  <dt>room</dt><dd>One <code>rooms</code> row. <code>kind</code> is <code>solo</code> (you pressed Play) or <code>party</code> (a shared space that outlives any one title). Solo turns into party when someone else joins.</dd>
+  <dt>anchor</dt><dd><code>playback</code> on the room: <code>{playing, position, anchorAt}</code>. Where the film is now is derived, never stored.</dd>
+  <dt>seq</dt><dd>A counter that goes up by one on every playback write. Clients use it to tell their own action coming back from someone else’s.</dd>
+  <dt>heartbeat</dt><dd>A mutation each member sends every 5&nbsp;s (10&nbsp;s while browsing a playing party). It sets <code>lastSeenAt</code>, <code>buffering</code> and <code>watching</code>.</dd>
+  <dt>leader</dt><dd>Worked out on every screen, never stored: the first watcher by id who isn’t buffering. It sends the buffering holds and the intro skips, so they happen once.</dd>
+</dl>
+
+<h2>Starting sends each friend an invite</h2>
+<p>“Watch with Ben” or the Start sheet calls <code>rooms.createParty</code>. It makes an <code>idle</code> room with no title, adds you as a member, leaves any other party you were in, and inserts one <code>invites</code> row per friend.</p>
+<div class="pair">
+  <figure><img class="shot" src="img/01-invite.jpg" width="1200" height="750" alt="Home page with a toast: Regress-QA-one invited you to a party. Nothing picked yet. Join or Not now."><figcaption>The friend’s side. <code>InviteListener</code> watches <code>invites.mine</code> and plays a chime.</figcaption></figure>
+  <figure><img class="shot" src="img/02-table.jpg" width="1200" height="750" alt="Dune: Part Two title page with the Party panel docked right, showing the suggestion waiting for the other profile and a chat message."><figcaption>After Join: the Party panel docks beside whatever page you’re on. Picking happens in the app, not on a lobby page.</figcaption></figure>
+</div>
+<ol class="steps">
+  <li><strong>Join</strong> calls <code>invites.respond</code> then <code>rooms.join</code>, which marks the invite accepted and writes a “joined” event into <code>messages</code>.</li>
+  <li>An invite nobody answers expires after 10&nbsp;minutes. A newer invite to the same person replaces it.</li>
+  <li>The host can also mint a guest link (<code>profiles.inviteTemporary</code>): a temporary profile that lasts 24&nbsp;hours and can enter only that room. At most 8 live links per room.</li>
+</ol>
+
+<h2>Everyone in starts a countdown</h2>
+<p>While the room is <code>idle</code>, Suggest puts a title “on the table” (<code>rooms.suggest</code>, up to 20). Each suggestion keeps <code>inIds</code>, the people who are in for it; suggesting one already there counts as being in.</p>
+<figure><img class="shot" src="img/03-countdown.jpg" width="1200" height="750" alt="The Party panel showing Dune: Part Two, Starting in 3, with a Cancel button, and the event 'Regress-QA-two is in for Dune: Part Two'."><figcaption>The second “I’m in” made everyone present in, so the server set <code>starting = {suggestionId, at: now + 3 s}</code>.</figcaption></figure>
+<p>The check lives in one function, <code>maybeStart</code> in <code>convex/lib/rooms.ts</code>. It runs after every suggest, vote and lobby heartbeat:</p>
+<ol class="steps">
+  <li>Only from <code>idle</code>, and only with 2 or more people present. Alone, “Play now” is the way.</li>
+  <li>“Present” means not left, <code>watching</code>, and heard from in the last 20&nbsp;s. Someone browsing a picking party counts as watching, so they still get a vote.</li>
+  <li>The first suggestion every present member is in for wins. The server schedules <code>startSuggestion</code> for 3&nbsp;s later.</li>
+  <li>Cancel clears <code>starting</code> and takes you out of that suggestion, or the countdown would just restart.</li>
+</ol>
+
+<h2>The newest Play job wins</h2>
+<p>Every way of putting a title on (countdown, Play now, an accepted switch, Up next, Retry, a new source) goes through <code>startJob</code>. It bumps <code>jobId</code>, sets <code>status: "preparing"</code>, stops the clock at <code>startAt</code>, and schedules <code>engine.prepare</code>.</p>
+
+<figure>
+<svg viewBox="0 0 760 320" role="img" aria-labelledby="f-life" style="width:100%;height:auto">
+  <title id="f-life">Room status: idle to preparing to ready; preparing can fail to error; ready goes back to idle on Back to picking; any open room closes when empty or idle</title>
+  <defs>
+    <marker id="ar-c" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8" fill="var(--text-3)"/></marker>
+  </defs>
+  <g font-size="14" fill="var(--text)">
+    <rect x="0" y="70" width="120" height="48" rx="24" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="60" y="99" text-anchor="middle" font-weight="500">idle</text>
+    <rect x="270" y="70" width="140" height="48" rx="24" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="340" y="99" text-anchor="middle" font-weight="500">preparing</text>
+    <rect x="560" y="70" width="120" height="48" rx="24" fill="var(--accent-soft)" stroke="var(--accent)"/>
+    <text x="620" y="99" text-anchor="middle" font-weight="500">ready</text>
+    <rect x="270" y="190" width="140" height="48" rx="24" fill="var(--raised)" stroke="var(--line)"/>
+    <text x="340" y="219" text-anchor="middle" font-weight="500">error</text>
+
+    <line x1="120" y1="88" x2="266" y2="88" stroke="var(--text-3)" marker-end="url(#ar-c)"/>
+    <text x="193" y="80" text-anchor="middle" font-size="12" fill="var(--text-2)">countdown ends</text>
+    <text x="193" y="108" text-anchor="middle" font-size="12" fill="var(--text-2)">or Play now</text>
+
+    <line x1="410" y1="94" x2="556" y2="94" stroke="var(--text-3)" marker-end="url(#ar-c)"/>
+    <text x="483" y="86" text-anchor="middle" font-size="12" fill="var(--text-2)">setReady</text>
+
+    <line x1="330" y1="118" x2="330" y2="186" stroke="var(--text-3)" marker-end="url(#ar-c)"/>
+    <text x="322" y="156" text-anchor="end" font-size="12" fill="var(--text-2)">setError</text>
+    <line x1="352" y1="190" x2="352" y2="122" stroke="var(--text-3)" marker-end="url(#ar-c)"/>
+    <text x="360" y="156" font-size="12" fill="var(--text-2)">Retry, other source</text>
+
+    <path d="M620,70 C620,20 340,20 340,66" fill="none" stroke="var(--text-3)" marker-end="url(#ar-c)"/>
+    <text x="480" y="22" text-anchor="middle" font-size="12" fill="var(--text-2)">switch, Up next: a new jobId</text>
+
+    <path d="M620,118 C620,335 60,335 60,122" fill="none" stroke="var(--text-3)" marker-end="url(#ar-c)"/>
+    <text x="340" y="304" text-anchor="middle" font-size="12" fill="var(--text-2)">Back to picking (rooms.stop)</text>
+
+    <text x="0" y="20" font-size="12" fill="var(--text-2)">From any status: closedAt set</text>
+    <text x="0" y="36" font-size="12" fill="var(--text-2)">when empty 30 s or idle 30 min</text>
+  </g>
+</svg>
+<figcaption>Every write from the engine carries its <code>jobId</code>. <code>setStep</code> and <code>setReady</code> drop anything from an older job, so a slow build can never overwrite a newer pick.</figcaption>
+</figure>
+
+<p>While preparing, the room shows <code>step</code> (“Finding sources…”, “Adding to TorBox…”, “Starting stream…”) to everyone. <code>setReady</code> leaves the clock paused with <code>action: "ready"</code> and <code>by: requestedBy</code>: whoever asked presses play for the room once their video can play.</p>
+
+<p>The stream is picked for the room, not one person: <code>screenFor</code> chooses SDR if anyone present has an SDR screen, since HDR comes out dark there.</p>
+
+<h2>Players jump on changes, nudge drift</h2>
+<p><code>useRoomSync</code> in <code>src/features/player/playbackSync.ts</code> keeps one <code>&lt;video&gt;</code> on the anchor in two ways.</p>
+
+<h3>When the room changes, jump if more than 1 s off</h3>
+<p>When a new <code>seq</code> from someone else arrives, the player seeks if it’s over 1&nbsp;s off the target, then plays or pauses to match. If the browser blocks autoplay, it shows a tap-to-play button instead.</p>
+
+<h3>Every second while playing, correct the drift</h3>
+<div class="ladder" role="img" aria-label="Drift under 0.35 seconds: nothing. 0.35 to 2.5 seconds: play at 0.95 or 1.05 speed. Over 2.5 seconds: seek to the target.">
+  <div class="l1"><b>&lt; 0.35 s</b>leave it</div>
+  <div class="l2"><b>0.35 – 2.5 s</b>play at 0.95× or 1.05× until it closes</div>
+  <div class="l3"><b>&gt; 2.5 s</b>seek to the target</div>
+</div>
+<p class="muted" style="font-size:0.875rem">The 1-second tick in <code>playbackSync.ts</code>. A party always plays at 1×; a speed you pick applies only alone.</p>
+
+<h3>Your own press doesn’t bounce you back</h3>
+<p>When you press Pause, your video pauses at once and only then does the mutation go out. When the room comes back, the player has to know it’s your echo, not something to apply again.</p>
+<div class="scroll">
+<table>
+  <caption class="muted" style="text-align:left;caption-side:bottom;padding-top:0.5rem;font-size:0.875rem">Ana pauses at 12:04 while the room is at seq 42.</caption>
+  <thead><tr><th scope="col" class="num">Step</th><th scope="col">Ana</th><th scope="col">Room</th><th scope="col">Ben</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td>video pauses; <code>pending = 43</code></td><td>seq 42, playing</td><td>playing</td></tr>
+    <tr><td class="num">2</td><td><code>control(pause, 724, at)</code></td><td>seq 43, paused at 724, by K</td><td></td></tr>
+    <tr><td class="num">3</td><td>seq 43 = pending, by me: ours, skip</td><td></td><td>seq 43 by K: theirs, pause, seek to 724</td></tr>
+    <tr><td class="num">4</td><td></td><td></td><td>note: “Ana paused”</td></tr>
+  </tbody>
+</table>
+</div>
+<p><code>at</code> is the press time on the server clock, clamped to between 3&nbsp;s ago and now, so a slow request can’t drag everyone back. If the echo hasn’t arrived in 3&nbsp;s, the client gives up and follows the room.</p>
+
+<div class="pair">
+  <figure><img class="shot" src="img/04-player-panel.jpg" width="1200" height="750" alt="Player with the Party panel open: 'You and Regress-QA-two are watching', the event log, a chat message, a floating emoji reaction and a pill saying Regress-QA-two pressed play."><figcaption>In the player: the panel floats over the picture, reactions rise from the right, and a pill names who pressed play.</figcaption></figure>
+  <figure><img class="shot" src="img/paused-b.jpg" width="1200" height="713" alt="Ben's player paused with a pill 'Regress-QA-one paused' and a 'Skipped intro, Watch it' toast."><figcaption>The other side of a pause. The “Skipped intro” toast is the leader’s skip, shown to everyone with a way back.</figcaption></figure>
+</div>
+
+<h2>The party waits for a stall</h2>
+<p>Without a hold, a stalled viewer falls behind, then seeks ahead to catch up and lands on a part TorBox hasn’t converted yet. So the leader stops the room for them (<code>holdStep</code> in <code>src/features/player/together.ts</code>):</p>
+<ol class="steps">
+  <li>Anyone’s heartbeat says <code>buffering</code> for 2.5&nbsp;s. The leader pauses its own video and sends <code>wait</code>. Every screen pauses.</li>
+  <li>Everyone loaded: 0.6&nbsp;s later the leader sends <code>resume</code> from the same spot.</li>
+  <li>Still stalled after 20&nbsp;s: the leader sends <code>move on</code>. That person’s stalls don’t hold the room again for 30&nbsp;s.</li>
+</ol>
+<figure><img class="shot" src="img/waiting-a.jpg" width="1200" height="713" alt="Player paused at 0:16 with a pill 'Waiting for Regress-QA-two to catch up' and a badge 'Regress-QA-two is buffering'."><figcaption>From the sync test: B’s segments were slowed to 7&nbsp;s each, A’s picture stopped at 0:16 and both resumed in step (A 18.67&nbsp;s, B 17.95&nbsp;s).</figcaption></figure>
+<p>Auto-skipping intros and recaps uses the same leader, and only when every member has that setting on. Only playback running into an intro skips it; seeking into one never does.</p>
+
+<h2>Changing titles asks whoever is watching</h2>
+<p>Play on another title mid-film calls <code>requestSwitch</code>. Alone, or between titles, it plays at once; otherwise it stores a <code>switchRequest</code> that the others answer within 30&nbsp;s.</p>
+<div class="pair">
+  <figure><img class="shot" src="img/05-switch-asked.jpg" width="1200" height="750" alt="Player with a prompt: Regress-QA-two wants to switch to Master and Commander. Switch now or Keep watching."><figcaption>The watcher is asked. Switch now runs <code>startJob</code> for the asker’s title.</figcaption></figure>
+  <figure><img class="shot" src="img/06-switch-declined.jpg" width="1200" height="750" alt="The asker's player: Regress-QA-one wants to keep watching Master and Commander. Switch anyway or Keep watching."><figcaption>Keep watching: the asker sees the no and can still Switch anyway (<code>playNow</code>).</figcaption></figure>
+</div>
+<h3>Up next is one slot, then the next episode</h3>
+<p>The order is: Autoplay off for this title (<code>stopAfter</code>), else the one lined-up title (<code>next</code>), else the next episode. Every client may call <code>advance</code> at the credits, but it only acts while the room is still on <code>fromVideoId</code>, so the first call wins.</p>
+<p>After 3 titles in a row start on their own, with no pause, seek or chat in between (<code>autoStreak</code>), the player asks “Still watching?” instead of counting down.</p>
+
+<h2>Leaving: timers do the cleanup</h2>
+<p>Closing a tab never sends “left”. Presence is all heartbeats and a sweep that books itself every 2&nbsp;minutes while any room is open, plus a 15-minute cron as a backstop.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">Rule</th><th scope="col" class="num">Time</th><th scope="col">Where</th></tr></thead>
+  <tbody>
+    <tr><td>Heartbeat from the player, lobby or a preparing room</td><td class="num">5 s</td><td><code>useProgress.ts</code>, <code>party.tsx</code></td></tr>
+    <tr><td>Heartbeat while browsing during a film</td><td class="num">10 s</td><td><code>party.tsx</code></td></tr>
+    <tr><td>Counts as present (votes, switch asks)</td><td class="num">20 s</td><td><code>PRESENT_MS</code></td></tr>
+    <tr><td>Last person out: room closes unless someone returns</td><td class="num">30 s</td><td><code>CLOSE_GRACE_MS</code></td></tr>
+    <tr><td>Silent this long: swept out, “left the party”</td><td class="num">10 min</td><td><code>AWAY_LEAVE_MS</code></td></tr>
+    <tr><td>Nobody watching or picking: party ends</td><td class="num">30 min</td><td><code>IDLE_CLOSE_MS</code></td></tr>
+    <tr><td>Swept laptop that wakes can rejoin within</td><td class="num">12 h</td><td><code>PARTY_TTL_MS</code></td></tr>
+    <tr><td>Invite unanswered</td><td class="num">10 min</td><td><code>INVITE_TTL_MS</code></td></tr>
+    <tr><td>Guest link and temporary profile</td><td class="num">24 h</td><td><code>TEMPORARY_PROFILE_TTL_MS</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>When the last person leaves, nobody else in the player means the clock stops (<code>pauseIfNobodyWatching</code>), so whoever returns carries on from where it was. If the host leaves, the earliest-joined permanent profile becomes host; guests never host.</p>
+
+<h2>Mistake: thinking the host drives playback</h2>
+<p>Any member can pause, seek, suggest, switch or go back to picking; the server only checks membership. <code>hostId</code> matters for two things: minting guest links, and turning a solo room back to solo when the friend leaves.</p>
+<p>The one role with extra duties is the leader. Each screen computes it from the same member list, so every screen agrees without a vote.</p>
+
+<h2>Check yourself</h2>
+<details class="check"><summary>Both press something at the same instant: Ana pauses, Ben seeks to 30:00. What does the room end on?</summary><div>
+<p>Convex runs the two mutations one after the other, so seq goes 42 → 43 → 44 and the later write wins on both screens. Say the pause lands first. Ana skips seq 43 as his own echo, then gets seq 44 by Ben, which is “theirs”. Ben’s video was still playing when he seeked, so his write says playing at 30:00, and both screens end up playing from 30:00.</p>
+</div></details>
+<details class="check"><summary>Ana and Ben are both in for Dune, then Ben walks off to the kitchen with his phone locked. Does the countdown still start for a third suggestion Ana adds?</summary><div>
+<p>Ben stops heart-beating; after 20&nbsp;s he isn’t present. <code>maybeStart</code> needs 2 or more present, so alone Ana gets no countdown and uses Play now. When Ben’s phone wakes, its next lobby heartbeat calls <code>maybeStart</code> again.</p>
+</div></details>
+<details class="check"><summary>You pick Source 3 while Source 1 is still “Adding to TorBox…”. Can Source 1 finish and win?</summary><div>
+<p>No. <code>chooseSource</code> runs <code>startJob</code>, which bumps <code>jobId</code>. When the old build calls <code>setStep</code> or <code>setReady</code> with the old id, the mutation returns false or does nothing, and the old action stops with <code>Superseded</code>.</p>
+</div></details>
+
+<h2>Where the code lives</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">File</th><th scope="col">What it owns</th></tr></thead>
+  <tbody>
+    <tr><td><code>convex/rooms.ts</code></td><td>Every party mutation and query: create, join, leave, heartbeat, control, suggest, vote, switch, Up next, sweep</td></tr>
+    <tr><td><code>convex/lib/rooms.ts</code></td><td>The rules: timers, <code>startJob</code>, <code>maybeStart</code>, <code>presentMembers</code>, <code>passHost</code>, <code>closeRoom</code>, <code>screenFor</code></td></tr>
+    <tr><td><code>convex/invites.ts</code>, <code>messages.ts</code></td><td>Invites with expiry; chat, reactions and event lines (last 60, at most 12 reactions)</td></tr>
+    <tr><td><code>convex/engine.ts</code></td><td><code>prepare</code> and <code>warm</code>: sources, TorBox, the stream</td></tr>
+    <tr><td><code>src/features/player/playbackSync.ts</code></td><td>Clock offset, applying the anchor, drift correction, echoes</td></tr>
+    <tr><td><code>src/features/player/together.ts</code></td><td>Leader, buffering hold, auto-skip</td></tr>
+    <tr><td><code>src/features/player/upNext.ts</code>, <code>Watch.tsx</code></td><td>Up next countdown and Still watching; the watch page joining, leaving and choosing player or preparing</td></tr>
+    <tr><td><code>src/features/party/</code></td><td>The UI: panel, lobby table, chat, reactions, invites, switch prompt, the party following you around the app (<code>party.tsx</code>)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>How this was checked</h2>
+<p>Read against <code>main</code> at <code>0f76956</code> on 27 Oct 2026. The screenshots come from this checkout’s QA app (local backend, stand-in providers, a one-minute test video), driven as two profiles in headless Chrome.</p>
+<details><summary>Ran: e2e-party-sync, 14 of 14 checks passed</summary><div>
+<p>Start in step (both at 13.90&nbsp;s), pause reaches B with a note, seek to 0:40 reaches B, B’s play resumes A (42.98 vs 43.02&nbsp;s), reload, then a hold for B’s 7-second segments with A’s picture stopped at 16.62&nbsp;s and both resuming in step without B jumping ahead.</p>
+</div></details>
+<details><summary>Ran: a screenshot script, 6 of 6 checks passed</summary><div>
+<p>Invite and join, a suggestion waiting for B, B’s “I’m in” starting the countdown, both landing in the player and playing, chat and a reaction in the player, and B’s Play on another title asking A, then A’s Keep watching reaching B.</p>
+</div></details>
+<details><summary>Partly ran: e2e-party-panel stopped after 3 of 11 steps</summary><div>
+<p>Passed: starting an empty party docks the panel, joining opens the panel, Suggest on a title page. It then timed out on Search results: this Mac’s <code>.env.local</code> has no <code>TMDB_API_KEY</code> or <code>MDBLIST_API_KEY</code>, so Search loads empty. That’s the environment, not the party code.</p>
+</div></details>
+<details><summary>Not tested here: real streams, phones, the apps, timers</summary><div>
+<p>Real TorBox files, phone layouts, Krida for Windows (mpv) and Android in a party, guest links, and the 10-minute, 30-minute and 12-hour timers. Those statements come from reading the code.</p>
+</div></details>
+<details><summary>Two comments disagree with the code</summary><div>
+<p><code>rooms.sweep</code> says “Every minute”, and <code>invites.forRoom</code> says the sweep runs “once a minute”. <code>SWEEP_EVERY_MS</code> is 2&nbsp;minutes, with a 15-minute cron behind it. Harmless, but worth fixing next time someone touches that file.</p>
+</div></details>
+
+</main>
+<script>
+addEventListener("beforeprint", () => document.querySelectorAll("details").forEach((d) => {
+  d.dataset.wasOpen = d.open; d.open = true;
+}));
+addEventListener("afterprint", () => document.querySelectorAll("details").forEach((d) => (d.open = d.dataset.wasOpen === "true")));
+</script>
+</body>
+</html>

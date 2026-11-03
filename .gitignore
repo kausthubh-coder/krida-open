@@ -1,0 +1,38 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+# A link to .agents/skills that npm run setup makes
+.claude/skills
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.vercel
+.env*
+.artifacts/
+# Screenshots, QA sessions and local backends. Script output goes to .artifacts/.
+.qa/
+.convex/
+shots/
+# The landing page's pictures are part of the site (scripts/shots-landing.ts retakes them).
+!src/features/landing/shots/
+screenshots/
+.agents/shots/

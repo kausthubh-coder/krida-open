@@ -1,0 +1,150 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+:root{
+  --page:oklch(0.145 0.006 60);--surface:oklch(0.18 0.007 60);--raised:oklch(0.215 0.008 60);--overlay:oklch(0.25 0.009 60);
+  --fg:oklch(0.95 0.005 60);--muted:oklch(0.76 0.01 60);--faint:oklch(0.6 0.012 60);
+  --kaccent:oklch(0.82 0.14 75);--on-accent:oklch(0.2 0.03 60);--danger:oklch(0.7 0.17 25);
+  --overlay-shadow:inset 0 1px 0 0 oklch(1 0 0 / .05),inset 0 0 0 1px oklch(1 0 0 / .06),0 0 0 1px oklch(0 0 0 / .25),0 4px 8px 0 oklch(0 0 0 / .2),0 16px 40px -8px oklch(0 0 0 / .5);
+}
+*{box-sizing:border-box;margin:0}
+body{color:var(--foreground,#eee);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.opt{margin:0 0 28px}
+.head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.head h3{font-size:15px;font-weight:600}
+.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--success-surface,#233);color:var(--success,#7c7)}
+.tag.no{background:var(--destructive-surface,#422);color:var(--destructive,#f77)}
+.tag.bug{background:oklch(0.78 0.14 50 / .15);color:oklch(0.78 0.14 50)}
+.note{font-size:13px;line-height:1.5;color:var(--muted-foreground,#aaa);margin:10px 0 0;max-width:680px}
+.stage{background:var(--page);border-radius:14px;padding:20px;overflow-x:auto;color:var(--fg)}
+.row{display:flex;gap:16px;align-items:flex-start}
+.cap{font-size:11px;color:var(--faint);margin-bottom:8px}
+.cell{width:184px;flex-shrink:0}
+.card{position:relative;display:flex;flex-direction:column;gap:8px}
+.poster{position:relative;aspect-ratio:2/3;border-radius:12px;background:var(--surface);outline:1px solid oklch(1 0 0 / .1);outline-offset:-1px}
+.poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
+.card.h .poster img{filter:brightness(1.1)}
+.t{font-size:14px;line-height:20px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.s{font-size:12px;line-height:16px;color:var(--faint);padding:0 2px;margin-top:-6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scrim{position:absolute;inset:auto 0 0 0;height:50%;border-radius:0 0 12px 12px;background:linear-gradient(to top,oklch(0 0 0 / .6),transparent)}
+.acts{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}
+.ib{position:relative;display:grid;place-items:center;width:36px;height:36px;border-radius:99px;border:0;color:var(--fg);font:600 12px Inter;font-size:16px;background:oklch(0 0 0 / .5);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px oklch(1 0 0 / .1)}
+.ib.hv{background:oklch(0 0 0 / .72)}
+.ib .num{font-size:12px;font-weight:600;color:var(--kaccent)}
+.ib.tr{position:absolute;top:8px;right:8px;width:32px;height:32px}
+.score{position:absolute;left:10px;bottom:16px;display:inline-flex;align-items:baseline;gap:4px;font-size:12px;line-height:16px;color:var(--muted);text-shadow:0 1px 2px oklch(0 0 0 / .6)}
+.score b{font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.badge{position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:4px;border-radius:99px;background:oklch(0 0 0 / .65);backdrop-filter:blur(12px);padding:2px 8px;font-size:12px;font-weight:500}
+.badge i{color:var(--kaccent)}
+.menu{position:absolute;top:44px;right:8px;z-index:3;width:196px;padding:4px;border-radius:12px;background:var(--raised);box-shadow:var(--overlay-shadow)}
+.menu div{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 10px;border-radius:8px;font-size:14px}
+.menu div i{font-size:16px;color:var(--muted)}
+.menu div.hv{background:oklch(1 0 0 / .08)}
+.menu small{display:block;font-size:12px;color:var(--faint);padding:2px 10px 6px}
+.toast{display:flex;align-items:center;gap:12px;margin-top:16px;width:max-content;padding:10px 10px 10px 14px;border-radius:12px;background:var(--raised);box-shadow:var(--overlay-shadow);font-size:14px}
+.toast span.u{padding:6px 10px;border-radius:8px;background:oklch(1 0 0 / .08);font-weight:500}
+/* starter sheet card */
+.rate{position:absolute;inset:auto 0 0 0;display:flex;align-items:center;justify-content:space-between;padding:32px 12px 12px;border-radius:0 0 12px 12px;background:linear-gradient(to top,oklch(0 0 0 / .9),transparent)}
+.pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;border-radius:99px;background:oklch(0 0 0 / .65);font-size:12px;font-weight:500}
+.pill.on{background:var(--kaccent);color:var(--on-accent)}
+.gone .poster img{filter:grayscale(1) brightness(.35)}
+.gonebox{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center;font-size:13px;line-height:18px;color:var(--muted)}
+.gonebox b{color:var(--fg);font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:10px;background:oklch(1 0 0 / .1);font-size:14px;font-weight:500;color:var(--fg)}
+.btn.primary{background:var(--kaccent);color:var(--on-accent)}
+.btn.ghost{background:transparent}
+.ty{font-size:12px;color:var(--muted);margin-top:-4px;padding:0 2px}
+/* title hero */
+.hero{display:flex;gap:20px;align-items:flex-end}
+.hero .poster{width:120px;flex-shrink:0}
+.hero h4{font:600 28px/36px Georgia,serif;letter-spacing:-.02em}
+.facts{font-size:14px;color:var(--muted);margin:6px 0 10px}
+.facts b{color:var(--fg);font-weight:500}
+.btns{display:flex;gap:8px;align-items:center}
+.btn.lg{min-height:44px;padding:0 20px;font-size:15px}
+.ib.lg{width:44px;height:44px;font-size:20px}
+</style></head><body>
+
+<div class="opt">
+  <div class="head"><h3>1 · Score on hover: one public score, bottom-left</h3><span class="tag">Recommended</span></div>
+  <div class="stage"><div class="row">
+    <div class="cell"><div class="cap">At rest</div>
+      <div class="card"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt15239678/img"></div>
+        <p class="t">Dune: Part Two</p><p class="s">2024</p></div></div>
+    <div class="cell"><div class="cap">Hover</div>
+      <div class="card h"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt11280740/img"><div class="scrim"></div>
+        <span class="score">IMDb <b>8.7</b></span>
+        <div class="acts"><button class="ib"><i class="ph-bold ph-plus"></i></button><button class="ib"><i class="ph ph-star"></i></button></div></div>
+        <p class="t">Severance</p><p class="s">Because you watched Dark</p></div></div>
+    <div class="cell"><div class="cap">Hover, saved and rated by you</div>
+      <div class="card h"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt14452776/img"><div class="scrim"></div>
+        <span class="score">IMDb <b>8.5</b></span>
+        <div class="acts"><button class="ib"><i class="ph-bold ph-check" style="color:var(--kaccent)"></i></button><button class="ib"><span class="num">9</span></button></div></div>
+        <p class="t">The Bear</p><p class="s">2022</p></div></div>
+  </div></div>
+  <p class="note">This is worth doing because it helps you decide while you browse, and it costs nothing. Every catalog and picks row already carries Cinemeta's IMDb rating, so there are no extra API calls (MDBList allows 1,000 a day). It appears instantly with the buttons, inside the same scrim, so nothing moves. It's labelled "IMDb" so it never reads as your own score, which lives in the star button in marigold. Rows that don't have a score, like Still watching, just show the buttons. The full set (Rotten Tomatoes, Metacritic, Letterboxd) stays on the title page. Putting all of those on cards would mean one MDBList call per row and five numbers on every poster you pass.</p>
+</div>
+
+<div class="opt">
+  <div class="head"><h3>1b · Score always in the subtitle</h3><span class="tag no">Skip</span></div>
+  <div class="stage"><div class="row">
+    <div class="cell"><div class="card"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt11280740/img"></div>
+      <p class="t">Severance</p><p class="s">★ 8.7 · Because you watched Dark</p></div></div>
+    <div class="cell"><div class="card"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt15398776/img"></div>
+      <p class="t">Oppenheimer</p><p class="s">★ 8.3 · 2023</p></div></div>
+    <div class="cell"><div class="card"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt0816692/img"></div>
+      <p class="t">Interstellar</p><p class="s">★ 8.7 · 2014</p></div></div>
+  </div></div>
+  <p class="note">This would work on phones too, but it adds a number under every poster on Home and pushes the "Because you watched…" reason off the end of the line. A star would also look like your own rating. On a phone, tapping a poster opens the title page, which already shows every score.</p>
+</div>
+
+<div class="opt">
+  <div class="head"><h3>2 · Still watching: say where you are with it</h3><span class="tag">Recommended</span></div>
+  <div class="stage"><div class="row">
+    <div class="cell"><div class="cap">Hover: the same × as Continue watching</div>
+      <div class="card h"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt0903747/img"><div class="scrim"></div>
+        <button class="ib tr hv"><i class="ph-bold ph-x"></i></button>
+        <div class="acts"><button class="ib"><i class="ph-bold ph-plus"></i></button><button class="ib"><i class="ph ph-star"></i></button></div></div>
+        <p class="t">Breaking Bad</p><p class="s">38 of 62 episodes</p></div></div>
+    <div class="cell" style="width:228px"><div class="cap">× opens a short menu</div>
+      <div class="card h" style="width:184px"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt2861424/img"><div class="scrim"></div>
+        <button class="ib tr"><i class="ph-bold ph-x"></i></button>
+        <div class="menu"><div class="hv"><i class="ph ph-check-circle"></i>I finished it</div><div><i class="ph ph-hand-palm"></i>I stopped watching</div><div><i class="ph ph-eye-slash"></i>Hide from this row</div><small>Finished and stopped update Simkl.</small></div></div>
+        <p class="t">Rick and Morty</p><p class="s">21 of 81 episodes</p></div></div>
+  </div>
+  <div class="toast">Marked “Rick and Morty” finished<span class="u">Undo</span></div></div>
+  <p class="note">The card leaves the row right away and a toast offers Undo, with no "Are you sure?". "I finished it" uses the existing Done status, which sends a whole-show completion to Simkl. "I stopped watching" moves it to Dropped on Simkl and stops it seeding your picks. "Hide" only hides it in Krida. Undo before the 45-second outbox wait cancels the Simkl change entirely. The rating sheet's Watch status gets a matching fourth option, Stopped.</p>
+</div>
+
+<div class="opt">
+  <div class="head"><h3>3 · Rate what you've watched: "I haven't seen this"</h3><span class="tag">Recommended</span></div>
+  <div class="stage"><div class="row">
+    <div class="cell"><div class="cap">History card, hover</div>
+      <div class="card h"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt1520211/img">
+        <button class="ib tr hv"><i class="ph-bold ph-x"></i></button>
+        <div class="rate"><span class="pill"><i class="ph ph-star"></i>Rate</span></div></div>
+        <p class="t">The Walking Dead</p><p class="ty">Show · 2010</p></div></div>
+    <div class="cell"><div class="cap">Removed: stays in place</div>
+      <div class="card gone"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt0898266/img">
+        <div class="gonebox"><i class="ph ph-clock-counter-clockwise" style="font-size:22px;color:var(--faint)"></i><span><b>Removed from your history</b><br>It won't come back from Simkl.</span><span class="btn">Undo</span></div></div>
+        <p class="t" style="color:var(--faint)">The Big Bang Theory</p><p class="ty">Show · 2007</p></div></div>
+    <div class="cell"><div class="cap">Rated</div>
+      <div class="card"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt0944947/img">
+        <div class="rate"><span class="pill on"><i class="ph-fill ph-star"></i>8/10</span><i class="ph-fill ph-check-circle"></i></div></div>
+        <p class="t">Game of Thrones</p><p class="ty">Show · 2011</p></div></div>
+  </div></div>
+  <p class="note">The × appears on hover and stays visible on touch screens. It's labelled "I haven't seen this". The card doesn't disappear: it dims in place with Undo, so the grid never shifts under your pointer, which is the same rule the sheet already follows. This removes it from Krida's watched history and queues a removal from your Simkl history, using the same <code>/sync/history/remove</code> call My list already uses. It only appears in the "From your watch history" group, because the starter titles were never in your history.</p>
+</div>
+
+<div class="opt">
+  <div class="head"><h3>4 · Watched, rated, saved to rewatch</h3><span class="tag bug">One bug to fix</span></div>
+  <div class="stage"><div class="row" style="gap:28px">
+    <div class="hero"><div class="poster"><img src="https://images.metahub.space/poster/medium/tt15398776/img"></div>
+      <div><h4>Oppenheimer</h4><p class="facts">2023 · 3h · Drama &nbsp; <i class="ph-fill ph-check-circle" style="color:var(--faint)"></i> Watched · you rated it <b>9/10</b></p>
+        <div class="btns"><span class="btn primary lg"><i class="ph-fill ph-play"></i>Watch again</span><button class="ib lg"><i class="ph-bold ph-check" style="color:var(--kaccent)"></i></button><button class="ib lg"><span class="num" style="font-size:14px">9</span></button></div></div></div>
+  </div></div>
+  <p class="note">This already mostly works. Rating a movie puts it in Library under Watched. You can add it to My list as well, and Play starts from the beginning. Finishing it again sends a second play to Simkl. The proposal is to say "Watch again" instead of "Play" once you've finished it. <b>The bug:</b> if you save a movie right after rating it, before Krida's next Simkl pull, Krida doesn't know Simkl has it yet. It queues "add to Plan to watch", so Simkl moves your watched movie back to Plan to watch. The fix is to also check Krida's own watched record before queuing that.</p>
+</div>
+</body></html>

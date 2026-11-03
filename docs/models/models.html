@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Open Krida models</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #fafaf9; --surface: #f1f0ee; --text: #1c1c1e; --text-2: #4a4a50; --text-3: #6b6b72;
+  --line: #d9d8d4; --accent: #1f5fbf; --bad: #a3261b; --good: #1d6b3a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161618; --surface: #212124; --text: #ececee; --text-2: #b9b9bf; --text-3: #9a9aa2;
+    --line: #3a3a3f; --accent: #7fb0ff; --bad: #ff8a7a; --good: #6fd08f;
+  }
+}
+html { background: var(--bg); color: var(--text); }
+body { margin: 0; font: 1.0625rem/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 52rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+p, li, figcaption { max-width: 55ch; text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; }
+h1 { font-size: 2rem; margin: 0 0 0.5rem; }
+h2 { font-size: 1.5rem; margin: 3rem 0 0.75rem; }
+h3 { font-size: 1.2rem; margin: 2rem 0 0.5rem; }
+.lede { color: var(--text-2); margin: 0 0 1.5rem; }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.9em; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+th, td { text-align: left; padding: 0.45rem 0.75rem 0.45rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--text-2); font-weight: 500; }
+td.num, th.num { text-align: end; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+.asks { padding-left: 1.4rem; }
+.asks li { margin-bottom: 0.6rem; }
+.asks li::marker { color: var(--accent); }
+.bad { color: var(--bad); font-weight: 600; }
+.good { color: var(--good); font-weight: 600; }
+figure { margin: 1rem 0; }
+figcaption { color: var(--text-2); font-size: 0.95rem; margin-top: 0.5rem; }
+.chart pre.mermaid { background: none; margin: 0; overflow-x: auto; font-size: 0.85rem; color: var(--text-3); }
+.chart svg { max-width: 100% !important; height: auto; }
+.chart.wide svg { max-width: none !important; width: 1150px; }
+details { border-top: 1px solid var(--line); margin-top: 1rem; }
+summary { padding-block: 0.7rem; cursor: pointer; color: var(--text-2); }
+details > *:not(summary) { margin-bottom: 1rem; }
+pre.log { background: var(--surface); padding: 0.75rem; overflow-x: auto; font-size: 0.8125rem; line-height: 1.45; }
+a { color: var(--accent); }
+::selection { background: var(--accent); color: var(--bg); }
+@media print {
+  :root { color-scheme: light; --bg: #fff; --text: #000; --text-2: #333; --text-3: #555; --line: #ccc; }
+  figure, table, pre { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>The design holds; today’s code breaks 11 rules</h1>
+<p class="lede">Done: three TLA+ models of the spec pass TLC on all 21 rules. TLC caught all 27 seeded bugs; 11 of them are what <code>convex/</code> does today.</p>
+
+<div class="scroll">
+<table>
+  <caption style="text-align:left;color:var(--text-2);padding-bottom:0.4rem">TLC on the Mac mini, 3 Nov 2026</caption>
+  <thead><tr><th scope="col">Model</th><th scope="col" class="num">Rules</th><th scope="col" class="num">States</th><th scope="col" class="num">Time</th><th scope="col" class="num">Today’s code breaks</th></tr></thead>
+  <tbody>
+    <tr><td>Sign-in and profiles</td><td class="num">9</td><td class="num">343,644</td><td class="num">2&nbsp;s</td><td class="num">6</td></tr>
+    <tr><td>Parties across accounts</td><td class="num">7</td><td class="num">99,169</td><td class="num">8&nbsp;s</td><td class="num">5</td></tr>
+    <tr><td>Onboarding</td><td class="num">5</td><td class="num">1,114</td><td class="num">&lt;1&nbsp;s</td><td class="num">no code yet</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Three choices for you</h2>
+<ol class="asks">
+  <li>Host leaves, nobody from their account left: the model ends the party. Today it passes to anyone, maybe without TorBox. End it?</li>
+  <li>Host leaves, only guests left: the model ends it. Today guests keep watching on the host’s TorBox. End it?</li>
+  <li>A room you’re invited to but not in: the spec lists its other accounts’ members; the model lists only yours. Change the spec?</li>
+</ol>
+
+<h2>Today’s party code lets strangers in</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">What happens today</th><th scope="col">Where</th></tr></thead>
+  <tbody>
+    <tr><td>Any profile with a room id joins it</td><td><code>rooms.join</code></td></tr>
+    <tr><td>Every open room is listed to everyone, with its members</td><td><code>rooms.live</code></td></tr>
+    <tr><td>Any profile reads any room’s members, chat and invites</td><td><code>rooms.get</code>, <code>messages.list</code>, <code>invites.forRoom</code></td></tr>
+    <tr><td>Every profile is listed, with no sign-in</td><td><code>profiles.list</code></td></tr>
+    <tr><td>Any profile signs in with its password, no account</td><td><code>profiles.signIn</code></td></tr>
+    <tr><td>The host role passes to another account</td><td><code>passHost</code></td></tr>
+    <tr><td>With only guests left, the room plays on without its host</td><td><code>passHost</code></td></tr>
+    <tr><td>Deleting a host leaves its room open</td><td><code>removeProfile</code></td></tr>
+    <tr><td>Unused guest links outlive the party</td><td><code>closeRoom</code></td></tr>
+    <tr><td>An expired guest still shows until the cleanup job runs</td><td><code>rooms.get</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Sign-in keeps accounts apart</h2>
+<figure class="chart">
+<pre class="mermaid">
+stateDiagram-v2
+  s0: Signed out
+  s1: Signed in, no profiles yet
+  s2: Signed in, picking a profile
+  s3: Using a profile
+  s4: Using a profile, in a party
+  [*] --&gt; s0
+  s0 --&gt; s1: you sign in
+  s1 --&gt; s0: you sign out: its profile sessions end
+  s1 --&gt; s2: you make a profile
+  s2 --&gt; s3: you pick a profile [PIN right, if it has one]
+  s2 --&gt; s0: you sign out: its profile sessions end
+  s2 --&gt; s1: you delete a profile
+  s3 --&gt; s0: you sign out: its profile sessions end
+  s3 --&gt; s1: you delete the profile you're using
+  s3 --&gt; s4: you start a party
+  s0 --&gt; s2: you sign in
+  s4 --&gt; s3: you leave the party
+  s4 --&gt; s1: you delete the profile you're using
+  s4 --&gt; s0: you sign out: its profile sessions end
+  s2 --&gt; s4: you pick a profile [PIN right, if it has one]
+</pre>
+<figcaption>One device, from a smaller run (41 states).</figcaption>
+</figure>
+<details>
+<summary>9 rules in plain words, and the bug that breaks each</summary>
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">Rule</th><th scope="col">Seeded bug TLC caught</th><th scope="col" class="num">Steps</th></tr></thead>
+  <tbody>
+    <tr><td>A profile session never belongs to another account’s profile</td><td>Picker takes any profile (today)</td><td class="num">4</td></tr>
+    <tr><td>Signing out of the account ends its profile sessions</td><td>Sign-out keeps them</td><td class="num">4</td></tr>
+    <tr><td>A profile with a PIN has no session that skipped it</td><td>No PIN check; setting a PIN keeps other devices in</td><td class="num">5, 6</td></tr>
+    <tr><td>No profile reads another account’s keys</td><td>Keys read by an account id argument</td><td class="num">3</td></tr>
+    <tr><td>Listing profiles shows only your account’s</td><td>List every profile (today)</td><td class="num">2</td></tr>
+    <tr><td>Listing rooms shows only your account’s, ones you’re invited to or in</td><td>List every room (today)</td><td class="num">7</td></tr>
+    <tr><td>Another account’s profile shows only as a member of a room you’re in</td><td>Room page open to anyone (today); live list shows all members</td><td class="num">7, 8</td></tr>
+    <tr><td>Members are invited or from the host’s account</td><td>Join with no check (today)</td><td class="num">8</td></tr>
+    <tr><td>Deleting a profile ends its sessions, memberships and rooms</td><td>Sessions kept; rooms kept (today)</td><td class="num">4, 5</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Steps count actions from the start state to the first broken state, on 2 accounts, 2 devices, 3 profile slots, 1 room. The same model with 2 rooms: 24,925,536 states in 3&nbsp;min 25&nbsp;s, no violation.</p>
+</details>
+
+<h2>Parties end rather than change hands</h2>
+<figure class="chart">
+<pre class="mermaid">
+stateDiagram-v2
+  s0: No party
+  s1: Host alone
+  s2: Party over
+  s3: Host with a friend
+  s4: Host with a guest
+  s5: Host with a friend and a guest
+  [*] --&gt; s0
+  s0 --&gt; s1: the host starts a party
+  s1 --&gt; s2: the party ends
+  s1 --&gt; s3: a friend opens the link
+  s1 --&gt; s4: the guest opens their link
+  s3 --&gt; s1: someone leaves or is kicked
+  s3 --&gt; s2: the party ends
+  s4 --&gt; s1: someone leaves or is kicked or the guest's 24 h run out
+  s4 --&gt; s2: the party ends
+  s3 --&gt; s5: the guest opens their link
+  s4 --&gt; s5: a friend opens the link
+  s5 --&gt; s4: someone leaves or is kicked
+  s5 --&gt; s2: the party ends
+  s5 --&gt; s3: someone leaves or is kicked or the guest's 24 h run out
+</pre>
+<figcaption>One room, from a smaller run (123 states). The friend is another account’s; in the full model a same-account profile takes over from a host who leaves.</figcaption>
+</figure>
+<details>
+<summary>7 rules in plain words, and the bug that breaks each</summary>
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">Rule</th><th scope="col">Seeded bug TLC caught</th><th scope="col" class="num">Steps</th></tr></thead>
+  <tbody>
+    <tr><td>Members are invited, from the host’s account, or that room’s guests</td><td>Join with no check (today)</td><td class="num">2</td></tr>
+    <tr><td>An ended party has no members and no working invite</td><td>End keeps the link; end keeps guest links (today)</td><td class="num">3, 3</td></tr>
+    <tr><td>A guest past 24&nbsp;h is not a member</td><td>Expired guest still listed (today)</td><td class="num">4</td></tr>
+    <tr><td>At most one host, and while anyone is in, the host is there</td><td>Host who left stays host (today)</td><td class="num">3</td></tr>
+    <tr><td>Someone kicked stays out</td><td>Kick not checked on join</td><td class="num">4</td></tr>
+    <tr><td>An open party’s host has TorBox</td><td>Hand-off to another account (today); party without TorBox</td><td class="num">4, 1</td></tr>
+    <tr><td>Every member eventually sees the room’s current title</td><td>Guests miss updates</td><td class="num">loop</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Checked on 2 accounts with 2 profiles each (only one with TorBox), 1 guest link, 1 room. With 2 rooms the liveness check ran past 10 minutes, so it stays at 1.</p>
+</details>
+
+<h2>Onboarding never reaches Home without TMDB</h2>
+<figure class="chart wide">
+<pre class="mermaid">
+stateDiagram-v2
+  s0: Landing page
+  s1: Make a profile
+  s2: TMDB key step
+  s3: Debrid step
+  s4: Profile picker
+  s5: Addons step
+  s6: Home, TorBox works
+  s7: Home, browser play and parties unavailable
+  s8: Settings
+  [*] --&gt; s0
+  s0 --&gt; s1: you sign in
+  s1 --&gt; s2: you make a profile
+  s2 --&gt; s3: you give a TMDB key that works
+  s0 --&gt; s4: you sign in
+  s3 --&gt; s5: you add a debrid key or skip
+  s3 --&gt; s2: you go back or it asks for a TMDB key again [the key stopped working]
+  s4 --&gt; s2: you pick a profile
+  s5 --&gt; s6: you install or skip addons
+  s5 --&gt; s3: you go back
+  s5 --&gt; s7: you install or skip addons
+  s4 --&gt; s3: you pick a profile
+  s6 --&gt; s0: you sign out
+  s6 --&gt; s4: you switch profile
+  s6 --&gt; s8: you open Settings
+  s6 --&gt; s2: the TMDB key stops working
+  s6 --&gt; s7: the debrid key stops working
+  s5 --&gt; s2: it asks for a TMDB key again [the key stopped working]
+  s7 --&gt; s0: you sign out
+  s7 --&gt; s4: you switch profile
+  s7 --&gt; s8: you open Settings
+  s7 --&gt; s2: the TMDB key stops working
+  s4 --&gt; s6: you pick a profile
+  s4 --&gt; s5: you pick a profile
+  s4 --&gt; s7: you pick a profile
+  s8 --&gt; s6: you close Settings
+  s8 --&gt; s7: you close Settings
+  s3 --&gt; s6: you add a debrid key or skip
+  s3 --&gt; s7: you add a debrid key or skip
+  s8 --&gt; s2: it asks for a TMDB key again [the key stopped working]
+</pre>
+<figcaption>One profile (189 states); scrolls sideways. Sign-out, drawn only from Home, works on every screen.</figcaption>
+</figure>
+<details>
+<summary>5 rules in plain words, and the bug that breaks each</summary>
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">Rule</th><th scope="col">Seeded bug TLC caught</th><th scope="col" class="num">Steps</th></tr></thead>
+  <tbody>
+    <tr><td>Home needs a profile and a working TMDB key</td><td>Router skips the TMDB check; Home ignores a key that died</td><td class="num">4, 6</td></tr>
+    <tr><td>Signed out, you see the landing page</td><td>Sign-out keeps the screen</td><td class="num">2</td></tr>
+    <tr><td>Without working TorBox, Home shows browser play and parties as unavailable</td><td>Gate not updated when the key dies</td><td class="num">6</td></tr>
+    <tr><td>Pressing them says so instead of failing</td><td>Play ignores the gate</td><td class="num">6</td></tr>
+    <tr><td>With working TorBox, both are offered</td><td>Gate always shut</td><td class="num">5</td></tr>
+  </tbody>
+</table>
+</div>
+</details>
+
+<h2>How to check it again</h2>
+<p><code>docs/models/check.sh</code> runs everything in about 20&nbsp;s. <code>docs/models/README.md</code> names the convex-test test each rule needs.</p>
+<details>
+<summary>Evidence: check.sh output, 3 passes and 27 caught bugs</summary>
+<pre class="log">PASS  AccountIsolation: 343644 states, 05s
+PASS  PartyInvites: 99169 states, 13s
+PASS  Onboarding: 1114 states, 00s
+CAUGHT AccountIsolation today_choose_any_profile -&gt; SessionInOwnAccount (5-state trace, 100 states, 00s)
+CAUGHT AccountIsolation signout_keeps_sessions -&gt; SignOutEndsSessions (5-state trace, 132 states, 00s)
+CAUGHT AccountIsolation skip_pin -&gt; PinRespected (6-state trace, 378 states, 00s)
+CAUGHT AccountIsolation pin_keeps_sessions -&gt; PinRespected (7-state trace, 674 states, 00s)
+CAUGHT AccountIsolation keys_by_argument -&gt; KeysIsolated (4-state trace, 34 states, 00s)
+CAUGHT AccountIsolation today_list_all_profiles -&gt; ProfileListIsolated (3-state trace, 8 states, 00s)
+CAUGHT AccountIsolation today_live_lists_all_rooms -&gt; RoomListIsolated (8-state trace, 1975 states, 00s)
+CAUGHT AccountIsolation live_shows_all_members -&gt; MemberListIsolated (9-state trace, 4852 states, 00s)
+CAUGHT AccountIsolation today_get_any_room -&gt; MemberListIsolated (8-state trace, 1975 states, 00s)
+CAUGHT AccountIsolation today_join_without_invite -&gt; MembersInvitedOrSameAccount (9-state trace, 4851 states, 00s)
+CAUGHT AccountIsolation delete_keeps_sessions -&gt; DeletedLeavesNothing (5-state trace, 133 states, 00s)
+CAUGHT AccountIsolation today_delete_keeps_rooms -&gt; DeletedLeavesNothing (6-state trace, 381 states, 00s)
+CAUGHT PartyInvites today_join_without_invite -&gt; MembersInvitedOrSameAccount (3-state trace, 7 states, 00s)
+CAUGHT PartyInvites end_keeps_link -&gt; EndedRoomIsEmpty (4-state trace, 22 states, 00s)
+CAUGHT PartyInvites today_end_keeps_guest_links -&gt; EndedRoomIsEmpty (4-state trace, 43 states, 00s)
+CAUGHT PartyInvites today_lists_expired_guests -&gt; ExpiredGuestNotMember (5-state trace, 165 states, 00s)
+CAUGHT PartyInvites today_keep_absent_host -&gt; OneHostPresent (4-state trace, 50 states, 00s)
+CAUGHT PartyInvites kick_not_enforced -&gt; KickedStayOut (5-state trace, 116 states, 00s)
+CAUGHT PartyInvites today_handoff_any_account -&gt; HostHasTorBox (5-state trace, 146 states, 00s)
+CAUGHT PartyInvites party_without_torbox -&gt; HostHasTorBox (2-state trace, 4 states, 00s)
+CAUGHT PartyInvites guests_miss_updates -&gt; SeesCurrentTitle (9-state trace, 10045 states, 03s)
+CAUGHT Onboarding route_ignores_tmdb -&gt; HomeNeedsProfileAndTmdb (5-state trace, 11 states, 00s)
+CAUGHT Onboarding home_ignores_dead_key -&gt; HomeNeedsProfileAndTmdb (7-state trace, 46 states, 00s)
+CAUGHT Onboarding signout_keeps_screen -&gt; SignedOutSeesLanding (3-state trace, 3 states, 00s)
+CAUGHT Onboarding stale_torbox_gate -&gt; NoTorBoxShownUnavailable (7-state trace, 47 states, 00s)
+CAUGHT Onboarding play_ignores_gate -&gt; NeverFailsForMissingTorBox (7-state trace, 69 states, 00s)
+CAUGHT Onboarding torbox_hidden_always -&gt; TorBoxShownAvailable (6-state trace, 17 states, 00s)
+TLC output: &lt;outdir&gt;</pre>
+</details>
+<details>
+<summary>What the models leave out</summary>
+<p>Exact timers (10 min sweep, 30 min idle, 60 s reopen), two rooms at once in a party, knocks and per-person invites, playback sync, PIN lockout, the 8-profile and 8-guest limits (2 and 1 here), Stremio import and addon order.</p>
+</details>
+</main>
+<script>
+addEventListener("beforeprint", () => document.querySelectorAll("details").forEach((d) => {
+  d.dataset.wasOpen = d.open; d.open = true;
+}));
+addEventListener("afterprint", () => document.querySelectorAll("details").forEach((d) => (d.open = d.dataset.wasOpen === "true")));
+</script>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs";
+const nodes = [...document.querySelectorAll("pre.mermaid")];
+nodes.forEach((n) => (n.dataset.src = n.textContent));
+const probe = document.body.appendChild(document.createElement("i"));
+const color = (v) => ((probe.style.color = `var(${v})`), getComputedStyle(probe).color);
+const dark = matchMedia("(prefers-color-scheme: dark)");
+async function draw() {
+  mermaid.initialize({
+    startOnLoad: false, theme: "base", look: "classic", layout: "dagre",
+    themeVariables: {
+      darkMode: dark.matches, background: color("--bg"), primaryColor: color("--surface"),
+      primaryTextColor: color("--text"), primaryBorderColor: color("--line"), nodeBorder: color("--line"),
+      lineColor: color("--text-3"), edgeLabelBackground: color("--bg"), textColor: color("--text"),
+      fontFamily: getComputedStyle(document.body).fontFamily, fontSize: "14px",
+    },
+  });
+  nodes.forEach((n) => { n.removeAttribute("data-processed"); n.textContent = n.dataset.src; });
+  await mermaid.run({ nodes });
+}
+draw();
+dark.addEventListener("change", draw);
+</script>
+</body>
+</html>

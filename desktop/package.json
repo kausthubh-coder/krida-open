@@ -1,0 +1,14 @@
+{
+  "name": "krida-desktop",
+  "private": true,
+  "version": "0.1.10",
+  "type": "module",
+  "scripts": {
+    "mpv": "node scripts/fetch-mpv.mjs",
+    "dev": "node scripts/fetch-mpv.mjs && tauri dev",
+    "build": "node scripts/fetch-mpv.mjs && tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.3"
+  }
+}

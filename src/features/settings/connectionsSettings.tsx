@@ -155,9 +155,10 @@ function DebridRow({ saved }: { saved: { service: Service; hint: string } | null
   const [service, setService] = useState<Service>(saved?.service ?? "torbox");
   const keys = SERVICES.find((s) => s.value === service)!.keys;
   return (
-    <KeyRow kind="debrid" title="Debrid service" badge="Needed to play" label={`${serviceName(service)} API key`} saved={saved?.hint ?? null} service={saved?.service ?? service}>
+    <KeyRow kind="debrid" title="Debrid service" badge="Recommended" label={`${serviceName(service)} API key`} saved={saved?.hint ?? null} service={saved?.service ?? service}>
       <p className="max-w-[60ch] text-body text-fg-faint">
-        Turns a title into something you can play. <span className="text-fg-muted">TorBox</span> plays in the browser and the
+        Plays torrents, which most stream addons find; an addon’s plain web videos play without one.{" "}
+        <span className="text-fg-muted">TorBox</span> plays in the browser and the
         installed app, in parties, and gives the timeline its preview pictures. The others play in Krida for Windows and Mac,
         or in an external player.{" "}
         {service === "torbox" ? (

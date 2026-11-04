@@ -12,7 +12,7 @@ import { Hero, HeroSkeleton, WelcomeHero } from "./hero";
 import { buildSlides, useHeroItems } from "./slides";
 import { AddonRail, ContinueCard, FriendRail, HomeRail, MyListRail, RowsSkeleton, UpcomingCard } from "./rails";
 import { splitUpcoming, useNextEpisodes } from "./nextUp";
-import { useHasNoTmdbKey, useNeedsTmdbKey } from "../../data/keys";
+import { useNeedsTmdbKey } from "../../data/keys";
 import { TmdbForMore } from "../../ui/needsKey";
 
 export type ProgressRow = Doc<"progress">;
@@ -43,8 +43,7 @@ export function Home() {
   const myList = useMyList();
   const needsKey = useNeedsTmdbKey();
   // With no TMDB key there are no picks or Top 10 to lead with: Cinemeta's popular movies do, unless a row was chosen.
-  const noKey = useHasNoTmdbKey();
-  const heroItems = useHeroItems(home, prefs.heroRow ?? (noKey ? CINEMETA_ROWS[0].key : undefined));
+  const heroItems = useHeroItems(home, prefs.heroRow ?? (needsKey ? CINEMETA_ROWS[0].key : undefined));
   const slides = useMemo(() => buildSlides(continueRows, home, heroItems), [continueRows, home, heroItems]);
   useReadyTiming("home", !!home && slides !== undefined);
 

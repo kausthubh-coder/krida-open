@@ -7,7 +7,7 @@ import { useCatalogRows, type RecItem, type ShownRow } from "../../data/api";
 import { useAddons, type InstalledAddon } from "../../data/addons";
 import { catalogRowKey, isRow, type AddonCatalog } from "../../../shared/stremio";
 import { CINEMETA } from "../../../shared/addons";
-import { useHasNoTmdbKey } from "../../data/keys";
+import { useHasNoTmdbKey, useNeedsTmdbKey } from "../../data/keys";
 import { useStored, useStoredQuery } from "../../data/stored";
 import { useTables, type Tables } from "../../data/sync";
 
@@ -114,7 +114,10 @@ export function homeRows(personal: Personal, simkl: HomeRow[], catalog: ShownRow
  * key, Cinemeta's popular rows stand in for Krida's own, as on Stremio.
  */
 export function useHome(token: string): HomeData | undefined {
+  // No key: /api/rows refuses, so it isn't asked. A key TMDB refuses: it still answers its genre rows, but Home leaves
+  // out its Popular rows (homeRows), so Cinemeta's stand in whenever the key doesn't work.
   const noKey = useHasNoTmdbKey();
+  const needsKey = useNeedsTmdbKey();
   const personal = useStoredQuery(api.recs.rows, { token });
   const friends = useStoredQuery(api.catalogs.friends, { token });
   const t = useTables();
@@ -129,7 +132,7 @@ export function useHome(token: string): HomeData | undefined {
     if (!personal || !simkl || !friends || !rows || !addons) return undefined;
     const { taste: _taste, rows: _rows, ...rest } = personal;
     const built = homeRows(personal, simkl, rows);
-    const addonRows = addonRowsOf(addons, noKey);
+    const addonRows = addonRowsOf(addons, needsKey);
     return { ...rest, ...built, addonRows, empty: built.empty && addonRows.length === 0, friends };
-  }, [personal, simkl, friends, rows, addons, noKey]);
+  }, [personal, simkl, friends, rows, addons, needsKey]);
 }

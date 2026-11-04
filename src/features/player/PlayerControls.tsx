@@ -273,7 +273,7 @@ export function PlayerControls(props: {
             )}
             <>
               <IconButton
-                label="Picture and speed"
+                label="Picture (V)"
                 aria-haspopup="dialog"
                 aria-expanded={menu === "picture"}
                 onClick={() => setMenu(menu === "picture" ? null : "picture")}

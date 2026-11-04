@@ -1,8 +1,10 @@
-// Reads the addon links of a Stremio account, in the browser. Krida's server never sees the email, password or the
-// key Stremio hands back: only the links go to Convex (addons.importUrls), and the Stremio session is ended after.
+// Reads addons and library in the browser. Only addon links and library items go to Convex.
+// The email, password and Stremio session key stay here, and the session is ended after.
 import { importableUrls, STREMIO_API } from "../../../shared/stremio";
 
 export class StremioError extends Error {}
+
+export type StremioLibraryItem = Record<string, unknown>;
 
 async function call(method: string, body: Record<string, unknown>) {
   const res = await fetch(`${STREMIO_API}/${method}`, {
@@ -23,16 +25,28 @@ export function stremioProblem(error: { message?: string; wrongEmail?: boolean; 
   return error?.message ? `Stremio said: ${error.message}` : "Stremio didn’t answer as expected. Try again.";
 }
 
-/** Signs in to Stremio, reads the account's addon links, and signs out again. */
-export async function stremioAddonUrls(email: string, password: string): Promise<string[]> {
+/** One Stremio sign-in for addons and library; the session ends even when either read fails. */
+export async function stremioAccount(email: string, password: string, includeLibrary = true): Promise<{ urls: string[]; library: StremioLibraryItem[] }> {
   const login = await call("login", { type: "Login", email: email.trim(), password, facebook: false });
   const authKey = login?.result?.authKey;
   if (typeof authKey !== "string") throw new StremioError(stremioProblem(login?.error));
   try {
     const collection = await call("addonCollectionGet", { type: "AddonCollectionGet", authKey, update: true });
     if (collection?.error) throw new StremioError(stremioProblem(collection.error));
-    return importableUrls(collection);
+    let library: StremioLibraryItem[] = [];
+    if (includeLibrary) {
+      const data = await call("datastoreGet", { authKey, collection: "libraryItem", ids: [], all: true });
+      if (data?.error) throw new StremioError(stremioProblem(data.error));
+      if (!Array.isArray(data?.result)) throw new StremioError("Stremio didn’t return its library. Try again.");
+      library = data.result;
+    }
+    return { urls: importableUrls(collection), library };
   } finally {
     void call("logout", { type: "Logout", authKey }).catch(() => {});
   }
+}
+
+/** Kept for callers that only need addon links. */
+export async function stremioAddonUrls(email: string, password: string): Promise<string[]> {
+  return (await stremioAccount(email, password, false)).urls;
 }

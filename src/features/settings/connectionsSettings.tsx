@@ -1,4 +1,5 @@
-// Settings → Connections: the account's TMDB, MDBList and debrid keys, checked with each service as they're pasted.
+// Settings → Connections: the account's TMDB, MDBList and debrid keys, checked with each service as they're pasted,
+// and this profile's Trakt.
 import { useState } from "react";
 import { useAction, useMutation } from "convex/react";
 import { CheckCircleIcon } from "@phosphor-icons/react";
@@ -10,6 +11,7 @@ import { Button, Spinner } from "../../ui/ui";
 import { errorMessage } from "../play";
 import { Field, Group } from "./settingsParts";
 import { inputClass, Select } from "../../ui/select";
+import { TraktConnection } from "./traktSettings";
 
 type Kind = "tmdb" | "mdblist" | "debrid";
 type Service = DebridService;
@@ -225,6 +227,9 @@ export function ConnectionsSection() {
       </Group>
       <Group>
         <DebridRow saved={connections.debrid} />
+      </Group>
+      <Group>
+        <TraktConnection />
       </Group>
     </div>
   );

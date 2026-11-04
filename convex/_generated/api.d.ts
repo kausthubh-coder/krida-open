@@ -45,6 +45,9 @@ import type * as lib_statsShape from "../lib/statsShape.js";
 import type * as lib_synced from "../lib/synced.js";
 import type * as lib_telemetry from "../lib/telemetry.js";
 import type * as lib_titleIds from "../lib/titleIds.js";
+import type * as lib_traktApi from "../lib/traktApi.js";
+import type * as lib_traktOutbox from "../lib/traktOutbox.js";
+import type * as lib_traktPull from "../lib/traktPull.js";
 import type * as lib_unwatched from "../lib/unwatched.js";
 import type * as lib_watchStatus from "../lib/watchStatus.js";
 import type * as library from "../library.js";
@@ -62,6 +65,7 @@ import type * as sources from "../sources.js";
 import type * as sync from "../sync.js";
 import type * as titles from "../titles.js";
 import type * as trailers from "../trailers.js";
+import type * as trakt from "../trakt.js";
 import type * as wrapped from "../wrapped.js";
 
 import type {
@@ -108,6 +112,9 @@ declare const fullApi: ApiFromModules<{
   "lib/synced": typeof lib_synced;
   "lib/telemetry": typeof lib_telemetry;
   "lib/titleIds": typeof lib_titleIds;
+  "lib/traktApi": typeof lib_traktApi;
+  "lib/traktOutbox": typeof lib_traktOutbox;
+  "lib/traktPull": typeof lib_traktPull;
   "lib/unwatched": typeof lib_unwatched;
   "lib/watchStatus": typeof lib_watchStatus;
   library: typeof library;
@@ -125,6 +132,7 @@ declare const fullApi: ApiFromModules<{
   sync: typeof sync;
   titles: typeof titles;
   trailers: typeof trailers;
+  trakt: typeof trakt;
   wrapped: typeof wrapped;
 }>;
 

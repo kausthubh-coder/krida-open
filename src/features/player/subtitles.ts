@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { resourceUrl, serves, type AddonManifest } from "../../../shared/stremio";
 import { addonJson } from "../../data/addons";
+import { SESSION_KEY } from "../../data/session";
+import { CONVEX_URL } from "../../data/backend";
+import type { SubtitleCue, SubtitleTrack } from "../../../server/mkv";
 
 const ADDON = "https://opensubtitles-v3.strem.io";
 
@@ -8,14 +11,45 @@ export type SubtitleOption = { id: string; url: string; lang: string };
 /** One of the file's own tracks. `id` is "file:<n>", n being mpv's track number (from 1). */
 export type FileSubtitle = { id: string; lang?: string; title?: string };
 
+/** This endpoint resolves the file inside the signed-in account, never from a client-supplied URL. */
+export async function embeddedSubtitles(size: number, track?: number) {
+  const params = new URLSearchParams({ mode: "subtitles", size: String(size) });
+  if (track !== undefined) params.set("track", String(track));
+  const res = await fetch(`/api/frames?${params}`, { headers: {
+    "x-krida-backend": CONVEX_URL,
+    "x-krida-session": localStorage.getItem(SESSION_KEY) ?? "",
+  } });
+  if (!res.ok) throw new Error(`File subtitles answered ${res.status}`);
+  return await res.json() as { tracks: SubtitleTrack[]; skipped: { codec: string; name: string }[]; cues: SubtitleCue[] } | null;
+}
+
+export function embeddedOptions(tracks: SubtitleTrack[]): FileSubtitle[] {
+  return tracks.map((t) => ({ id: `file:${t.track}`, lang: subtitleLanguage(t.language), title: t.name ? `${t.name} · in the file` : "in the file" }));
+}
+
+function subtitleLanguage(language: string | undefined) {
+  const primary = (language ?? "und").toLowerCase().split("-")[0];
+  const codes: Record<string, string> = { en: "eng", ja: "jpn", es: "spa", fr: "fra", fre: "fra", de: "deu", ger: "deu", zh: "zho", chi: "zho", ko: "kor", pt: "por", it: "ita", ru: "rus", ar: "ara", hi: "hin" };
+  return codes[primary] ?? primary;
+}
+
+export function embeddedCues(codec: string, cues: SubtitleCue[]): Cue[] {
+  return cues.map((c) => {
+    // Matroska ASS packets omit Start/End and begin ReadOrder,Layer,Style,Name,MarginL,MarginR,MarginV,Effect.
+    const ass = codec === "S_TEXT/ASS" || codec === "S_TEXT/SSA";
+    const html = ass ? assCueHtml(c.text.split(",").slice(8).join(",")) : cueHtml(c.text);
+    return { start: c.start, end: c.end, html };
+  }).filter((c) => c.html !== "");
+}
+
 /** Signs and forced tracks only cover on-screen text and foreign lines, so they aren't picked for a language. */
 const PARTIAL = /\b(forced|signs?|songs?)\b/i;
 
 /** The best subtitles in a language: the file's own full track (timed to this very file), else OpenSubtitles. */
 export function bestSubtitles(lang: string, fileTracks: FileSubtitle[], options: SubtitleOption[] | undefined) {
   return (
-    fileTracks.find((t) => t.lang === lang && !PARTIAL.test(t.title ?? ""))?.id ??
-    options?.find((s) => s.lang === lang)?.id ??
+    fileTracks.find((t) => t.lang && subtitleLanguage(t.lang) === subtitleLanguage(lang) && !PARTIAL.test(t.title ?? ""))?.id ??
+    options?.find((s) => subtitleLanguage(s.lang) === subtitleLanguage(lang))?.id ??
     null
   );
 }
@@ -141,11 +175,16 @@ function parseAss(text: string): Cue[] {
     values.splice(ti, values.length - format.length + 1, values.slice(ti, ti + values.length - format.length + 1).join(","));
     const start = toSeconds(values[format.indexOf("start")] ?? "");
     const end = toSeconds(values[format.indexOf("end")] ?? "");
-    const plain = values[ti].replace(/\{\\[^}]*\}/g, "").replace(/\\[Nn]/g, "\n").replace(/\\h/g, " ").trim();
-    if (Number.isFinite(start) && Number.isFinite(end) && end > start && plain)
-      cues.push({ start, end, html: escapeHtml(plain).replace(/\n/g, "<br>") });
+    const html = assCueHtml(values[ti]);
+    if (Number.isFinite(start) && Number.isFinite(end) && end > start && html)
+      cues.push({ start, end, html });
   }
   return cues.sort((a, b) => a.start - b.start);
+}
+
+function assCueHtml(text: string) {
+  const plain = text.replace(/\{\\[^}]*\}/g, "").replace(/\\[Nn]/g, "\n").replace(/\\h/g, " ").trim();
+  return escapeHtml(plain).replace(/\n/g, "<br>");
 }
 
 export type LocalSubtitle = { id: string; name: string; cues: Cue[] };

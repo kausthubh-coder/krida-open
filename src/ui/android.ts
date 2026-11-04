@@ -1,3 +1,5 @@
+import { startDpad } from "./dpad";
+
 /**
  * Krida's Android app (android/) opens this site in a WebView and hands the page what a browser can't reach: the
  * screen's own brightness, the phone's volume, its haptic motor, holding the phone sideways, keeping the screen on,
@@ -37,10 +39,33 @@ type Bridge = {
   setOrientation(kind: "landscape" | "any"): void;
   canPictureInPicture(): boolean;
   enterPictureInPicture(): void;
+  /**
+   * From 1.4: the file itself, played by ExoPlayer under the page (android/…/NativePlayer.kt), which hears `player`
+   * events back. The player speaks mpv's words (features/player/androidPlayer.ts); `aid` counts sound tracks from 1.
+   */
+  playerLoad?(url: string, start: number, paused: boolean, aid: number, title: string): void;
+  playerSeek?(time: number): void;
+  /** One of mpv's properties, its value as JSON. */
+  playerSet?(name: string, value: string): void;
+  playerStop?(): void;
 };
 
 export const android: Bridge | null = (window as { KridaAndroid?: Bridge }).KridaAndroid ?? null;
 
+/** Whether the app's version, as "major.minor", is `version` or later. False in a browser and before 1.2 (no version). */
+export function androidAtLeast(version: string) {
+  const have = android?.version?.().split(".").map(Number);
+  if (!have) return false;
+  const want = version.split(".").map(Number);
+  for (let i = 0; i < want.length; i++) {
+    const a = have[i] ?? 0;
+    if (a !== want[i]) return a > want[i]!;
+  }
+  return true;
+}
+
+/** What the app's player reports, as mpv would (desktop.ts's MpvMessage). */
+export type PlayerReport = { name?: string; value?: unknown; event?: string; time?: number | null; reason?: string | null };
 /** What the phone tells the page: a volume key's new level, the small window opening or closing, its play button. */
 export type AndroidEvent =
   | ({ type: "insets" } & Insets)
@@ -48,6 +73,7 @@ export type AndroidEvent =
   | { type: "pip"; on: boolean }
   | { type: "media"; action: "toggle" | "pause" }
   | { type: "signin"; url: string }
+  | ({ type: "player" } & PlayerReport)
   | { type: "update"; state: "idle" | "checking" | "current" | "downloading" | "ready" | "failed"; version: string | null };
 
 export function onAndroid(listener: (event: AndroidEvent) => void) {
@@ -58,13 +84,15 @@ export function onAndroid(listener: (event: AndroidEvent) => void) {
 
 /**
  * In the app, before the first render: the page learns the phone's bars and cutout (styles.css turns them into
- * --inset-*), now and whenever they change, and the back button asks the page first.
+ * --inset-*), now and whenever they change, the back button asks the page first, and a TV remote's arrows move focus
+ * (dpad.ts).
  */
 export function startAndroid() {
   if (!android) return;
   if (android.insets) setInsets(JSON.parse(android.insets()) as Insets);
   onAndroid((e) => e.type === "insets" && setInsets(e));
   (window as { kridaBack?: () => boolean }).kridaBack = back;
+  startDpad();
 }
 
 function setInsets(insets: Insets) {
@@ -72,12 +100,23 @@ function setInsets(insets: Insets) {
   for (const side of ["top", "right", "bottom", "left"] as const) style.setProperty(`--android-inset-${side}`, `${insets[side]}px`);
 }
 
+/** The menu Back last sent Escape to, and when: one still open moments later didn't close, so Back moves on. */
+let escaped: { menu: Element; at: number } | null = null;
+
 /**
- * The phone's back button or gesture asks the page first (`window.kridaBack`): it closes the sheet on top, or leaves
- * full screen, as Escape does. False lets the app go back a page. Chrome does this itself; a WebView leaves it to
- * the app.
+ * The phone's back button or gesture (or a remote's) asks the page first (`window.kridaBack`): it closes the menu or
+ * sheet on top, or leaves full screen, as Escape does. False lets the app go back a page. Chrome does this itself; a
+ * WebView leaves it to the app.
  */
 function back() {
+  // A menu's button says it's open; the menu closes on Escape (ui/dismiss.ts, the player's keys.ts).
+  const menu = [...document.querySelectorAll('[aria-haspopup][aria-expanded="true"]')].pop();
+  if (menu && !(escaped?.menu === menu && Date.now() - escaped.at < 3000)) {
+    escaped = { menu, at: Date.now() };
+    (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    return true;
+  }
+  escaped = null;
   const sheet = [...document.querySelectorAll("dialog[open]")].pop();
   if (sheet instanceof HTMLDialogElement) {
     // As Escape would: the sheet's own cancel handler animates it shut; one without a handler just closes.

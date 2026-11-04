@@ -217,6 +217,83 @@ describe("didn't watch it", () => {
 });
 
 describe("scores and statuses", () => {
+  test.each(["tmdb:603", "mal:5114", "dbl:abc123"])("addon title %s can be saved, rated and given a status", async (id) => {
+    const { t, outbox } = await fixture();
+    const item = { id, type: "series" as const, name: "Addon title" };
+    await t.mutation(api.library.toggle, { token, item: { imdbId: id, type: item.type, name: item.name }, saved: true });
+    expect(await t.query(api.library.has, { token, imdbId: id })).toBe(true);
+    await t.mutation(api.ratings.save, { token, item, rating: 8 });
+    await t.mutation(api.library.setStatus, { token, item, state: "hold" });
+    expect(await t.query(api.ratings.details, { token, id })).toMatchObject({ rating: 8, watchStatus: "hold" });
+    expect(await outbox()).toEqual([]);
+  });
+
+  test.each(["", "../title", "a\\b", "a/b", "a?b", "a#b", "a%2Fb", "a b", "..", "x".repeat(201)])("refuses malformed catalog id %s", async (id) => {
+    const { t } = await fixture();
+    const item = { ...movie, id };
+    await expect(t.mutation(api.library.toggle, { token, item: { imdbId: id, type: item.type, name: item.name }, saved: true })).rejects.toThrow("This title does not have a supported ID yet.");
+    await expect(t.mutation(api.ratings.save, { token, item, rating: 8 })).rejects.toThrow("This title does not have a supported ID yet.");
+    await expect(t.mutation(api.library.setStatus, { token, item, state: "completed" })).rejects.toThrow("This title does not have a supported ID yet.");
+  });
+
+  test("Stremio JSON imports bookmarks, watched movies and resume positions, once", async () => {
+    const { t, outbox } = await fixture();
+    const items = [
+      { _id: "dbl:abc123", type: "movie", name: "Saved", removed: false, state: {} },
+      { _id: "tmdb:603", type: "movie", name: "Watched", removed: false, state: { timesWatched: 1, duration: 7200000 } },
+      { _id: "tt123", type: "series", name: "Resume", removed: false, state: { video_id: "tt123:2:3", timeOffset: 120000, duration: 2400000 } },
+      { _id: "tt9", type: "movie", name: "Removed", removed: true },
+      { _id: "yt:1", type: "channel", name: "Channel", removed: false },
+    ];
+    expect(await t.mutation(api.library.importStremio, { token, items })).toEqual({ added: 3, skipped: 2 });
+    expect(await t.mutation(api.library.importStremio, { token, items })).toEqual({ added: 0, skipped: 5 });
+    expect(await t.query(api.library.has, { token, imdbId: "dbl:abc123" })).toBe(true);
+    expect((await t.query(api.library.statusFor, { token, id: "tmdb:603" })).state).toBe("completed");
+    expect((await t.query(api.library.statusFor, { token, id: "tt123" })).state).toBe("watching");
+    const rows = await t.run(async ctx => ({
+      library: (await ctx.db.query("library").collect()).map(r => [r.imdbId, r.name]),
+      viewing: (await ctx.db.query("viewing").collect()).map(r => [r.id, r.state]),
+      progress: (await ctx.db.query("progress").collect()).map(r => [r.media.imdbId, r.media.videoId, r.media.season ?? null, r.media.episode ?? null, r.position, r.duration, r.finished]),
+    }));
+    expect(rows).toEqual({
+      library: [["dbl:abc123", "Saved"], ["tmdb:603", "Watched"], ["tt123", "Resume"]],
+      viewing: [["dbl:abc123", "plantowatch"], ["tmdb:603", "completed"], ["tt123", "watching"]],
+      progress: [["tmdb:603", "tmdb:603", null, null, 7200, 7200, true], ["tt123", "tt123:2:3", 2, 3, 120, 2400, false]],
+    });
+    expect(await outbox()).toEqual([]);
+  });
+
+  test("Stremio import preserves existing ratings, statuses and progress, and requires a session", async () => {
+    const { t } = await fixture();
+    await t.mutation(api.ratings.save, { token, item: movie, rating: 9 });
+    const items = [{ _id: movie.id, type: "movie", name: "Incoming", removed: false, state: { timeOffset: 10000, duration: 100000 } }];
+    expect(await t.mutation(api.library.importStremio, { token, items })).toEqual({ added: 0, skipped: 1 });
+    expect((await t.query(api.ratings.details, { token, id: movie.id })).rating).toBe(9);
+    await expect(t.mutation(api.library.importStremio, { token: "bad", items })).rejects.toThrow("Sign in to continue");
+    await expect(t.mutation(api.library.importStremio, { token, items: Array(101).fill(items[0]) })).rejects.toThrow("Import at most 100 library items at a time.");
+  });
+
+  test("Stremio preserves an existing resume position and does not mark a partly watched show completed", async () => {
+    const { t } = await fixture();
+    await t.mutation(api.progress.save, { token, media: { imdbId: "tt42", videoId: "tt42:1:1", type: "series", name: "Local", season: 1, episode: 1 },
+      position: 300, duration: 1800 });
+    expect(await t.mutation(api.library.importStremio, { token, items: [
+      { _id: "tt42", type: "series", name: "Incoming", removed: false, state: { timeOffset: 1200000, duration: 1800000, video_id: "tt42:1:1" } },
+      { _id: "mal:5114", type: "series", name: "Partly watched", removed: false, state: { timesWatched: 3 } },
+    ] })).toEqual({ added: 1, skipped: 1 });
+    expect((await t.query(api.progress.forTitle, { token, imdbId: "tt42" })).map(r => [r.videoId, r.position, r.duration])).toEqual([["tt42:1:1", 300, 1800]]);
+    expect((await t.query(api.library.statusFor, { token, id: "mal:5114" })).state).toBe("watching");
+  });
+
+  test("Stremio rejects unsafe ids without partially importing the batch", async () => {
+    const { t } = await fixture();
+    await expect(t.mutation(api.library.importStremio, { token, items: [
+      { _id: "dbl:ok", type: "movie", name: "Valid", removed: false },
+      { _id: "../bad", type: "movie", name: "Invalid", removed: false },
+    ] })).rejects.toThrow("This title does not have a supported ID yet.");
+    expect(await t.query(api.library.has, { token, imdbId: "dbl:ok" })).toBe(false);
+  });
+
   test("rating an imported completed title preserves its diary date", async () => {
     const { t, tracked } = await fixture();
     const at = now - 90 * 86_400_000;

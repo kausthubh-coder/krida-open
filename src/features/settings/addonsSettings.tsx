@@ -15,7 +15,7 @@ import { Button, cx, IconButton, Spinner, Toggle } from "../../ui/ui";
 import { errorMessage } from "../play";
 import { Field, Group } from "./settingsParts";
 import { inputClass, Select } from "../../ui/select";
-import { StremioError, stremioAddonUrls } from "./stremioImport";
+import { StremioError, stremioAccount } from "./stremioImport";
 
 const link = "font-medium text-fg underline decoration-fg-faint underline-offset-2 hover:decoration-fg";
 
@@ -298,10 +298,11 @@ export function Suggestions() {
   );
 }
 
-type ImportResult = { added: string[]; already: number; failed: { host: string; message: string }[] };
+type ImportResult = { added: string[]; already: number; failed: { host: string; message: string }[]; titles?: number };
 
-function importSummary({ added, already, failed }: ImportResult) {
+function importSummary({ added, already, failed, titles }: ImportResult) {
   const parts = [
+    titles !== undefined ? `Added ${titles} ${titles === 1 ? "title" : "titles"} to your library.` : "",
     added.length ? `Added ${added.length === 1 ? added[0] : `${added.length} addons`}.` : "No new addons to add.",
     already ? `${already} ${already === 1 ? "was" : "were"} already installed.` : "",
     failed.length ? `${failed.length} couldn’t be added: ${failed.map((f) => f.host).join(", ")}.` : "",
@@ -312,6 +313,7 @@ function importSummary({ added, already, failed }: ImportResult) {
 export function StremioImport() {
   const { token } = useAuthed();
   const importUrls = useAction(api.addons.importUrls);
+  const importLibrary = useMutation(api.library.importStremio);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -325,10 +327,12 @@ export function StremioImport() {
     setError(null);
     setResult(null);
     try {
-      const urls = await stremioAddonUrls(email, password);
-      if (urls.length === 0) return setError("That Stremio account has no addons Krida can install.");
-      const done = await importUrls({ token, urls });
-      setResult(done);
+      const { urls, library } = await stremioAccount(email, password);
+      let titles = 0;
+      for (let start = 0; start < library.length; start += 100)
+        titles += (await importLibrary({ token, items: library.slice(start, start + 100) })).added;
+      const done = urls.length ? await importUrls({ token, urls }) : { added: [], already: 0, failed: [] };
+      setResult({ ...done, titles });
       setPassword("");
     } catch (err) {
       setError(err instanceof StremioError ? err.message : errorMessage(err, "Couldn’t import your addons. Try again."));
@@ -342,7 +346,7 @@ export function StremioImport() {
       <span>
         <span className="block text-body font-medium">Import from Stremio</span>
         <span className="block max-w-[60ch] text-body text-fg-faint">
-          This browser signs in to Stremio, reads your addon list and signs out. Krida never keeps your Stremio email or password.
+          This browser signs in to Stremio, reads your addons and library and signs out. Krida never keeps your Stremio email or password.
         </span>
       </span>
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -355,11 +359,11 @@ export function StremioImport() {
         </label>
         <input id="stremio-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" placeholder="Password" className={inputClass} />
         <Button type="submit" className="h-11 shrink-0" loading={busy}>
-          Import addons
+          Import from Stremio
         </Button>
       </div>
       <p role="status" className={cx("min-h-5 text-body", error ? "text-danger" : "text-fg-muted")}>
-        {error ?? (result ? importSummary(result) : busy ? "Reading your Stremio addons…" : "")}
+        {error ?? (result ? importSummary(result) : busy ? "Reading your Stremio addons and library…" : "")}
       </p>
       {result && result.failed.length > 0 && (
         <ul className="flex flex-col gap-1 text-body text-fg-faint">

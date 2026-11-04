@@ -1,6 +1,6 @@
 import { signTicket } from "../server/frameTicket.js";
 import { BadRequest, endpoint } from "../server/http.js";
-import { readIndex } from "../server/mkv.js";
+import { readIndex, readSubtitles } from "../server/mkv.js";
 import { torboxKey } from "../server/session.js";
 import { fileReader } from "../server/torbox.js";
 
@@ -24,6 +24,17 @@ export default endpoint(async (params, request) => {
     return Response.json(url && secret ? { url, ...(await signTicket(secret, size, key)) } : null, { headers: { "Cache-Control": "no-store" } });
   }
   const read = await fileReader(key, size);
+  if (params.get("mode") === "subtitles") {
+    const track = params.has("track") ? Number(params.get("track")) : undefined;
+    if (track !== undefined && (!Number.isSafeInteger(track) || track < 1)) throw new BadRequest("Invalid subtitle track");
+    if (!read) return Response.json(null, { headers: { "Cache-Control": "no-store" } });
+    const result = await readSubtitles(read, size, track);
+    return Response.json(result, { headers: {
+      "Cache-Control": "private, max-age=86400",
+      "Vercel-CDN-Cache-Control": "max-age=31536000, immutable",
+      "Vary": "x-krida-backend, x-krida-session",
+    } });
+  }
   const index = read ? await readIndex(read) : null;
   return Response.json(index, {
     headers: index

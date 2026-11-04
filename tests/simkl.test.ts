@@ -204,7 +204,7 @@ describe("watch-status menu and library", () => {
     expect(await rows()).toEqual([]);
     expect(await t.query(api.library.statusFor, { token, id: movie.id })).toMatchObject({ state: "hold", sync: "off" });
     await expect(t.mutation(api.library.setStatus, { token: "bad-session", item: show, state: "completed" })).rejects.toThrow("Sign in to continue");
-    await expect(t.mutation(api.library.setStatus, { token, item: { ...show, id: "not-an-id" }, state: "completed" })).rejects.toThrow("This title does not have a supported ID yet.");
+    await expect(t.mutation(api.library.setStatus, { token, item: { ...show, id: "../not-an-id" }, state: "completed" })).rejects.toThrow("This title does not have a supported ID yet.");
   });
 });
 

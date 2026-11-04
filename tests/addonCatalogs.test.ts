@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { proxiedUrl, proxyAddon } from "../server/addonProxy";
 import { addonMeta, released, toRowItem } from "../src/data/addons";
-import { stremioAddonUrls, stremioProblem } from "../src/features/settings/stremioImport";
+import { stremioAccount, stremioAddonUrls, stremioProblem } from "../src/features/settings/stremioImport";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -166,5 +166,33 @@ describe("importing from a Stremio account", () => {
     const calls = stremio({ login: { error: { code: 3, message: "Wrong passphrase", wrongPass: true } } });
     await expect(stremioAddonUrls("me@example.com", "nope")).rejects.toThrow("That password isn’t right for this Stremio account.");
     expect(calls.map((c) => c.method)).toEqual(["login"]);
+  });
+
+  test("one sign-in reads both addons and library and ends the session", async () => {
+    const library = [{ _id: "tmdb:603", name: "The Matrix", type: "movie", removed: false, state: { timeOffset: 120000, duration: 7200000 } }];
+    const calls = stremio({
+      login: { result: { authKey: "auth-1" } },
+      addonCollectionGet: { result: { addons: [] } },
+      datastoreGet: { result: library },
+    });
+    expect(await stremioAccount(" me@example.com ", "pw")).toEqual({ urls: [], library });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(calls).toEqual([
+      { method: "login", body: { type: "Login", email: "me@example.com", password: "pw", facebook: false } },
+      { method: "addonCollectionGet", body: { type: "AddonCollectionGet", authKey: "auth-1", update: true } },
+      { method: "datastoreGet", body: { authKey: "auth-1", collection: "libraryItem", ids: [], all: true } },
+      { method: "logout", body: { type: "Logout", authKey: "auth-1" } },
+    ]);
+  });
+
+  test("a failed library read signs out and reports the error", async () => {
+    const calls = stremio({
+      login: { result: { authKey: "auth-1" } },
+      addonCollectionGet: { result: { addons: [] } },
+      datastoreGet: { error: { message: "Library unavailable" } },
+    });
+    await expect(stremioAccount("me@example.com", "pw")).rejects.toThrow("Stremio said: Library unavailable");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(calls.map(c => c.method)).toEqual(["login", "addonCollectionGet", "datastoreGet", "logout"]);
   });
 });

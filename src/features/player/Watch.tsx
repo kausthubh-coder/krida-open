@@ -22,7 +22,7 @@ import { Player } from "./Player";
 import { useReleaseOrientation } from "./touch";
 import { useSideways } from "../../ui/sideways";
 import { enterPlayerLandscape } from "../../ui/fullscreen";
-import { useAndroidWatching } from "./androidPlayer";
+import { nativePlayer, useAndroidWatching } from "./androidPlayer";
 import { usePlayTiming } from "./playTiming";
 import { canGoBack } from "../../ui/history";
 
@@ -113,7 +113,7 @@ function Room({ room }: { room: RoomData }) {
 
   useReleaseOrientation();
   // How this device plays the stream; a file it can't play gets the places it does play instead of a player.
-  const how = room.stream ? playsIn(room.stream, { app: !!desktopApp(), canPlay: browserCanPlay }) : undefined;
+  const how = room.stream ? playsIn(room.stream, { app: !!desktopApp(), native: nativePlayer(), canPlay: browserCanPlay }) : undefined;
   const ready = room.status === "ready" && !!room.stream;
   const elsewhere = ready && how?.mode === "elsewhere";
   // Always sideways on a phone: turned for real where the browser can (Play asked already; a first press here asks
@@ -187,8 +187,8 @@ function Room({ room }: { room: RoomData }) {
       onPointerDownCapture={elsewhere ? undefined : enterPlayerLandscape}
       className={cx(
         "fixed overflow-hidden text-fg",
-        // In the app, mpv's picture is under the page: the room is see-through while it plays.
-        !(playing && how?.mode === "mpv") && "bg-black",
+        // In the apps, mpv's or ExoPlayer's picture is under the page: the room is see-through while it plays.
+        !(playing && (how?.mode === "mpv" || how?.mode === "native")) && "bg-black",
         // A quarter turn clockwise about the top left, moved back on screen: the frame is the phone's length wide.
         sideways ? "top-0 left-full h-[100vw] w-[100dvh] origin-top-left rotate-90" : "inset-0",
       )}
@@ -210,7 +210,7 @@ function Room({ room }: { room: RoomData }) {
           onOpenParty={() => setPanel("party")}
           audioLanguage={audioLanguage}
           onAudioLanguage={setAudioLanguage}
-          mode={how!.mode as "hls" | "mpv" | "file"}
+          mode={how!.mode as "hls" | "mpv" | "file" | "native"}
         />
       ) : ready && how?.why ? (
         <PlayElsewhere

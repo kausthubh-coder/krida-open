@@ -438,6 +438,69 @@ export default defineSchema({
     .index("by_profile", ["profileId", "nextAt"])
     .index("by_key", ["profileId", "key"]),
 
+  // A profile's Trakt account (convex/trakt.ts, docs/trakt.md). Tokens never leave the server.
+  traktConnections: defineTable({
+    profileId: v.id("profiles"),
+    accessToken: v.string(),
+    refreshToken: v.optional(v.string()),
+    expiresAt: v.optional(v.number()),
+    account: v.optional(v.object({ name: v.string(), avatar: v.optional(v.string()) })),
+    // The last /sync/last_activities answer, so each sync fetches only what moved.
+    snapshot: v.optional(v.string()),
+    // What the first import brought in, for Settings.
+    imported: v.optional(v.object({ plays: v.number(), planned: v.number(), rated: v.number() })),
+    syncing: v.optional(v.number()),
+    lastSyncAt: v.optional(v.number()),
+    lastError: v.optional(v.string()),
+    needsReconnect: v.optional(v.boolean()),
+    writeBack: v.boolean(),
+    connectedAt: v.number(),
+    // When the outbox is due to be sent next (a send is scheduled for then).
+    flushAt: v.optional(v.number()),
+    flushJobId: v.optional(v.id("_scheduled_functions")),
+    // Trakt said "slow down" (429): nothing is sent or fetched before this.
+    backoffUntil: v.optional(v.number()),
+  }).index("by_profile", ["profileId"]),
+
+  // Connecting Trakt: the code the person enters at trakt.tv/activate, and the device code the server asks with.
+  traktLogins: defineTable({
+    profileId: v.id("profiles"),
+    deviceCode: v.string(),
+    userCode: v.string(),
+    verificationUrl: v.string(),
+    // Seconds between asks, as Trakt sets it.
+    interval: v.number(),
+    expiresAt: v.number(),
+    // Why it ended without a connection: the person said no, or the code ran out.
+    over: v.optional(v.union(v.literal("denied"), v.literal("expired"))),
+  }).index("by_profile", ["profileId"]),
+
+  // Changes made in Krida waiting to go to Trakt, batched and retried with backoff (convex/lib/traktOutbox.ts).
+  traktOutbox: defineTable({
+    profileId: v.id("profiles"),
+    op: v.union(v.literal("watched"), v.literal("unwatch"), v.literal("plan"), v.literal("unplan"), v.literal("rate")),
+    // One pending change per episode, rating or watchlist entry.
+    key: v.string(),
+    item: v.object({
+      // Always an IMDb id: Trakt has no Kitsu ids.
+      id: v.string(),
+      type: v.union(v.literal("movie"), v.literal("series")),
+      name: v.string(),
+      year: v.optional(v.string()),
+      season: v.optional(v.number()),
+      episode: v.optional(v.number()),
+      // For "rate": 1–10, or 0 to clear the rating.
+      rating: v.optional(v.number()),
+    }),
+    at: v.number(),
+    attempts: v.number(),
+    nextAt: v.number(),
+    // A sender has taken a snapshot. Further edits get a new row.
+    inFlight: v.optional(v.boolean()),
+  })
+    .index("by_profile", ["profileId", "nextAt"])
+    .index("by_key", ["profileId", "key"]),
+
   oauthStates: defineTable({
     state: v.string(),
     profileId: v.id("profiles"),
@@ -518,6 +581,8 @@ export default defineSchema({
     addedAt: v.number(),
     // On the profile's Simkl watchlist and kept in step with it: it leaves Plan to watch when it leaves there.
     source: v.optional(v.literal("simkl")),
+    // The same for the profile's Trakt watchlist.
+    trakt: v.optional(v.boolean()),
   })
     .index("by_profile", ["profileId", "addedAt"])
     .index("by_profile_imdb", ["profileId", "imdbId"]),

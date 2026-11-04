@@ -1,10 +1,11 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { housemates } from "./lib/accounts";
 import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { internalMutation, mutation } from "./functions";
 import { requireProfile } from "./lib/auth";
 import { enqueue, listChangePending, statusOffWatchlist } from "./lib/simklOutbox";
+import { enqueueTrakt, inPlanToWatch, takeBackTraktUnwatch, traktStatus } from "./lib/traktOutbox";
 import { isStatusChoice } from "./simkl";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -22,6 +23,68 @@ const statusItemValidator = v.object({ id: v.string(), type: v.union(v.literal("
   name: v.string(), poster: v.optional(v.string()), year: v.optional(v.string()) });
 type StatusItem = Infer<typeof statusItemValidator>;
 
+/** Stremio's datastore JSON, fetched by the browser. Importing never changes existing profile choices. */
+export const importStremio = mutation({
+  args: { token: v.string(), items: v.array(v.any()) },
+  returns: v.object({ added: v.number(), skipped: v.number() }),
+  handler: async (ctx, { token, items }) => {
+    const me = await requireProfile(ctx, token);
+    if (items.length > 100 || JSON.stringify(items).length > 100_000)
+      throw new ConvexError("Import at most 100 library items at a time.");
+    let added = 0;
+    let skipped = 0;
+    for (const raw of items) {
+      if (!raw || typeof raw !== "object" || raw.removed !== false ||
+        (raw.type !== "movie" && raw.type !== "series") || typeof raw._id !== "string" ||
+        typeof raw.name !== "string" || !raw.name.trim()) { skipped++; continue; }
+      assertTitleId(raw._id);
+      const item = await canonicalTitle(ctx, me._id, { id: raw._id, type: raw.type as "movie" | "series",
+        name: raw.name.slice(0, 200),
+        poster: typeof raw.poster === "string" && /^https?:\/\//.test(raw.poster) ? raw.poster.slice(0, 2048) : undefined });
+      const ids = await titleIds(ctx, me._id, item.id);
+      const existing = await Promise.all(ids.map(async (id) => {
+        const [saved, viewing, progress, rated, tracked, unwatched] = await Promise.all([
+          ctx.db.query("library").withIndex("by_profile_imdb", q => q.eq("profileId", me._id).eq("imdbId", id)).first(),
+          ctx.db.query("viewing").withIndex("by_title", q => q.eq("profileId", me._id).eq("id", id)).first(),
+          ctx.db.query("progress").withIndex("by_profile_imdb", q => q.eq("profileId", me._id).eq("media.imdbId", id)).first(),
+          ctx.db.query("feedback").withIndex("by_profile_id", q => q.eq("profileId", me._id).eq("id", id)).first(),
+          ctx.db.query("tracked").withIndex("by_profile_id", q => q.eq("profileId", me._id).eq("id", id)).first(),
+          ctx.db.query("unwatched").withIndex("by_title", q => q.eq("profileId", me._id).eq("id", id)).first(),
+        ]);
+        return !!(saved || viewing || progress || rated || tracked || unwatched);
+      }));
+      if (existing.some(Boolean)) { skipped++; continue; }
+      const state = raw.state && typeof raw.state === "object" ? raw.state : {};
+      const at = typeof state.lastWatched === "string" ? Date.parse(state.lastWatched) : NaN;
+      const updatedAt = Number.isFinite(at) ? Math.min(at, Date.now()) : Date.now();
+      const duration = typeof state.duration === "number" && Number.isFinite(state.duration) && state.duration > 0
+        ? Math.min(state.duration / 1000, 7 * 86400) : 0;
+      const position = duration && typeof state.timeOffset === "number" && Number.isFinite(state.timeOffset)
+        ? Math.max(0, Math.min(state.timeOffset / 1000, duration)) : 0;
+      const watched = (typeof state.timesWatched === "number" && state.timesWatched > 0) || state.flaggedWatched === 1;
+      await ctx.db.insert("library", { profileId: me._id, imdbId: item.id, type: item.type,
+        name: item.name, poster: item.poster, addedAt: Date.now() });
+      const started = position > 0 || watched;
+      const completed = item.type === "movie" && (watched || duration > 0 && position >= duration * 0.9);
+      await writeViewing(ctx, me._id, item, completed && !(position > 0 && position < duration * 0.9) ? "completed" :
+        started ? "watching" : "plantowatch");
+      if (position > 0 || watched && item.type === "movie") {
+        const videoId = typeof state.video_id === "string" && state.video_id ? state.video_id : raw._id;
+        assertTitleId(videoId);
+        const parts = videoId.startsWith(raw._id + ":") ? videoId.slice(raw._id.length + 1).match(/^(\d+):(\d+)$/) : null;
+        const season = parts ? Number(parts[1]) : undefined;
+        const episode = parts ? Number(parts[2]) : undefined;
+        await ctx.db.insert("progress", { profileId: me._id,
+          media: { imdbId: raw._id, videoId, type: item.type, name: item.name, poster: item.poster, season, episode },
+          position: position || duration, duration, finished: position ? position >= duration * 0.9 : watched, updatedAt });
+      }
+      added++;
+    }
+    if (added) await invalidateStats(ctx, me._id);
+    return { added, skipped };
+  },
+});
+
 async function writeViewing(ctx: MutationCtx, profileId: Id<"profiles">, item: StatusItem, state: WatchStatus) {
   const row = await ctx.db.query("viewing").withIndex("by_title", (q) => q.eq("profileId", profileId).eq("id", item.id)).first();
   const { year: _year, ...display } = item;
@@ -33,6 +96,9 @@ async function writeViewing(ctx: MutationCtx, profileId: Id<"profiles">, item: S
 /** The one write path for a watch status: the menu, Plan to watch, the rating editor and playback all come here. */
 export async function changeStatus(ctx: MutationCtx, me: Doc<"profiles">, item: StatusItem, state: WatchStatus, addedAt?: number) {
   await invalidateStats(ctx, me._id);
+  // Before Plan to watch changes below: Trakt's watchlist follows it.
+  await traktStatus(ctx, me._id, item, state,
+    state !== "plantowatch" && syncableStatus(item.type, item.id, state) && await inPlanToWatch(ctx, me._id, item.id));
   await writeViewing(ctx, me._id, item, state);
   // When Simkl has no list for this status, Plan to watch stays as it is and follows Simkl's nearest list.
   const syncable = syncableStatus(item.type, item.id, state);
@@ -195,6 +261,7 @@ export const toggle = mutation({
   returns: v.union(v.number(), v.null()),
   handler: async (ctx, { token, item: page, saved, addedAt }) => {
     const profile = await requireProfile(ctx, token);
+    assertTitleId(page.imdbId);
     // Saved under the title's canonical id; removing it also removes a copy saved under its alias.
     const ids = await titleIds(ctx, profile._id, page.imdbId);
     const title = await canonicalTitle(ctx, profile._id, { id: page.imdbId, type: page.type, name: page.name, poster: page.poster, year: page.year });
@@ -207,12 +274,15 @@ export const toggle = mutation({
       const { status } = await titleStatus(ctx, profile._id, title.id);
       // Plan to watch can also bookmark something already watched, without planning it again on Simkl.
       // Watching a movie is local-only, so the Simkl destination alone cannot identify an active watch.
-      if (previous === "completed" || previous === "watching" || status === "watching" || status === "rewatching")
+      if (previous === "completed" || previous === "watching" || status === "watching" || status === "rewatching") {
         await ctx.db.insert("library", { profileId: profile._id, ...item, addedAt: addedAt ?? Date.now() });
-      else await changeStatus(ctx, profile, title, "plantowatch", addedAt);
+        await enqueueTrakt(ctx, profile._id, "plan", title);
+      } else await changeStatus(ctx, profile, title, "plantowatch", addedAt);
     }
     if (!saved && rows.length > 0) {
       for (const r of rows) await ctx.db.delete(r._id);
+      // Trakt's watchlist holds no history, so taking a title off it loses nothing.
+      await enqueueTrakt(ctx, profile._id, "unplan", title);
       const locals = (await Promise.all(ids.map((id) =>
         ctx.db.query("viewing").withIndex("by_title", (q) => q.eq("profileId", profile._id).eq("id", id)).first()))).filter((r) => r !== null);
       const tracked = await ctx.db.query("tracked").withIndex("by_profile_id", (q) => q.eq("profileId", profile._id).eq("id", item.imdbId)).first();
@@ -508,6 +578,8 @@ export const markUnwatched = mutation({
     // Local history can already be queued or sent even before the next Simkl import.
     if (tracked && tracked.status !== "plantowatch" || played || viewing && viewing.state !== "plantowatch") {
       await enqueue(ctx, me._id, "unwatch", item);
+      // Trakt knows the title by its IMDb id, which is its alias when the canonical one is Kitsu's.
+      for (const id of ids) await enqueueTrakt(ctx, me._id, "unwatch", { ...item, id });
       // Plays waiting under the other id would put it back on Simkl right after.
       for (const id of ids) if (id !== item.id)
         for (const w of await ctx.db.query("syncOutbox").withIndex("by_key", (q) =>
@@ -532,6 +604,7 @@ export const restoreWatched = mutation({
       if (row) await ctx.db.delete(row._id);
       const op = await ctx.db.query("syncOutbox").withIndex("by_key", (q) => q.eq("profileId", me._id).eq("key", `unwatch:${id}`)).first();
       if (op && !op.inFlight) await ctx.db.delete(op._id);
+      await takeBackTraktUnwatch(ctx, me._id, id);
       told ||= !!op?.inFlight || !!row?.sent;
     }
     await refreshPicks(ctx, me);

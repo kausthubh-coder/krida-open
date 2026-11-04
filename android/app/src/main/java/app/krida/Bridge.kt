@@ -1,6 +1,7 @@
 package app.krida
 
 import android.webkit.JavascriptInterface
+import org.json.JSONArray
 
 /**
  * What the page can ask of the phone, as `window.KridaAndroid` (src/ui/android.ts is the page's side). WebView calls
@@ -83,4 +84,29 @@ class Bridge(private val app: MainActivity) {
 
     @JavascriptInterface
     fun enterPictureInPicture() = onUi { app.enterPictureInPicture() }
+
+    /**
+     * From 1.4, the file itself plays under the page (NativePlayer): MKV, HEVC, DTS and TrueHD, which the page's video
+     * can't. The page speaks mpv's words (src/features/player/androidPlayer.ts) and hears `player` events back.
+     * `aid` counts the file's sound tracks from 1.
+     */
+    @JavascriptInterface
+    fun playerLoad(url: String, start: Double, paused: Boolean, aid: Int, title: String) = onUi { app.playerLoad(url, start, paused, aid, title) }
+
+    @JavascriptInterface
+    fun playerSeek(time: Double) = onUi { app.playerSeek(time) }
+
+    /** One of mpv's properties (pause, speed, volume, mute, aid, sid, panscan, keepaspect, video-unscaled), its value as JSON. */
+    @JavascriptInterface
+    fun playerSet(name: String, value: String) {
+        val parsed = try {
+            JSONArray("[$value]").get(0)
+        } catch (_: org.json.JSONException) {
+            return
+        }
+        onUi { app.playerSet(name, parsed) }
+    }
+
+    @JavascriptInterface
+    fun playerStop() = onUi { app.playerStop() }
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Glass } from "bubli";
 import {
   ClockClockwiseIcon,
+  ScreencastIcon,
   ClockCounterClockwiseIcon,
   ClosedCaptioningIcon,
   CornersInIcon,
@@ -31,6 +32,7 @@ import type { FramePreview } from "./framePreview";
 import type { PlayerMenu } from "./keys";
 import { FITS, type Fit } from "./touch";
 import type { useSubtitles } from "./useSubtitles";
+import type { useCast } from "./cast";
 
 type Next = Extract<UpNext, { kind: "next" | "episode" }>;
 
@@ -44,6 +46,7 @@ const BARS_HINTS: Record<BarsState, string> = {
 };
 
 export function PlayerControls(props: {
+  cast?: ReturnType<typeof useCast>;
   room: RoomData;
   video: HTMLVideoElement | null;
   visible: boolean;
@@ -63,6 +66,8 @@ export function PlayerControls(props: {
   audio: number;
   setAudio: (track: number) => void;
   subtitles: ReturnType<typeof useSubtitles>;
+  /** ExoPlayer plays the file (the Android app), drawing its own subtitle tracks, which it can't shift in time. */
+  native?: boolean;
   automatic: { others: unknown[]; mine: (key: AutoKey) => boolean; setMine: (key: AutoKey, on: boolean) => void; whoHasIt: (key: AutoKey) => string };
   togglePlay: () => void;
   seekTo: (t: number) => void;
@@ -241,6 +246,7 @@ export function PlayerControls(props: {
           {/* A window too narrow even for this (under about 470px) scrolls it sideways rather than cut it off. */}
           <Glass {...capsuleBubble()} data-panel-edge className={cx(CAPSULE, "pointer-events-auto max-w-full", fade(visible))}>
             <div className="flex min-w-0 items-center overflow-x-auto [scrollbar-width:none]">
+            <CastButton cast={props.cast} party={room.kind === "party"} />
             {room.kind === "party" && (
               <IconButton
                 label="React (R)"
@@ -333,6 +339,7 @@ export function PlayerControls(props: {
           </Popover>
           <Popover open={menu === "subs"} title="Subtitles" onClose={closeMenu}>
               <SubtitleMenu
+                native={props.native}
                 fileTracks={subtitles.fileSubs}
                 filePlayable={subtitles.filePlayable}
                 options={subtitles.subs}
@@ -352,6 +359,21 @@ export function PlayerControls(props: {
         </div>
       </div>
     </div>
+  );
+}
+
+export function CastButton({ cast, party }: { cast?: ReturnType<typeof useCast>; party: boolean }) {
+  if (!cast?.available) return null;
+  return (
+    <IconButton
+      label={party ? "Casting is unavailable in a party" : cast.error ?? (cast.active ? "Stop casting" : cast.connecting ? "Connecting to Cast…" : "Cast to a device")}
+      aria-pressed={cast.active}
+      aria-disabled={party || cast.connecting}
+      onClick={() => { if (!party && !cast.connecting) cast.toggle(); }}
+      className={capOpen(cast.active)}
+    >
+      <ScreencastIcon weight={cast.active ? "fill" : "regular"} />
+    </IconButton>
   );
 }
 

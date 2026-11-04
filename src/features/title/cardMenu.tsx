@@ -9,7 +9,7 @@ import { useOpenStartParty, useParty } from "../party";
 import { usePlayTitle, useSuggest, useTitleTarget } from "../play";
 import { RatingEditor } from "./taste";
 import type { StatusItem } from "./watchStatus";
-import { isTitleId } from "../../../shared/ids";
+import { isLibraryId } from "../../../convex/lib/titleIds";
 
 type Extra = { label: string; icon: ReactNode; onSelect: () => unknown };
 
@@ -138,7 +138,7 @@ function Panel({ item, to, point, open, focusBack, pressed, onClose, onClosed, o
         <p className="truncate px-3 pt-2 pb-1.5 text-caption text-fg-faint" title={item.name}>{item.name}</p>
         <Item icon={<PlayIcon weight="fill" />} onClick={choose(onPlay ?? (() => playTitle(item.type, item.id)), "Couldn't load that title. Try again.")}>{playLabel}</Item>
         <Item icon={<InfoIcon />} onClick={choose(() => navigate(to))}>Details</Item>
-        {isTitleId(item.id) && <>
+        {isLibraryId(item.id) && <>
           <div role="separator" className="mx-3 my-1 h-px bg-line" />
           {saved ? (
             <Item icon={<BookmarkSimpleIcon weight="fill" />} onClick={choose(removeFromPlan)}>Remove from Plan to watch</Item>

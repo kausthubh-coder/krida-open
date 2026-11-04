@@ -1,14 +1,13 @@
 // Subtitles: the options for this file, the one picked (or the title's last choice, or the profile's language), its
 // cues, and the line on screen.
-// Two kinds: the file's own tracks, which mpv draws in Krida for Windows, and subtitle addons' (OpenSubtitles and the
-// profile's own), which Krida draws itself.
+// The file's text tracks and subtitle addons are drawn here; mpv draws the original file tracks in the desktop app.
 import { useEffect, useMemo, useState } from "react";
 import type { Me } from "../../data/session";
 import { useAddons } from "../../data/addons";
 import type { RoomData } from "../party";
 import type { MpvVideo } from "./desktop";
 import { choiceFor, recallSubtitles, rememberSubtitles, startingSubtitles } from "./subtitleMemory";
-import { bestSubtitles, cuesAt, loadCues, nextCueChange, readSubtitleFile, useSubtitleOptions, type Cue, type FileSubtitle, type LocalSubtitle } from "./subtitles";
+import { bestSubtitles, cuesAt, embeddedCues, embeddedOptions, embeddedSubtitles, loadCues, nextCueChange, readSubtitleFile, useSubtitleOptions, type Cue, type FileSubtitle, type LocalSubtitle } from "./subtitles";
 
 export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me: Me, mpv: MpvVideo | null) {
   const m = room.media!;
@@ -23,12 +22,23 @@ export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me:
   const addons = useAddons();
   const subtitleAddons = useMemo(() => (addons ?? []).map((a) => ({ base: a.url, manifest: a.manifest, enabled: a.enabled })), [addons]);
   const subs = useSubtitleOptions(m.type, [...new Set([subtitleId, m.videoId])], stream.osHash, stream.size, subtitleAddons);
+  const [embedded, setEmbedded] = useState<Awaited<ReturnType<typeof embeddedSubtitles>>>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!mpv && stream.size) void embeddedSubtitles(stream.size).then(
+      (result) => { if (alive) setEmbedded(result); },
+      () => { /* Addon subtitles remain available when the original file cannot be read. */ },
+    );
+    return () => { alive = false; };
+  }, [mpv, stream.size]);
+  // The tracks read from the file play here; until they're read, or when they can't be, the ones TorBox reports are
+  // still named, with the note that they show in the app.
+  const read = useMemo(() => embeddedOptions(embedded?.tracks ?? []), [embedded]);
   const fileSubs: FileSubtitle[] = useMemo(
-    () => stream.subtitles.map((t, i) => ({ id: `file:${i + 1}`, lang: t.language, title: t.title })),
-    [stream.subtitles],
+    () => mpv || read.length === 0 ? stream.subtitles.map((t, i) => ({ id: `file:${i + 1}`, lang: t.language, title: t.title })) : read,
+    [mpv, stream.subtitles, read],
   );
-  // The browser plays TorBox's conversion, which drops the file's tracks: only the app can show them.
-  const filePlayable = mpv !== null;
+  const filePlayable = mpv !== null || read.length > 0;
   const [subPick, setSubPick] = useState<string | null | undefined>(undefined); // undefined = automatic
   const [subOffset, setSubOffset] = useState(0);
   const [localSubs, setLocalSubs] = useState<LocalSubtitle[]>([]);
@@ -74,16 +84,23 @@ export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me:
       setCues(local.cues);
       return;
     }
-    if (!subOption) return;
+    const track = !mpv && fileTrack ? embedded?.tracks.find((t) => t.track === fileTrack) : undefined;
+    if (!subOption && !track) return;
     let alive = true;
-    loadCues(subOption.url).then(
+    const load = track && stream.size
+      ? embeddedSubtitles(stream.size, track.track).then((result) => {
+        if (!result) throw new Error("File unavailable");
+        return embeddedCues(track.codec, result.cues);
+      })
+      : loadCues(subOption!.url);
+    load.then(
       (c) => alive && setCues(c),
       () => alive && setSubError(true),
     );
     return () => {
       alive = false;
     };
-  }, [subOption, local]);
+  }, [subOption, local, mpv, fileTrack, embedded, stream.size]);
   const [cueHtml, setCueHtml] = useState("");
   useEffect(() => {
     if (!video || cues.length === 0) {
@@ -121,5 +138,6 @@ export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me:
   /** C on the keyboard: off, or back on in this title's language, else yours (English when none is set). */
   const onLang = (remembered && "lang" in remembered ? remembered.lang : undefined) ?? me.prefs.subLang ?? "eng";
   const toggle = () => pick(subId ? null : bestIn(onLang));
-  return { subs, fileSubs, filePlayable, subId, setSubPick: pick, toggle, subOffset, setSubOffset, subError, cueHtml, localSubs, loadFile, fileError };
+  const skippedNotice = embedded?.skipped.length ? "Some subtitle tracks use images or unsupported encoding and cannot be shown in the web player. Try addon subtitles." : null;
+  return { subs, fileSubs, filePlayable, subId, setSubPick: pick, toggle, subOffset, setSubOffset, subError, cueHtml, localSubs, loadFile, fileError: fileError ?? skippedNotice };
 }

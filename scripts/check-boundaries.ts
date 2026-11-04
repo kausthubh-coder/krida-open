@@ -5,8 +5,9 @@
 //   index.ts, which lists exactly what the rest of the app uses from it;
 // - shared code (src/ui/, src/data/) never imports a feature;
 // - shared/ and convex/lib/ never import React, the web app or Vercel code, so other platforms can reuse them;
-// - only the Simkl outbox (convex/lib/simklOutbox.ts) builds a /sync/history/remove request, which deletes a title with
-//   every play: built from partial data elsewhere, it wiped real history three times (080d1e6, 450dbdd, 1cda4f7);
+// - only the Simkl outbox (convex/lib/simklOutbox.ts) and the Trakt outbox (convex/lib/traktOutbox.ts) build a
+//   /sync/history/remove request, which deletes plays: built from partial data elsewhere, it wiped real Simkl history
+//   three times (080d1e6, 450dbdd, 1cda4f7);
 // - a page loaded after start-up (a feature's page.ts) is imported nowhere else;
 // - icons use only the weights the build keeps (regular, bold, fill).
 // --fix rewrites a deep import of another feature to its index.ts, then rebuilds every feature's index.ts from what
@@ -126,12 +127,12 @@ for (const feature of existsSync("src/features") ? readdirSync("src/features") :
 }
 
 for (const file of [...walk("convex"), ...walk("src"), ...walk("server"), ...walk("shared")]) {
-  if (rel(file) === "convex/lib/simklOutbox.ts") continue;
+  if (rel(file) === "convex/lib/simklOutbox.ts" || rel(file) === "convex/lib/traktOutbox.ts") continue;
   const source = readFileSync(file, "utf8");
   // Comments may name it; code may not.
   const code = source.replace(/\/\*[\s\S]*?\*\/|(^|[^:])\/\/.*$/gm, "$1");
   if (code.includes("/sync/history/remove"))
-    problems.push(`${rel(file)} builds a /sync/history/remove request. Queue the change with enqueue() from convex/lib/simklOutbox.ts, the one place that decides what Simkl may delete.`);
+    problems.push(`${rel(file)} builds a /sync/history/remove request. Queue the change with enqueue() from convex/lib/simklOutbox.ts or enqueueTrakt() from convex/lib/traktOutbox.ts, the places that decide what Simkl and Trakt may delete.`);
 }
 
 // A page loaded after start-up (a feature's page.ts) is only imported there: one static import puts it back in the first load.

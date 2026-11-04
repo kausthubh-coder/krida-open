@@ -95,9 +95,10 @@ function Gate() {
   useEffect(() => {
     if (profileId !== undefined) identify(profileId && profileName ? { _id: profileId, name: profileName } : null);
   }, [profileId, profileName]);
-  // Opening Krida, or coming back to it, catches up with Simkl. The server decides whether it's due
+  // Opening Krida, or coming back to it, catches up with Simkl and Trakt. The server decides whether it's due
   // (at most every ten minutes); this only avoids asking more than once a minute.
   const touchSimkl = useMutation(api.simkl.touch);
+  const touchTrakt = useMutation(api.trakt.touch);
   const signedIn = !!me;
   usePendingPartyLink(signedIn);
   useEffect(() => {
@@ -107,6 +108,7 @@ function Gate() {
       if (document.visibilityState !== "visible" || Date.now() - last < 60_000) return;
       last = Date.now();
       void touchSimkl({ token }).catch(() => {});
+      void touchTrakt({ token }).catch(() => {});
     };
     touch();
     document.addEventListener("visibilitychange", touch);
@@ -115,7 +117,7 @@ function Gate() {
       document.removeEventListener("visibilitychange", touch);
       window.removeEventListener("focus", touch);
     };
-  }, [token, signedIn, touchSimkl]);
+  }, [token, signedIn, touchSimkl, touchTrakt]);
 
   // Onboarding (docs/models/Onboarding.tla): Home shows only once the profile's steps are done. Once it starts it stays
   // until its last step says so, so an addon installed half way through doesn't jump to Home.

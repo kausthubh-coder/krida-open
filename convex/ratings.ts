@@ -5,6 +5,7 @@ import { mutation } from "./functions";
 import { requireProfile } from "./lib/auth";
 import { bandOf, scoreOf } from "./lib/ratings";
 import { enqueue } from "./lib/simklOutbox";
+import { enqueueTrakt } from "./lib/traktOutbox";
 import { viewingStateValidator } from "./schema";
 import { changeStatus } from "./library";
 import { invalidateStats } from "./lib/statsCache";
@@ -51,6 +52,7 @@ export const save = mutation({
         if (shown !== rating || await ctx.db.query("syncOutbox").withIndex("by_key", (q) =>
           q.eq("profileId", me._id).eq("key", `rate:${title.id}`)).first())
           await enqueue(ctx, me._id, "rate", { ...title, rating: rating ?? 0 });
+        if (shown !== rating) await enqueueTrakt(ctx, me._id, "rate", { ...item, rating: rating ?? 0 });
       }
     }
     // Status is its own choice: a score never sets one, except that scoring a movie means you saw it.

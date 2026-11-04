@@ -1,7 +1,6 @@
 import type { Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { ConvexError } from "convex/values";
-import { isTitleId } from "../../shared/ids";
 
 // The browser imports this file too; runtime imports must stay browser-safe.
 
@@ -64,7 +63,11 @@ export async function canonicalTitle<T extends { id: string; type: "movie" | "se
     ...("year" in item ? { year: t.year ?? item.year } : {}) };
 }
 
-/** Refuses an id that isn't an IMDb or Kitsu id, before anything is written under it. */
+/** Catalog ids stay opaque, but must be safe as one URL path segment. */
+export const isLibraryId = (id: string) => id.length <= 200 && id !== "." && id !== ".." &&
+  /^[^\s/\\?#%]+$/.test(id) && [...id].every(char => char.charCodeAt(0) >= 32 && char.charCodeAt(0) !== 127);
+
+/** Refuses malformed catalog ids before anything is written under them. */
 export function assertTitleId(id: string) {
-  if (!isTitleId(id)) throw new ConvexError("This title does not have a supported ID yet.");
+  if (!isLibraryId(id)) throw new ConvexError("This title does not have a supported ID yet.");
 }

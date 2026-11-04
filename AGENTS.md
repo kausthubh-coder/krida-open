@@ -45,6 +45,7 @@ Deeper docs, read the one that matches your task:
 - `docs/product-feel.md`: who uses Krida and how it should feel. Read it before any UI work.
 - `docs/recommendations.md`: how picks are scored and when they refresh.
 - `docs/simkl.md`: Simkl sync both ways, the outbox, ratings, redirect URLs.
+- `docs/trakt.md`: Trakt sync both ways, connecting with a device code, what the import fills, the outbox.
 - `docs/database-reads.md`: Convex bandwidth rules. Read before adding a query.
 - `docs/performance.md`: speed notes, perf measurements, what bubbles cost.
 - `docs/e2e-scripts.md`: what each e2e script checks and which profile it needs.
@@ -146,10 +147,10 @@ Most rules fail a check when broken. The rest are judgment, so they're written h
 | --- | --- |
 | Every mutation comes from `convex/functions.ts`; queries use the cached `useQuery` | oxlint `no-restricted-imports` |
 | Every public Convex function has validators; none is removed or changes its arguments (the live frontend calls them) | `tests/apiSnapshot.test.ts` (update with `UPDATE_API_SNAPSHOT=1` only on purpose) |
-| No cron calls Simkl | `tests/apiSnapshot.test.ts` |
+| No cron calls Simkl or Trakt | `tests/apiSnapshot.test.ts`, `tests/trakt.test.ts` |
 | Relative imports in `shared/`, `server/`, `api/` name their `.js` file | `tsc` with Node resolution (`tsconfig.api.json`) |
 | A feature imports another only through its `index.ts`; `src/ui` and `src/data` never import a feature; `shared/` and `convex/lib/` never import React or the web app | `scripts/check-boundaries.ts` (`--fix` rewrites imports and rebuilds each `index.ts`) |
-| Only the Simkl outbox (`convex/lib/simklOutbox.ts`) builds a request that removes Simkl history | `scripts/check-boundaries.ts` |
+| Only the Simkl and Trakt outboxes (`convex/lib/simklOutbox.ts`, `convex/lib/traktOutbox.ts`) build a request that removes history | `scripts/check-boundaries.ts` |
 | At most 12 endpoints in `api/` (Vercel's free plan deploys no more; a 13th fails the deploy) | `scripts/check-boundaries.ts` |
 | Colors come from the tokens in `src/styles.css`; the brand has no hue | `scripts/check-colors.ts` |
 | Tests assert exact values | oxlint jest rules on `tests/` (no `toBeDefined`, `toBeTruthy`, bare `toThrow()`…) |
@@ -163,7 +164,7 @@ Most rules fail a check when broken. The rest are judgment, so they're written h
 Judgment, not checked:
 - Secrets stay on the server (Convex env or Vercel env). Only `VITE_` variables reach the browser.
 - Keep backend changes compatible with the live frontend: add optional fields, keep old signatures.
-- Never poll Simkl on a timer. Before adding a query that reads a whole table, read `docs/database-reads.md`.
+- Never poll Simkl or Trakt on a timer. Before adding a query that reads a whole table, read `docs/database-reads.md`.
 - New code goes in the feature it belongs to. Logic in `.ts`, components in `.tsx`. Move files with
   `node scripts/move.ts` and split big ones with `node scripts/split.ts`; both rewrite imports.
 - UI work: use the `critly` skill (installed globally), reuse tokens and components, check empty, loading, error and

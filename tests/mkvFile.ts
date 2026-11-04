@@ -40,3 +40,38 @@ export function file() {
   const { bytes } = build(at.cues, at.c1, at.c2, at.relative1);
   return Uint8Array.from(bytes);
 }
+
+/** Text tracks use real Matroska packets, with a large video block between subtitle blocks. */
+export function subtitleFile(indexed = false, videoBlocks = 1, indexedTrack = 2) {
+  const track = (n: number, codec: string, language: string, name: string) => el(0xae, [
+    ...uint(0xd7, n), ...uint(0x83, 17), ...text(0x86, codec), ...text(0x22b59c, language), ...text(0x536e, name),
+  ]);
+  const packet = (n: number, at: number, duration: number, line: string) => el(0xa0, [
+    ...el(0xa1, [0x80 | n, (at >> 8) & 255, at & 255, 0, ...new TextEncoder().encode(line)]), ...uint(0x9b, duration),
+  ]);
+  const tracks = el(0x1654ae6b, [
+    ...el(0xae, [...uint(0xd7, 1), ...uint(0x83, 1), ...text(0x86, "V_MPEG4/ISO/AVC"), ...el(0x63a2, avcC)]),
+    ...track(2, "S_TEXT/UTF8", "eng", "Full subtitles"), ...track(3, "S_TEXT/ASS", "jpn", "Dialogue"),
+    ...track(4, "S_HDMV/PGS", "eng", "PGS"), ...track(5, "S_TEXT/WEBVTT", "fra", "VTT"),
+    ...track(6, "S_TEXT/SSA", "spa", "SSA"), ...track(7, "S_VOBSUB", "eng", "DVD"),
+  ]);
+  const video = Array.from({ length: videoBlocks }, () => el(0xa3, [0x81, 0, 0, 0x80, ...new Uint8Array(videoBlocks === 1 ? 100_000 : 32)])).flat();
+  const cluster = (time: number, second: boolean) => el(0x1f43b675, [
+    ...uint(0xe7, time), ...video,
+    ...packet(2, second ? -250 : 125, 1500, second ? "Second\nline" : "Hello <i>world</i>"),
+    ...packet(3, 250, 2000, second ? "1,0,Default,,0,0,0,,Goodbye, friend" : "0,0,Default,,0,0,0,,{\\i1}Hello\\Nworld"),
+    ...packet(5, 0, 500, "VTT cue"), ...packet(6, 0, 500, "0,0,Default,,0,0,0,,SSA cue"),
+  ]);
+  const info = el(0x1549a966, uint(0x2ad7b1, 1_000_000));
+  const c1 = cluster(0, false);
+  const c2 = cluster(5000, true);
+  const seek = (pos: number) => el(0x114d9b74, el(0x4dbb, [...el(0x53ab, [0x1c, 0x53, 0xbb, 0x6b]), ...uint(0x53ac, pos, 8)]));
+  const base = (indexed ? seek(0).length : 0) + info.length + tracks.length;
+  const cue = (at: number, clusterAt: number) => el(0xbb, [...uint(0xb3, at), ...el(0xb7, [
+    ...uint(0xf7, indexedTrack), ...uint(0xf1, clusterAt, 8), ...uint(0xf0, uint(0xe7, 0).length + (indexedTrack === 1 ? 0 : video.length)),
+  ])]);
+  const cues = indexed ? el(0x1c53bb6b, [...cue(indexedTrack === 1 ? 0 : 125, base), ...cue(indexedTrack === 1 ? 5000 : 4750, base + c1.length)]) : [];
+  return Uint8Array.from([...el(0x1a45dfa3, text(0x4282, "matroska")), ...el(0x18538067, [
+    ...(indexed ? seek(base + c1.length + c2.length) : []), ...info, ...tracks, ...c1, ...c2, ...cues,
+  ])]);
+}

@@ -235,3 +235,208 @@ function base64(bytes: Uint8Array) {
   for (const b of bytes) s += String.fromCharCode(b);
   return btoa(s);
 }
+
+export type SubtitleTrack = { track: number; language: string; name: string; codec: string };
+export type SubtitleCue = { start: number; end: number; text: string };
+export const SUBTITLE_READ_LIMIT = 16 * 1024 * 1024;
+/** Range reads a walk of an unindexed subtitle track may make before giving up. */
+const SCAN_REQUESTS = 200;
+
+/** Sparse EBML reads. Video/audio payloads are skipped by their element size, never buffered whole. */
+export async function readSubtitles(read: Read, size: number, wanted?: number, budget = SUBTITLE_READ_LIMIT) {
+  let spent = 0;
+  let requests = 0;
+  let windowAt = -1;
+  let window = new Uint8Array(0);
+  let readAhead = 64;
+  const bytes = async (from: number, length: number): Promise<Uint8Array> => {
+    if (from >= windowAt && from + length <= windowAt + window.length) return window.subarray(from - windowAt, from - windowAt + length);
+    const count = Math.min(Math.max(length, readAhead), size - from, Math.max(length, budget - spent));
+    if (count < length || spent + count > budget || ++requests > 50_000) throw new Error("Subtitle read limit exceeded or truncated file");
+    spent += count;
+    windowAt = from;
+    window = new Uint8Array(await read(from, from + count));
+    if (window.length !== count) throw new Error("Truncated subtitle data");
+    return window.subarray(0, length);
+  };
+  const header = async (pos: number): Promise<Element> => {
+    const buf = await bytes(pos, Math.min(12, size - pos));
+    const e = element(buf, 0);
+    if (!e || (!Number.isSafeInteger(e.end) && e.end !== Infinity)) throw new Error("Invalid Matroska element");
+    return { id: e.id, start: pos, dataStart: pos + e.dataStart, end: e.end === Infinity ? Infinity : pos + e.end };
+  };
+  const value = async (e: Element) => {
+    const buf = await bytes(e.dataStart, e.end - e.dataStart);
+    return uint(buf, { ...e, dataStart: 0, end: buf.length });
+  };
+  const tracks: SubtitleTrack[] = [];
+  const skipped: { codec: string; name: string }[] = [];
+  const defaults = new Map<number, number>();
+  const cues: SubtitleCue[] = [];
+  const ebml = await header(0);
+  if (ebml.id !== 0x1a45dfa3) return { tracks, skipped, cues };
+  const segment = await header(ebml.end);
+  if (segment.id !== ID.Segment) return { tracks, skipped, cues };
+  const end = Math.min(size, segment.end);
+  let scale = 1_000_000;
+  let firstCluster = end;
+  let cuesAt: number | undefined;
+  const metadataSeen = new Set<number>();
+  const metadata = async (top: Element) => {
+    if (![ID.Tracks, ID.Info].includes(top.id) || metadataSeen.has(top.start)) return;
+    metadataSeen.add(top.start);
+    const buf = await bytes(top.start, top.end - top.start);
+    const e = element(buf, 0)!;
+    if (top.id === ID.Info) {
+      for (const c of children(buf, e.dataStart, e.end)) if (c.id === ID.TimecodeScale) scale = uint(buf, c);
+      return;
+    }
+    for (const entry of children(buf, e.dataStart, e.end)) {
+      if (entry.id !== ID.TrackEntry) continue;
+      const fields = new Map([...children(buf, entry.dataStart, entry.end)].map((c) => [c.id, c]));
+      const n = (id: number, fallback = 0) => fields.has(id) ? uint(buf, fields.get(id)!) : fallback;
+      const s = (id: number, fallback = "") => {
+        const f = fields.get(id);
+        return f ? new TextDecoder().decode(buf.subarray(f.dataStart, f.end)) : fallback;
+      };
+      if (n(ID.TrackType) !== 17) continue;
+      const codec = s(ID.CodecID);
+      const name = s(0x536e);
+      // Image tracks need OCR or a bitmap renderer and cannot be presented as browser text cues.
+      if (!["S_TEXT/UTF8", "S_TEXT/ASS", "S_TEXT/SSA", "S_TEXT/WEBVTT"].includes(codec) || fields.has(0x6d80)) {
+        skipped.push({ codec, name });
+        continue;
+      }
+      const track = n(ID.TrackNumber);
+      if (tracks.some((t) => t.track === track)) continue;
+      tracks.push({ track, language: s(0x22b59d, s(0x22b59c, "eng")), name, codec });
+      defaults.set(track, n(0x23e383) / 1e9);
+    }
+  };
+  // Follow SeekHead entries as well: some muxers put Tracks after the first cluster.
+  const seen = new Set<number>();
+  const scanMetadata = async (e: Element) => {
+    if (seen.has(e.start)) return;
+    seen.add(e.start);
+    await metadata(e);
+    if (e.id !== ID.SeekHead) return;
+    const buf = await bytes(e.start, e.end - e.start);
+    const top = element(buf, 0)!;
+    for (const seek of children(buf, top.dataStart, top.end)) {
+      let id = 0;
+      let at = -1;
+      for (const c of children(buf, seek.dataStart, seek.end)) {
+        if (c.id === ID.SeekID) id = uint(buf, c);
+        if (c.id === ID.SeekPosition) at = segment.dataStart + uint(buf, c);
+      }
+      if ([ID.Tracks, ID.Info].includes(id) && at >= segment.dataStart && at < end) await metadata(await header(at));
+      if (id === ID.Cues && at >= segment.dataStart && at < end) cuesAt = at;
+    }
+  };
+  for (let pos = segment.dataStart; pos < end;) {
+    const e = await header(pos);
+    if (e.id === ID.Cluster) { firstCluster = pos; break; }
+    if (e.end > end || e.end <= pos) throw new Error("Invalid Matroska metadata");
+    await scanMetadata(e);
+    pos = e.end;
+  }
+  // Listing needs no cluster reads; extraction scans every cluster, including those absent from Cues.
+  if (wanted === undefined || !tracks.some((t) => t.track === wanted)) return { tracks, skipped, cues };
+  const pending: { start: number; end?: number; text: string }[] = [];
+  const block = async (e: Element, time: number, duration?: number, absolute?: number) => {
+    const head = await bytes(e.dataStart, Math.min(12, e.end - e.dataStart));
+    const track = vint(head, 0, false);
+    if (!track || track.value !== wanted) return;
+    if (head[track.length + 2] & 0x06) throw new Error("Laced subtitle blocks are unsupported");
+    let relative = head[track.length] * 256 + head[track.length + 1];
+    if (relative >= 32768) relative -= 65536;
+    const start = absolute ?? (time + relative) * scale / 1e9;
+    const text = new TextDecoder().decode(await bytes(e.dataStart + track.length + 3, e.end - e.dataStart - track.length - 3));
+    const length = duration === undefined ? defaults.get(wanted) : duration * scale / 1e9;
+    pending.push({ start, end: length ? start + length : undefined, text });
+  };
+  const group = async (e: Element, time: number, absolute?: number) => {
+    let b: Element | undefined;
+    let duration: number | undefined;
+    for (let g = e.dataStart; g < e.end;) {
+      const child = await header(g);
+      if (child.end > e.end || child.end <= g) throw new Error("Invalid block group");
+      if (child.id === ID.Block) b = child;
+      if (child.id === 0x9b) duration = await value(child);
+      g = child.end;
+    }
+    if (b) await block(b, time, duration, absolute);
+  };
+  // Matroska recommends indexing every subtitle frame. A subtitle index with relative positions lets us read
+  // only those blocks, instead of requesting a header for every video/audio block. Older muxers fall back below.
+  const indexed: { cluster: number; relative: number; time: number }[] = [];
+  let usableIndex = true;
+  if (cuesAt !== undefined) {
+    const top = await header(cuesAt);
+    if (top.id === ID.Cues && top.end <= end) {
+      const buf = await bytes(top.start, top.end - top.start);
+      const local = element(buf, 0)!;
+      for (const point of children(buf, local.dataStart, local.end)) {
+        if (point.id !== ID.CuePoint) continue;
+        const fields = [...children(buf, point.dataStart, point.end)];
+        const time = fields.find((f) => f.id === ID.CueTime);
+        for (const position of fields.filter((f) => f.id === ID.CueTrackPositions)) {
+          const f = new Map([...children(buf, position.dataStart, position.end)].map((c) => [c.id, c]));
+          if (!f.has(ID.CueTrack) || uint(buf, f.get(ID.CueTrack)!) !== wanted) continue;
+          if (!time || !f.has(ID.CueClusterPosition) || !f.has(ID.CueRelativePosition)) { usableIndex = false; continue; }
+          indexed.push({ time: uint(buf, time) * scale / 1e9, cluster: segment.dataStart + uint(buf, f.get(ID.CueClusterPosition)!), relative: uint(buf, f.get(ID.CueRelativePosition)!) });
+        }
+      }
+    }
+  }
+  if (usableIndex && indexed.length) {
+    const seenBlocks = new Set<number>();
+    for (const cue of indexed) {
+      const cluster = await header(cue.cluster);
+      if (cluster.id !== ID.Cluster) throw new Error("Invalid subtitle cue cluster");
+      const pos = cluster.dataStart + cue.relative;
+      if (seenBlocks.has(pos)) continue;
+      seenBlocks.add(pos);
+      const e = await header(pos);
+      if (e.end > Math.min(cluster.end, end)) throw new Error("Invalid subtitle cue block");
+      const before = pending.length;
+      if (e.id === ID.BlockGroup) await group(e, 0, cue.time);
+      else if (e.id === ID.SimpleBlock) await block(e, 0, undefined, cue.time);
+      else throw new Error("Invalid subtitle cue block");
+      if (pending.length === before) throw new Error("Subtitle cue points at another track");
+    }
+  }
+  // Without the subtitle track in the Cues, its blocks are found only by walking every block header, one Range read
+  // per video block on a real film. A short file is walked; a long one gives up after SCAN_REQUESTS reads, and the
+  // player names the file's tracks without them. Small windows still let one read cover several small blocks.
+  readAhead = 2048;
+  const scanFrom = requests;
+  for (let pos = firstCluster; !(usableIndex && indexed.length) && pos < end;) {
+    if (requests - scanFrom > SCAN_REQUESTS) throw new Error("Subtitle track isn't indexed; too far to scan");
+    const cluster = await header(pos);
+    if (cluster.id !== ID.Cluster) { if (cluster.end > end) break; pos = cluster.end; continue; }
+    let time = 0;
+    let p = cluster.dataStart;
+    for (; p < Math.min(cluster.end, end);) {
+      if (requests - scanFrom > SCAN_REQUESTS) throw new Error("Subtitle track isn't indexed; too far to scan");
+      const e = await header(p);
+      if (cluster.end === Infinity && [ID.Cluster, ID.Cues, ID.Tracks, ID.Info].includes(e.id)) break;
+      if (e.end > Math.min(cluster.end, end) || e.end <= p) throw new Error("Invalid cluster element");
+      if (e.id === 0xe7) time = await value(e);
+      if (e.id === ID.SimpleBlock) await block(e, time);
+      if (e.id === ID.BlockGroup) {
+        await group(e, time);
+      }
+      p = e.end;
+    }
+    pos = p;
+  }
+  pending.sort((a, b) => a.start - b.start);
+  for (let i = 0; i < pending.length; i++) {
+    const c = pending[i];
+    const stop = c.end ?? pending[i + 1]?.start;
+    if (stop === undefined) throw new Error("Subtitle block has no duration");
+    if (stop > c.start) cues.push({ start: c.start, end: stop, text: c.text });
+  }
+  return { tracks, skipped, cues };
+}

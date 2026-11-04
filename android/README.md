@@ -13,6 +13,33 @@ back closing sheets, Krida links and the icon's Search and Library shortcuts ope
 method only works once the site that calls it is deployed, so ship the web side before handing out an APK that needs
 it, and keep old methods (installed APKs keep calling them).
 
+## Playing files the page can't
+
+From 1.4 the app plays a file itself when the page's `<video>` can't: another debrid service's MKV, HEVC, DTS, TrueHD,
+E-AC-3 (`playsIn` in `src/features/player/playsIn.ts` sends it here as `native`; what the page plays, MP4 and TorBox's
+HLS, stays in the page). `NativePlayer.kt` is Media3's ExoPlayer drawing into a SurfaceView under the WebView, which
+goes see-through while it plays, as mpv sits under the desktop app's page. Sounds the phone has no decoder for go
+through FFmpeg: Jellyfin's build of Media3's FFmpeg decoder (`org.jellyfin.media3:media3-ffmpeg-decoder`, GPLv3 as Krida
+is; its version follows Media3's, so raise both together).
+
+The page keeps its own controls, party sync, skips and Up next: `src/features/player/androidPlayer.ts` hands the
+bridge's `playerLoad`, `playerSeek`, `playerSet` and `playerStop` to the same `MpvVideo` the desktop app uses, speaking
+mpv's command and property names, and the app answers with mpv's reports as `player` events (position four times a
+second while it moves, pause, buffering, the end, errors, the picture's size). Picture fits (crop, stretch, original)
+lay out the SurfaceView. Not yet: black-bar trimming and debanding (mpv only), subtitle delay for the file's own
+tracks. An app before 1.4 has none of these methods, and the page offers external players as before
+(`nativePlayer()`). `scripts/e2e-android-native.ts` plays the stand-in debrid addon's MKV and FFmpeg's DTS and TrueHD.
+
+## Android TV
+
+The manifest has a TV banner (`res/drawable-xhdpi/banner.png`, 320x180 dp), the leanback launcher category, and needs
+no touchscreen. A remote's arrows move focus on the page itself (`src/ui/dpad.ts`, started by `startAndroid`): to the
+nearest focusable thing that way, rows remembering the card you left, with a thicker focus ring while you use them.
+Back closes a menu, then a sheet, then goes back a page. In the player the middle button plays and pauses, up or down
+brings the controls with play focused, and left and right seek with nothing focused. A remote's play and pause keys
+press the player's own button. The Mac mini has no Android TV image; the phone emulator checks the same keys
+(`scripts/e2e-android-native.ts`).
+
 ## Signing in
 
 Email codes work in the WebView as on the web. Google refuses to sign anyone in inside a WebView (its page answers

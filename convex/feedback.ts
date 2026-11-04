@@ -4,6 +4,7 @@ import { query } from "./_generated/server";
 import { mutation } from "./functions";
 import { requireProfile } from "./lib/auth";
 import { rateOnSimkl, thumbFor } from "./simkl";
+import { rateThumbOnTrakt } from "./lib/traktOutbox";
 import { scoreOf } from "./lib/ratings";
 import { canonicalTitle, titleIds } from "./lib/titleIds";
 
@@ -46,6 +47,7 @@ export const set = mutation({
     await ctx.db.insert("feedback", { profileId: me._id, ...item, value, at: Date.now() });
     // Positive ratings can add a previously untracked title on Simkl.
     await rateOnSimkl(ctx, me._id, item, value);
+    await rateThumbOnTrakt(ctx, me._id, page, value);
     // One pending recompute per profile, even if the starter sheet sends many ratings.
     return null;
   },

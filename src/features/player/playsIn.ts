@@ -1,6 +1,6 @@
 // Where the room's stream plays on this device: TorBox's HLS in the page, mpv in the app, another debrid service's file
-// or an addon's plain web video straight in the page, or, when nothing here can play it, somewhere else (the desktop
-// app, an external player).
+// or an addon's plain web video straight in the page, a file the page can't play in the Android app's own player, or,
+// when nothing here can play it, somewhere else (the desktop app, an external player).
 import { fileKind, isBrowserContainer } from "../../../shared/formats";
 
 export type PlayMode =
@@ -13,6 +13,8 @@ export type PlayMode =
   | "mpv"
   /** A file played from its link in the page's <video> (another service's, or a plain web video): MP4 and WebM the browser has codecs for. */
   | "file"
+  /** A file the page can't play (MKV, HEVC, DTS, TrueHD), played by the Android app itself under the page (androidPlayer.ts). */
+  | "native"
   /** Nothing here plays it: the person is offered the desktop app and external players instead. */
   | "elsewhere";
 
@@ -34,19 +36,31 @@ const NO_BROWSER_SOUND = /truehd|dts/i;
 const DOLBY_SOUND = /^(dd\+?|e?-?ac-?3|atmos)$/i;
 
 /**
- * How this device plays the stream. `app` is Krida for Windows or Mac; `canPlay` asks the browser about a MIME type
- * with codecs (HTMLMediaElement.canPlayType), true for "probably" or "maybe".
+ * How this device plays the stream. `app` is Krida for Windows or Mac; `native` is the Android app with its own player
+ * (1.4 on); `canPlay` asks the browser about a MIME type with codecs (HTMLMediaElement.canPlayType), true for
+ * "probably" or "maybe". The Android app plays in the page what the page can, and itself only what it can't.
  */
-export function playsIn(stream: StreamFacts, { app, canPlay }: { app: boolean; canPlay: (type: string) => boolean }): { mode: PlayMode; why?: ElsewhereWhy } {
+export function playsIn(
+  stream: StreamFacts,
+  { app, native = false, canPlay }: { app: boolean; native?: boolean; canPlay: (type: string) => boolean },
+): { mode: PlayMode; why?: ElsewhereWhy } {
   if (!stream.direct) return { mode: app && stream.ownFile !== false ? "mpv" : "hls" };
   if (stream.ownFile === false) return { mode: "elsewhere", why: "account" };
   if (app) return { mode: "mpv" };
-  const { container, audio } = stream.direct;
+  const inPage = playsInPage(stream.direct, stream.videoCodec, canPlay);
+  return inPage.mode === "elsewhere" && native ? { mode: "native" } : inPage;
+}
+
+function playsInPage(
+  { container, audio }: NonNullable<StreamFacts["direct"]>,
+  videoCodec: string | undefined,
+  canPlay: (type: string) => boolean,
+): { mode: PlayMode; why?: ElsewhereWhy } {
   if (!isBrowserContainer(container)) return { mode: "elsewhere", why: "format" };
   if (audio.some((a) => NO_BROWSER_SOUND.test(a))) return { mode: "elsewhere", why: "sound" };
   if (audio.some((a) => DOLBY_SOUND.test(a)) && !canPlay('audio/mp4; codecs="ec-3"') && !canPlay('audio/mp4; codecs="ac-3"'))
     return { mode: "elsewhere", why: "sound" };
-  const codec = stream.videoCodec ?? "";
+  const codec = videoCodec ?? "";
   if (/hevc|265/i.test(codec) && !canPlay('video/mp4; codecs="hvc1.1.6.L93.B0"')) return { mode: "elsewhere", why: "picture" };
   if (/av1/i.test(codec) && !canPlay('video/mp4; codecs="av01.0.08M.08"')) return { mode: "elsewhere", why: "picture" };
   return { mode: container === "hls" ? "hls" : "file" };

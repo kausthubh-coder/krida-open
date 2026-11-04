@@ -431,6 +431,7 @@ function listLanguages(tracks: { lang?: string }[]) {
 }
 
 export function SubtitleMenu({
+  native,
   fileTracks,
   filePlayable,
   options,
@@ -443,6 +444,8 @@ export function SubtitleMenu({
   onLoadFile,
   fileError,
 }: {
+  /** ExoPlayer plays the file and draws its own tracks, which it can't shift in time. */
+  native?: boolean;
   /** The file's own tracks, which only Krida for Windows can show (`filePlayable`). */
   fileTracks: { id: string; lang?: string; title?: string }[];
   filePlayable: boolean;
@@ -531,7 +534,8 @@ export function SubtitleMenu({
         );
       })}
       {error && <p className="px-3 py-2 text-body text-danger">That subtitle file didn’t load. Try another.</p>}
-      {current && (
+      {/* Media3 1.9 has no embedded-track offset; addon and loaded cues are timed by the page and still support it. */}
+      {current && !(native && current.startsWith("file:")) && (
         <div className="mt-1 flex items-center gap-2 border-t border-line px-3 pt-3 pb-2">
           <span className="flex-1 text-body text-fg-muted">Timing</span>
           <IconButton label="Show subtitles 0.1 seconds earlier (G)" size="sm" onClick={() => onOffset(shiftSubtitleDelay(offset, -1))}>

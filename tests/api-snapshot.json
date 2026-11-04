@@ -834,6 +834,26 @@
       }
     }
   },
+  "library:importStremio": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "items": {
+        "fieldType": {
+          "type": "array",
+          "value": {
+            "type": "any"
+          }
+        },
+        "optional": false
+      }
+    }
+  },
   "library:list": {
     "kind": "query",
     "args": {
@@ -6311,6 +6331,104 @@
           "value": {
             "type": "string"
           }
+        },
+        "optional": false
+      }
+    }
+  },
+  "trakt:cancel": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "trakt:disconnect": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "trakt:enabled": {
+    "kind": "query",
+    "args": {}
+  },
+  "trakt:login": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "trakt:setWriteBack": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "writeBack": {
+        "fieldType": {
+          "type": "boolean"
+        },
+        "optional": false
+      }
+    }
+  },
+  "trakt:start": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "trakt:status": {
+    "kind": "query",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "trakt:syncNow": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
+  "trakt:touch": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
         },
         "optional": false
       }

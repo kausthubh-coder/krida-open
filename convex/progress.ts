@@ -4,6 +4,7 @@ import { mutation } from "./functions";
 import { requireProfile } from "./lib/auth";
 import { mediaValidator } from "./schema";
 import { enqueue } from "./lib/simklOutbox";
+import { enqueueTrakt, traktMedia } from "./lib/traktOutbox";
 import { changeStatus } from "./library";
 import { hiddenBy, unwatchedFor } from "./lib/unwatched";
 import { expandEpisodes, withoutEpisodes } from "./lib/simkl";
@@ -59,6 +60,9 @@ export const save = mutation({
         season: media.season,
         episode: media.episode,
       });
+    // Trakt counts every play, a rewatch's too. A movie finished here was already queued as Watched (changeStatus),
+    // and the two share one play.
+    if (finished && !existing?.finished) await enqueueTrakt(ctx, profile._id, "watched", traktMedia(media));
   },
 });
 
@@ -110,8 +114,10 @@ export const mark = mutation({
         marked.unshift(m);
       }
       if (!rewatching)
-        for (const m of marked)
+        for (const m of marked) {
           await enqueue(ctx, profile._id, "watched", { ...item, season: m.season, episode: m.episode });
+          await enqueueTrakt(ctx, profile._id, "watched", traktMedia(m));
+        }
     } else {
       const tracked = rewatching ? null : await ctx.db.query("tracked").withIndex("by_profile_id", (q) => q.eq("profileId", profile._id).eq("id", id)).first();
       const onSimkl = new Set(expandEpisodes(tracked?.watched));
@@ -125,6 +131,8 @@ export const mark = mutation({
         const queued = await ctx.db.query("syncOutbox").withIndex("by_key", (q) =>
           q.eq("profileId", profile._id).eq("key", `watched:${id}:${m.season}:${m.episode}`)).first();
         if (row?.finished || onSimkl.has(key) || queued) await enqueue(ctx, profile._id, "unwatch", { ...item, season: m.season, episode: m.episode });
+        // Trakt may have it from another app, so the play is taken back there whatever Krida knew of it.
+        await enqueueTrakt(ctx, profile._id, "unwatch", traktMedia(m));
       }
       // Shown unwatched right away; the next Simkl sync agrees once the removal is sent.
       if (tracked && drop.size) await ctx.db.patch(tracked._id, withoutEpisodes(tracked, drop));

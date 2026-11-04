@@ -86,6 +86,8 @@ class MainActivity : ComponentActivity() {
     private var signInCallback: String? = null
 
     private val audio by lazy { getSystemService(AudioManager::class.java) }
+    /** The file itself, played under the page when the browser can't (NativePlayer). */
+    private lateinit var native: NativePlayer
     val updates by lazy { Updates(this) }
     private val origin by lazy { Uri.parse(BuildConfig.START_URL) }
 
@@ -110,6 +112,9 @@ class MainActivity : ComponentActivity() {
         root = FrameLayout(this).apply { setBackgroundColor(getColor(R.color.page)) }
         web = makeWebView()
         offline = makeOfflineView()
+        native = NativePlayer(this, ::dispatch) { width, height -> setVideoSize(width, height) }
+        // Under the page, which goes see-through while it plays.
+        root.addView(native.stage, FrameLayout.LayoutParams(MATCH, MATCH))
         root.addView(web, FrameLayout.LayoutParams(MATCH, MATCH))
         root.addView(offline, FrameLayout.LayoutParams(MATCH, MATCH))
         setContentView(root)
@@ -253,6 +258,7 @@ class MainActivity : ComponentActivity() {
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
             // The page's process died (the phone ran short of memory): start the app's screen again rather than crash.
+            native.stop()
             root.removeView(web)
             web.destroy()
             recreate()
@@ -366,10 +372,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (!isInPictureInPictureMode) web.onPause()
+        if (!isInPictureInPictureMode) {
+            web.onPause()
+            native.pause()
+        }
     }
 
     override fun onDestroy() {
+        native.stop()
         unregisterReceiver(mediaButton)
         super.onDestroy()
     }
@@ -424,9 +434,22 @@ class MainActivity : ComponentActivity() {
         return volume()
     }
 
-    /** In the player, the volume keys move the phone's volume quietly and the page shows its own meter. */
+    /**
+     * In the player, the volume keys move the phone's volume quietly and the page shows its own meter, and a remote's
+     * play and pause keys press the player's own button, so in a party they move everyone.
+     */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val key = event.keyCode
+        if (inPlayer && key in MEDIA_KEYS) {
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                when (key) {
+                    KeyEvent.KEYCODE_MEDIA_PAUSE -> emit("media", "action" to "pause")
+                    KeyEvent.KEYCODE_MEDIA_PLAY -> if (!playing) emit("media", "action" to "toggle")
+                    else -> emit("media", "action" to "toggle")
+                }
+            }
+            return true
+        }
         if (inPlayer && (key == KeyEvent.KEYCODE_VOLUME_UP || key == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             if (event.action == KeyEvent.ACTION_DOWN) {
                 val direction = if (key == KeyEvent.KEYCODE_VOLUME_UP) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
@@ -439,6 +462,23 @@ class MainActivity : ComponentActivity() {
     }
 
     // ----- the player
+
+    /** Plays the file at `url` under the page (NativePlayer): the page goes see-through until [playerStop]. */
+    fun playerLoad(url: String, start: Double, paused: Boolean, aid: Int, title: String) {
+        val scheme = Uri.parse(url).scheme
+        if (scheme != "https" && scheme != "http") return
+        web.setBackgroundColor(Color.TRANSPARENT)
+        native.load(url, start, paused, aid, title)
+    }
+
+    fun playerSeek(time: Double) = native.seek(time)
+
+    fun playerSet(name: String, value: Any?) = native.set(name, value)
+
+    fun playerStop() {
+        native.stop()
+        web.setBackgroundColor(getColor(R.color.page))
+    }
 
     /**
      * Watching, from Play until you leave: sideways and edge to edge, bars hidden until a swipe, as Netflix does.
@@ -541,6 +581,9 @@ class MainActivity : ComponentActivity() {
         const val SIGN_IN_REDIRECT = "${BuildConfig.APPLICATION_ID}://$SIGN_IN_HOST"
         private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
         private const val ACTION_MEDIA = "app.krida.MEDIA"
+        private val MEDIA_KEYS = setOf(
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK,
+        )
         /** Roughly how the eye sees light: what Android's own brightness slider uses. */
         private const val GAMMA = 2.2f
     }

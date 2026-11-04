@@ -6,11 +6,13 @@ import { api } from "../../../convex/_generated/api";
 import { useAuthed } from "../../data/session";
 import { logProblem } from "../../data/log";
 import { android } from "../../ui/android";
+import { desktopApp } from "../../data/desktop";
+import { castContentType, useCast } from "./cast";
 import { canFullscreen, toggleFullscreen as toggleAppFullscreen, useFullscreen } from "../../ui/fullscreen";
 import { Button, cx, IconButton, Spinner } from "../../ui/ui";
 import type { Media } from "../play";
 import { ReactionLayer, SITE, type Member, type RoomData, type UpNext } from "../party";
-import { useAndroidPlayer, useAndroidVolumeKeys } from "./androidPlayer";
+import { useAndroidPlayer, useAndroidVolumeKeys, useNativeVideo, useRemoteKeys } from "./androidPlayer";
 import { AUTO_SKIPS, joinNames, MIN_AUTO_SKIP, useAutomatic, type SkipPart } from "./automatic";
 import { fade } from "./chrome";
 import { useFramePreview } from "./framePreview";
@@ -84,9 +86,19 @@ export function Player({
   const { token, me } = useAuthed();
   const stream = room.stream!;
   const [element, setElement] = useState<HTMLVideoElement | null>(null);
-  // In the app, mpv plays the picture under the page and stands in for the element (desktop.ts).
-  const mpv = useMpvVideo(mode === "mpv");
-  const video = mpv ? (mpv as unknown as HTMLVideoElement) : element;
+  // In the desktop app, mpv plays the picture under the page and stands in for the element (desktop.ts); in the
+  // Android app, ExoPlayer does the same for a file the page can't play (androidPlayer.ts).
+  const native = useNativeVideo(mode === "native");
+  const mpv = useMpvVideo(mode === "mpv") ?? native;
+  const castResume = useRef<(time: number, playing: boolean) => void>(() => {});
+  const cast = useCast(element, !android && !desktopApp(), () => {
+    if (room.kind === "party") return null;
+    const url = mode === "hls"
+      ? `${SITE}/hls/playlist.m3u8?s=${stream._id}&a=${audio}&t=${token}`
+      : stream.ownFile ? element?.currentSrc || element?.src : null;
+    return url && /^https?:/.test(url) ? { url, contentType: castContentType(url), title: room.media!.name, poster: room.media!.poster } : null;
+  }, (time, playing) => castResume.current(time, playing));
+  const video = (cast.video as unknown as HTMLVideoElement | null) ?? (mpv ? (mpv as unknown as HTMLVideoElement) : element);
   usePlaybackHealth(video, stream, !!mpv);
   const heartbeat = useMutation(api.rooms.heartbeat);
   const saveProgress = useMutation(api.progress.save);
@@ -136,25 +148,26 @@ export function Player({
   }
 
   // ----- speed: yours alone in the room; a party shares one clock, so it plays at 1×. Holding the picture is 2×.
-  const speed = useSpeed(room.kind === "party");
+  const speed = useSpeed(room.kind === "party" || cast.active);
   const [held, setHeld] = useState(false);
   const rate = !speed ? 1 : held ? 2 : speed.speed;
-  const browserPip = usePictureInPicture(video);
+  const browserPip = usePictureInPicture(cast.active ? null : video);
 
   const sync = useRoomSync({
     video,
     playback: room.playback as Playback,
     roomId: room._id,
     token,
-    enabled: !!video && !fatal,
+    enabled: !!video && !fatal && !cast.active,
     rate,
     myId: me._id,
     videoId: m.videoId,
     onAutoplayBlocked: useCallback(() => setBlocked(true), []),
   });
+  castResume.current = (time, playing) => sync.send("seek", playing, time);
 
   // ----- the stream, the element's state, and starting once ready
-  useHlsStream(mode === "hls" ? video : null, src, sync, setFatal);
+  useHlsStream(mode === "hls" ? element : null, src, sync, setFatal);
   useFileStream(mode === "file" ? element : null, stream._id, token, sync, setFatal);
   useDesktopStream({
     video: mpv,
@@ -170,7 +183,8 @@ export function Player({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fatal]);
   const marksAt = (duration: number) => playerMarks([stream.intro, stream.recap, stream.outro], duration);
-  const { paused, time, setTime, duration, waiting, canPlay, volume, setVolume, muted, ended } = useVideoState(video, stream.duration ?? 0, setBlocked, marksAt);
+  const { paused, time, setTime, duration, waiting, canPlay, volume: localVolume, setVolume, muted, ended } = useVideoState(video, stream.duration ?? 0, setBlocked, marksAt);
+  const volume = cast.video?.volume ?? localVolume;
   useAutoStart(video, room, online, me, sync, setBlocked);
 
   // ----- presence and progress
@@ -184,6 +198,12 @@ export function Player({
   // ----- controls
   const togglePlay = useCallback(() => {
     if (!video) return;
+    if (cast.active) {
+      const playing = video.paused;
+      if (playing) void video.play(); else video.pause();
+      sync.send(playing ? "play" : "pause", playing, video.currentTime);
+      return;
+    }
     if (video.paused && !video.ended && room.playback.playing) {
       // The room plays on without us (the browser blocked autoplay, or we just came back): join it where it is.
       // Sending "play" from here would pull everyone back to where we stopped.
@@ -195,7 +215,7 @@ export function Player({
       video.pause();
       sync.send("pause", false, video.currentTime);
     }
-  }, [video, sync, room.playback]);
+  }, [video, sync, room.playback, cast.active]);
 
   // Back and forward (keys, buttons, a double tap, a headset) gather quick presses into one seek; `aim` is where
   // they're headed, for the timeline, until the picture goes there.
@@ -271,10 +291,12 @@ export function Player({
   useAndroidVolumeKeys(touch.showLevel);
   // Measured on the page's own element. In the app it has no picture: mpv draws it, and sets the fit itself.
   const fitScale = useFitScale(element, touch.fit);
-  const fit = !mpv || mpvFits() ? { fit: touch.fit, setFit: touch.setFit } : null;
+  // The Android app's player lays out the picture as mpv does.
+  const fits = !!native || mpvFits();
+  const fit = !mpv || fits ? { fit: touch.fit, setFit: touch.setFit } : null;
   useEffect(() => {
-    if (mpv && mpvFits()) mpv.setFit(touch.fit);
-  }, [mpv, touch.fit]);
+    if (mpv && fits) mpv.setFit(touch.fit);
+  }, [mpv, fits, touch.fit]);
   // In the app, mpv trims black bars built into the film too, unless they're switched off in the Picture menu.
   const [trimBars, setTrimBars] = useTrimBars();
   const trims = !!mpv && mpvTrims();
@@ -309,6 +331,8 @@ export function Player({
     if (e.pointerType === "mouse" || e.target !== video) wake();
   };
 
+  // A TV remote in the Android app; the keyboard's keys below answer it too.
+  useRemoteKeys({ togglePlay, wake });
   usePlayerKeys({
     video, menu, setMenu: openMenu, wake, togglePlay, skipBy, setVolume, toggleFullscreen,
     toggleSubtitles: subtitles.toggle,
@@ -596,6 +620,8 @@ export function Player({
       )}
 
       <PlayerControls
+        native={mode === "native"}
+        cast={cast}
         speed={speed}
         onShortcuts={() => { setMenu(null); setShortcutsOpen(true); }}
         room={room}

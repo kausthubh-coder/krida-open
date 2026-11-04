@@ -33,7 +33,7 @@ import { Episodes } from "./titleEpisodes";
 import { MoreLikeThis } from "./moreLikeThis";
 import { lookupOf } from "./lookup";
 import { useArtTint } from "../../ui/artTint";
-import { isTitleId } from "../../../shared/ids";
+import { isLibraryId } from "../../../convex/lib/titleIds";
 
 export function TitlePage() {
   const { type, id } = useParams<{ type: "movie" | "series"; id: string }>();
@@ -302,8 +302,8 @@ function TitleView({ meta, filling }: { meta: Meta; filling: boolean }) {
                   <span className="max-sm:sr-only">Trailer</span>
                 </button>
               )}
-              {/* Kept by IMDb or Kitsu id, as Simkl knows titles; an addon's own id has neither. */}
-              {isTitleId(meta.id) && <>
+              {/* Addon titles keep the same library controls as built-in catalogs. */}
+              {isLibraryId(meta.id) && <>
                 <ListButton item={item} variant="toolbar" className="max-md:flex-1" />
                 <RateButton item={item} variant="toolbar" />
               </>}

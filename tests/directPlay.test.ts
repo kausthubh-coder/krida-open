@@ -63,6 +63,18 @@ describe("where the room's stream plays", () => {
     const theirs = { ...direct("mp4"), ownFile: false };
     expect(playsIn(theirs, { app: false, canPlay: all })).toEqual({ mode: "elsewhere", why: "account" });
     expect(playsIn(theirs, { app: true, canPlay: all })).toEqual({ mode: "elsewhere", why: "account" });
+    expect(playsIn(theirs, { app: false, native: true, canPlay: all })).toEqual({ mode: "elsewhere", why: "account" });
+  });
+
+  test("the Android app's own player takes what the page can't, and leaves the page what it can", () => {
+    expect(playsIn(direct("mkv"), { app: false, native: true, canPlay: all })).toEqual({ mode: "native" });
+    expect(playsIn(direct("mp4", ["DTS-HD"]), { app: false, native: true, canPlay: all })).toEqual({ mode: "native" });
+    expect(playsIn(direct("mp4", ["AAC"], "HEVC"), { app: false, native: true, canPlay: none })).toEqual({ mode: "native" });
+    expect(playsIn(direct("mp4"), { app: false, native: true, canPlay: none })).toEqual({ mode: "file" });
+    // TorBox's own stream stays the page's HLS.
+    expect(playsIn({ ownFile: true }, { app: false, native: true, canPlay: none })).toEqual({ mode: "hls" });
+    // An app from before 1.4 offers other players, as a browser does.
+    expect(playsIn(direct("mkv"), { app: false, native: false, canPlay: all })).toEqual({ mode: "elsewhere", why: "format" });
   });
 
   test("says why in words", () => {

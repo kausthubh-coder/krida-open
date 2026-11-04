@@ -8,6 +8,7 @@ import {
 } from "./simkl";
 import { syncableStatus, type TrackedStatus } from "./watchStatus";
 import { titleIds } from "./titleIds";
+import { isTitleId } from "../../shared/ids";
 import { BATCH_WAIT, DAILY_BUDGET, DAY, connectionFor, session, today, usedToday } from "./simklApi";
 
 // ---------------------------------------------------------------------------------------------
@@ -80,6 +81,8 @@ export async function listChangePending(ctx: QueryCtx, profileId: Id<"profiles">
  * request; a save and an unsave of the same title before then cancel out.
  */
 export async function enqueue(ctx: MutationCtx, profileId: Id<"profiles">, op: Op, item: OutItem) {
+  // Only ids this adapter can resolve belong in Simkl's outbox.
+  if (!isTitleId(item.id)) return;
   const c = await connectionFor(ctx, profileId);
   if (!c || !c.writeBack || !c.scope.includes("media:write")) return;
   // UI items can carry artwork. Only tracker fields belong in the outbox.

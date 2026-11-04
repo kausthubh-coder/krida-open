@@ -81,4 +81,9 @@ dependencies {
     implementation("androidx.webkit:webkit:1.14.0")
     // Signing in with Google happens in a Custom Tab: Google refuses sign-in inside a WebView.
     implementation("androidx.browser:browser:1.8.0")
+    // The file itself, under the page (NativePlayer.kt): MKV and HEVC through the phone's decoders, and DTS, TrueHD and
+    // E-AC-3 through FFmpeg (Jellyfin's build of Media3's FFmpeg decoder, GPLv3 as Krida is; its version follows Media3's).
+    implementation("androidx.media3:media3-exoplayer:1.9.0")
+    implementation("androidx.media3:media3-ui:1.9.0")
+    implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 }

@@ -33,6 +33,13 @@ export function ExternalPlayers({ url, title, className }: { url: string; title:
       <Button icon={<CopyIcon />} onClick={() => void copy()}>
         Copy link
       </Button>
+      {url && (
+        // `download` holds only where the service sends the file as one (debrid links do); elsewhere the file opens
+        // in a tab of its own, where the browser saves it, and Krida stays where it was.
+        <a href={url} download target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-body font-medium hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-fg">
+          <DownloadSimpleIcon aria-hidden /> Download file
+        </a>
+      )}
       <Button icon={<DownloadSimpleIcon />} onClick={download}>
         Download playlist
       </Button>

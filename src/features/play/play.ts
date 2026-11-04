@@ -54,8 +54,9 @@ export function errorMessage(error: unknown, fallback: string) {
 }
 
 /**
- * True when Play can't start here: alone, it streams from this account's debrid service, so it needs a debrid key its
- * service accepts; in a party it plays the host's stream. Play shows as unavailable then and says why when pressed.
+ * True when Play can't start here: alone, it streams from this account's debrid service or an addon's plain web video,
+ * so it needs a debrid key its service accepts or a stream addon; in a party it plays the host's stream. Play shows as
+ * unavailable then and says why when pressed. A title whose sources are all torrents says so once Play looks.
  */
 export function usePlayNeedsDebrid() {
   const party = useParty();
@@ -79,7 +80,7 @@ export function usePlay() {
     async (media: Media, options: { startAt?: number; sourceIndex?: number; sourceKey?: string } = {}) => {
       if (needsDebrid) {
         toast(PLAY_NEEDS_DEBRID, {
-          description: "Add your debrid key in Settings → Connections. TorBox plays everywhere; other services play MP4 files in the browser and the rest in the Mac and Windows apps.",
+          description: "Add a stream addon in Settings → Addons, or your debrid key in Settings → Connections. Addons’ web videos play without one; torrents need TorBox or another debrid service.",
           action: { label: "Add a key", onClick: () => navigate("/settings/connections") },
         });
         return;

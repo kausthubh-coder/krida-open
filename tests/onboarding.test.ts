@@ -70,15 +70,16 @@ async function setup() {
   return { t, ...ids, status, save, addAddon };
 }
 
-const fresh: Status = { tmdb: "none", debrid: null, torbox: false, play: false, debridAsked: false, addons: "todo", extrasAsked: false, mdblist: false };
-/** Every status: each field through its values. */
+const fresh: Status = { tmdb: "none", tmdbAsked: false, debrid: null, torbox: false, play: false, debridAsked: false, addons: "todo", extrasAsked: false, mdblist: false };
+/** Every status: each field through its values (`tmdbAsked` unset too, as servers before it answer). */
 function* statuses(): Generator<Status> {
   for (const tmdb of ["none", "valid", "invalid"] as const)
-    for (const debrid of [null, { service: "torbox" as const, valid: true }, { service: "realdebrid" as const, valid: false }])
-      for (const debridAsked of [false, true])
-        for (const addons of ["todo", "installed", "skipped"] as const)
-          for (const extrasAsked of [false, true])
-            yield { tmdb, debrid, torbox: debrid?.service === "torbox", play: debrid?.valid === true, debridAsked, addons, extrasAsked, mdblist: extrasAsked };
+    for (const tmdbAsked of [false, true, undefined])
+      for (const debrid of [null, { service: "torbox" as const, valid: true }, { service: "realdebrid" as const, valid: false }])
+        for (const debridAsked of [false, true])
+          for (const addons of ["todo", "installed", "skipped"] as const)
+            for (const extrasAsked of [false, true])
+              yield { tmdb, tmdbAsked, debrid, torbox: debrid?.service === "torbox", play: debrid?.valid === true, debridAsked, addons, extrasAsked, mdblist: extrasAsked };
 }
 
 describe("the route", () => {
@@ -90,14 +91,15 @@ describe("the route", () => {
   test("route sends to the first step still needed", () => {
     for (const status of statuses()) {
       const screen = route({ signedIn: true, profile: true, status });
-      // HomeNeedsProfileAndTmdb: no key, or one TMDB refuses, is always the TMDB step.
-      if (status.tmdb !== "valid") expect(screen).toBe("tmdbKey");
+      // TmdbAskedBeforeHome: no key, or one TMDB refuses, is the TMDB step until it's skipped.
+      if (status.tmdb !== "valid" && !status.tmdbAsked) expect(screen).toBe("tmdbKey");
       else if (!status.debridAsked) expect(screen).toBe("debrid");
       else if (status.addons === "todo") expect(screen).toBe("addons");
       else if (!status.extrasAsked) expect(screen).toBe("extras");
       else expect(screen).toBe("home");
     }
-    expect(route({ signedIn: true, profile: false, status: fresh })).toBe("picker");
+    // HomeNeedsProfile: without a profile chosen, the picker, whatever the account has done.
+    for (const status of [...statuses(), null]) expect(route({ signedIn: true, profile: false, status })).toBe("picker");
     // A party guest has no account and plays on the host's keys.
     expect(route({ signedIn: true, profile: true, status: null })).toBe("home");
   });
@@ -108,7 +110,7 @@ describe("onboarding status", () => {
     const { t, one, status, save, addAddon } = await setup();
     expect(await status()).toEqual(fresh);
     expect(await save("tmdb", "tmdb-good")).toEqual({ ok: true });
-    expect(await status()).toEqual({ ...fresh, tmdb: "valid" });
+    expect(await status()).toEqual({ ...fresh, tmdb: "valid", tmdbAsked: true });
 
     // Skipping the debrid step is remembered on the account.
     await t.mutation(api.onboarding.pass, { token: "one", step: "debrid" });
@@ -117,8 +119,9 @@ describe("onboarding status", () => {
     // An addon installed and Continue: installed. The other profile still has its own addons step.
     await addAddon(one);
     await t.mutation(api.onboarding.pass, { token: "one", step: "addons" });
-    expect(await status()).toEqual({ ...fresh, tmdb: "valid", debridAsked: true, addons: "installed" });
-    expect(await status("two")).toEqual({ ...fresh, tmdb: "valid", debridAsked: true, addons: "todo" });
+    // With a stream addon, Play works without a debrid service: the addon's plain web videos play (lib/accounts.ts).
+    expect(await status()).toEqual({ ...fresh, tmdb: "valid", tmdbAsked: true, debridAsked: true, addons: "installed", play: true });
+    expect(await status("two")).toEqual({ ...fresh, tmdb: "valid", tmdbAsked: true, debridAsked: true, addons: "todo" });
     await t.mutation(api.onboarding.pass, { token: "two", step: "addons" });
     expect((await status("two"))?.addons).toBe("skipped");
 
@@ -132,6 +135,45 @@ describe("onboarding status", () => {
     expect(await status("guest")).toBe(null);
     expect(await status("nobody")).toBe(null);
     await expect(t.mutation(api.onboarding.pass, { token: "guest", step: "debrid" })).rejects.toThrow("Only profiles in an account have keys");
+    await expect(t.mutation(api.onboarding.skipTmdb, { token: "guest" })).rejects.toThrow("Only profiles in an account have keys");
+  });
+
+  test("the TMDB step can be skipped, and Home comes without a key", async () => {
+    const { t, status } = await setup();
+    expect(route({ signedIn: true, profile: true, status: await status() })).toBe("tmdbKey");
+    await t.mutation(api.onboarding.skipTmdb, { token: "one" });
+    // Kept on the account: the other profile, on any device, is past it too.
+    expect(await status()).toEqual({ ...fresh, tmdbAsked: true });
+    expect(route({ signedIn: true, profile: true, status: await status("two") })).toBe("debrid");
+    for (const step of ["debrid", "addons", "extras"] as const) await t.mutation(api.onboarding.pass, { token: "one", step });
+    expect(await status()).toEqual({ ...fresh, tmdbAsked: true, debridAsked: true, addons: "skipped", extrasAsked: true });
+    expect(route({ signedIn: true, profile: true, status: await status() })).toBe("home");
+  });
+
+  test("a key that stops working asks once more, and can be skipped then too", async () => {
+    const { t, status, save } = await setup();
+    await t.mutation(api.onboarding.skipTmdb, { token: "one" });
+    for (const step of ["debrid", "addons", "extras"] as const) await t.mutation(api.onboarding.pass, { token: "one", step });
+    vi.setSystemTime(now + 60_000);
+    await save("tmdb", "tmdb-good");
+    // A skip from before the key doesn't count for it: TMDB refusing it later is the TMDB step again.
+    GOOD.delete("tmdb-good");
+    vi.setSystemTime(now + 7 * 60 * 60_000);
+    await t.action(api.onboarding.recheck, { token: "one" });
+    expect(await status()).toMatchObject({ tmdb: "invalid", tmdbAsked: false });
+    expect(route({ signedIn: true, profile: true, status: await status() })).toBe("tmdbKey");
+    await t.mutation(api.onboarding.skipTmdb, { token: "one" });
+    expect(await status()).toMatchObject({ tmdb: "invalid", tmdbAsked: true });
+    expect(route({ signedIn: true, profile: true, status: await status() })).toBe("home");
+  });
+
+  test("a TMDB key removed in Settings leaves the account at Home", async () => {
+    const { t, status, save } = await setup();
+    await save("tmdb", "tmdb-good");
+    for (const step of ["debrid", "addons", "extras"] as const) await t.mutation(api.onboarding.pass, { token: "one", step });
+    await t.mutation(api.accounts.clear, { token: "one", kind: "tmdb" });
+    expect(await status()).toMatchObject({ tmdb: "none", tmdbAsked: true });
+    expect(route({ signedIn: true, profile: true, status: await status() })).toBe("home");
   });
 
   test("a refused TMDB key is marked invalid", async () => {

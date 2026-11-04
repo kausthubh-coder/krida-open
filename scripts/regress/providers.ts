@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
-import { createServer, type Server } from "node:http";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { join } from "node:path";
 
 /**
@@ -77,6 +77,19 @@ const DIRECT_MANIFEST = {
   types: ["movie", "series"], resources: ["stream"], idPrefixes: ["tt"], catalogs: [],
 };
 /**
+ * A stand-in for a free addon with plain web videos, which play with no debrid service, at `{base}/web`. For any film
+ * or episode: the one-minute test video as HLS (an .m3u8), the 480p public-domain MP4, and a torrent (an `infoHash`)
+ * that needs a debrid service. The HLS sits on another host name (`localhost`, where the addon answers on `127.0.0.1`),
+ * as a free addon's links usually do, so the backend counts it a link with no secret that a party may share
+ * (engine.mayPlay). Nothing installs it: scripts that play without a debrid service add it.
+ */
+export const standInWebAddon = (base: string) => `${base}/web`;
+const WEB_MANIFEST = {
+  id: "krida.regress.web", name: "Stand-in web", version: "1.0.0", description: "Plain web videos, no debrid service needed.",
+  types: ["movie", "series"], resources: ["stream"], idPrefixes: ["tt"], catalogs: [],
+};
+const WEB_TORRENT = "a".repeat(40);
+/**
  * A stand-in subtitle addon at `{base}/subs`, with Spanish subtitles only for any film: a line every two seconds of the
  * one-minute test video. Nothing installs it; scripts that check how subtitles are picked and drawn add it
  * (scripts/e2e-playback-settings.ts).
@@ -116,7 +129,7 @@ export const providerEnv = (base: string) => ({
 export async function startProviders(mediaDir: string): Promise<Providers> {
   testVideo(mediaDir);
   let base = "";
-  const server: Server = createServer((req, res) => {
+  const answer = (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
     const json = (body: unknown) => {
       res.writeHead(200, { "content-type": "application/json", "access-control-allow-origin": "*" });
@@ -132,6 +145,20 @@ export async function startProviders(mediaDir: string): Promise<Providers> {
     if (path === "/subs/spa.srt") {
       res.writeHead(200, { "content-type": "text/plain; charset=utf-8", "access-control-allow-origin": "*" });
       return res.end(SPANISH);
+    }
+    if (path === "/web/manifest.json") return json(WEB_MANIFEST);
+    if (/^\/web\/stream\/(movie|series)\/.+\.json$/.test(path)) {
+      const elsewhere = base.replace("127.0.0.1", "localhost");
+      return json({ streams: [
+        { name: "Stand-in web\n360p", description: "Test.Movie.2026.360p.WEB.AAC.x264-KRIDA (HLS)", url: `${elsewhere}/web/hls/playlist.m3u8`, behaviorHints: { bingeGroup: "standin-web|hls" } },
+        { name: "Stand-in web\n480p", description: "Night.of.the.Living.Dead.1968.480p.WEB.AAC.x264-KRIDA.mp4\n💾 596 MB", url: PUBLIC_DOMAIN_MP4, behaviorHints: { filename: "Night.of.the.Living.Dead.1968.480p.WEB.AAC.x264-KRIDA.mp4", videoSize: 596_399_542 } },
+        { name: "Stand-in web\n1080p", description: "Test.Movie.2026.1080p.WEB-DL.x264-KRIDA.mkv\n💾 1.2 GB 👤 50", infoHash: WEB_TORRENT, behaviorHints: { filename: "Test.Movie.2026.1080p.WEB-DL.x264-KRIDA.mkv", videoSize: 1_200_000_000 } },
+      ] });
+    }
+    const web = /^\/web\/hls\/(playlist\.m3u8|seg\d+\.ts)$/.exec(path)?.[1];
+    if (web && existsSync(join(mediaDir, web))) {
+      res.writeHead(200, { "content-type": web.endsWith(".m3u8") ? "application/vnd.apple.mpegurl" : "video/mp2t", "access-control-allow-origin": "*" });
+      return res.end(readFileSync(join(mediaDir, web)));
     }
     if (/^\/direct\/stream\/(movie|series)\/.+\.json$/.test(path))
       return json({ streams: DIRECT_SOURCES.map((s) => ({ name: s.name, description: s.description, url: `${base}/resolve/${s.to}`, behaviorHints: { filename: s.file, videoSize: s.size, bingeGroup: `standin|${s.to}` } })) });
@@ -204,12 +231,23 @@ export async function startProviders(mediaDir: string): Promise<Providers> {
     }
     res.writeHead(404, { "access-control-allow-origin": "*" });
     res.end();
-  });
+  };
+  const server: Server = createServer(answer);
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
-  base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const port = (server.address() as { port: number }).port;
+  base = `http://127.0.0.1:${port}`;
+  // `localhost` (the web stand-in's other host name) can mean ::1 first, so the same port answers there too where it can.
+  const v6: Server = createServer(answer);
+  const v6Up = await new Promise<boolean>((resolve) => {
+    v6.once("error", () => resolve(false));
+    v6.listen(port, "::1", () => resolve(true));
+  });
+  const close = (s: Server) => new Promise<void>((resolve) => s.close(() => resolve()));
   return {
     url: base,
     env: providerEnv(base),
-    stop: () => new Promise((resolve) => server.close(() => resolve())),
+    stop: async () => {
+      await Promise.all([close(server), ...(v6Up ? [close(v6)] : [])]);
+    },
   };
 }

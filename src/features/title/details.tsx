@@ -2,6 +2,7 @@
 import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import type { Meta } from "../../data/cinemeta";
+import { useNeedsTmdbKey } from "../../data/keys";
 import { cx } from "../../ui/ui";
 
 /** "166 min" as "2 h 46 min", the way the rest of Krida writes durations. */
@@ -47,8 +48,12 @@ export function Facts({ meta, certification }: { meta: Meta; certification?: str
   );
 }
 
-/** Who made it and who's in it: quiet, under the buttons, for the curious. */
+/**
+ * Who made it and who's in it: quiet, under the buttons, for the curious. Each name opens their page, which is TMDB's:
+ * without the account's key they're just names.
+ */
 export function Credits({ meta, className }: { meta: Meta; className?: string }) {
+  const needsKey = useNeedsTmdbKey();
   const directors = meta.director?.slice(0, 2) ?? [];
   const cast = meta.cast?.slice(0, 5) ?? [];
   if (!directors.length && !cast.length) return null;
@@ -58,9 +63,9 @@ export function Credits({ meta, className }: { meta: Meta; className?: string })
     names.map((name, i) => (
       <Fragment key={name}>
         {i > 0 && ", "}
-        <Link to={`/person/${encodeURIComponent(name)}${imdbId ? `?title=${imdbId}` : ""}`} className="underline decoration-fg-faint/50 underline-offset-[3px] hover:text-fg hover:decoration-current">
+        {needsKey ? name : <Link to={`/person/${encodeURIComponent(name)}${imdbId ? `?title=${imdbId}` : ""}`} className="underline decoration-fg-faint/50 underline-offset-[3px] hover:text-fg hover:decoration-current">
           {name}
-        </Link>
+        </Link>}
       </Fragment>
     ));
   return (

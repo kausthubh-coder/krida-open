@@ -32,9 +32,32 @@ export function torboxKeyOf(keys: AccountKeys): string {
 /** Whether the account's streams go through TorBox, or play straight from the addon's link (another service). */
 export const viaTorBox = (keys: AccountKeys) => keys.debrid?.service === "torbox";
 
-/** Said before anything is fetched when the account has no debrid service at all. */
-export function requireDebrid(keys: AccountKeys) {
-  if (!keys.debrid) throw new SourceError("Add a debrid service in Settings → Connections to play here.", "torbox");
+/** A torrent (a magnet, made from an addon's `infoHash`): only a debrid service turns it into a file to play. */
+export const isTorrent = (source: Pick<RawSource, "url">) => source.url.startsWith("magnet:");
+
+/** What Play says when every source listed is a torrent and the account has no debrid service. */
+export const NEEDS_DEBRID_SOURCES = "These sources need a debrid service. Add one in Settings → Connections.";
+
+/**
+ * The hosts of debrid services and their file servers. A link that passes through one plays a file from someone's
+ * debrid account, so it isn't a plain web video, even when nothing in it names a torrent.
+ */
+const DEBRID_HOST = /(^|\.)(torbox\.app|tb-cdn\.io|real-debrid\.com|alldebrid\.com|debrid\.it|premiumize\.me|energycdn\.com|debrid-link\.(com|fr)|debrid\.link|offcloud\.com|easydebrid\.com)$/i;
+const INFO_HASH = /\b[a-f0-9]{40}\b/i;
+
+/**
+ * Whether a link someone else could be handed carries one of the account's secrets: one of its keys, or a place under
+ * an addon whose link holds its settings (Torrentio's `/realdebrid=KEY`, an encoded config, a `?key=`). Such an addon's
+ * links on its own host are taken to carry them, since its settings can sit anywhere in them.
+ */
+export function carriesSecret(link: string, keys: AccountKeys, addonUrls: string[]) {
+  const decoded = decodeURIComponentSafe(link);
+  if ([keys.debrid?.key, keys.tmdb, keys.mdblist].some((key) => !!key && (link.includes(key) || decoded.includes(key)))) return true;
+  const host = new URL(link).host;
+  return addonUrls.some((url) => {
+    const base = new URL(url);
+    return base.host === host && (base.pathname.replace(/\/+$/, "") !== "" || base.search !== "");
+  });
 }
 
 /** Why a copy of a title didn't start, so a failed Play can say what happened to each copy it tried. */
@@ -119,6 +142,20 @@ async function torbox(key: string, path: string, signal?: AbortSignal, form?: Fo
   return body.data;
 }
 
+/**
+ * Not a failure: following the addon's link for TorBox ended at a video on an ordinary web server, with nothing naming a
+ * torrent or a debrid service on the way. It plays from that link as it is, as Stremio and Nuvio play it.
+ */
+export class PlainFile extends Error {
+  readonly url: string;
+  readonly container: string;
+  constructor(url: string, container: string) {
+    super(`A plain web video at ${new URL(url).host}`);
+    this.url = url;
+    this.container = container;
+  }
+}
+
 /** A source that didn't reach TorBox within its time: the next copy is tried. `host` is the step it was waiting on. */
 export class SlowSource extends SourceError {
   readonly host: string;
@@ -132,8 +169,8 @@ export class SlowSource extends SourceError {
 
 /**
  * Follow the addon's playback redirects just far enough to learn which TorBox torrent and file it
- * points at. We never download the video here. `episode` picks the file out of a season pack when the addon
- * doesn't name it. Past `limitMs` it gives up with SlowSource: a service adding a file to TorBox can hold its
+ * points at, or that it's a plain web video (PlainFile). We never download the video here. `episode` picks the file
+ * out of a season pack when the addon doesn't name it. Past `limitMs` it gives up with SlowSource: a service adding a file to TorBox can hold its
  * redirect for a minute (StremThru held one for 62 s while another copy of the episode answered in 2 s). It carries
  * on without us, so that copy is quick next time. `onTimed` hears how long each service took, for the failure log.
  */
@@ -174,6 +211,7 @@ async function findTorrent(
   let url = source.url;
   let hash: string | undefined;
   let torrentId: number | undefined;
+  const visited: string[] = [];
   // A torrent-only stream (an addon with no debrid set up): TorBox can still play it if it has the file cached.
   const magnet = url.startsWith("magnet:");
   if (magnet) hash = /btih:([a-f0-9]{40})/i.exec(url)?.[1]?.toLowerCase();
@@ -187,7 +225,7 @@ async function findTorrent(
       torrentId = Number(torrent);
       break;
     }
-    hash ??= /\b[a-f0-9]{40}\b/i.exec(decodeURIComponent(url))?.[0]?.toLowerCase();
+    hash ??= INFO_HASH.exec(decodeURIComponent(url))?.[0]?.toLowerCase();
     if (/tb-cdn\.io$/.test(parsed.host)) break;
     const res = await timed(parsed.host, async () => {
       const res = await fetch(url, { redirect: "manual", headers: { range: "bytes=0-0" }, signal }).catch((error) => {
@@ -201,8 +239,14 @@ async function findTorrent(
     if (!location) {
       if (res.status === 404 || res.status === 410) throw new UnavailableSource(`${parsed.hostname} answered ${res.status}`, "brokenLink");
       if (res.status >= 400) throw new SourceError(`The source answered ${res.status}`, "brokenLink");
+      // A video served by an ordinary web server, reached without a torrent's hash or a debrid service on the way. A
+      // hash keeps it on TorBox, as before: an addon's proxy in front of a debrid file shows one.
+      const container = containerOf(res.headers.get("content-type"), url);
+      if (!hash && container && !DEBRID_HOST.test(parsed.hostname) && !visited.some((host) => DEBRID_HOST.test(host)))
+        throw new PlainFile(url, container);
       break;
     }
+    visited.push(parsed.hostname);
     url = new URL(location, url).toString();
   }
 
@@ -339,18 +383,21 @@ const PLACEHOLDER = /\/(videos|static)\/(downloading|failed|limits|blocked|uncac
 /**
  * Follows the addon's link (the addon asks its debrid service for the file, then redirects to it) to the file itself,
  * reading one byte, so a link that doesn't play is found here rather than in the player. Returns the file's link,
- * which holds no API key, and its container. A torrent (a magnet) has no link to follow without TorBox.
+ * which holds no API key, and its container. `plain` when it's a web video no debrid service gave: no hop on a debrid
+ * service's host and no torrent's hash in any link. A torrent (a magnet) has no link to follow without TorBox.
  */
 export async function resolveDirect(
   source: Pick<RawSource, "url" | "filename">,
   { limitMs, onTimed }: { limitMs?: number; onTimed?: (host: string, ms: number) => void } = {},
-): Promise<{ url: string; container?: string }> {
+): Promise<{ url: string; container?: string; plain: boolean }> {
   if (!/^https?:\/\//.test(source.url)) throw new SourceError("This copy is a torrent, and only TorBox plays torrents.", "torrent");
   const started = Date.now();
   const signal = limitMs === undefined ? undefined : AbortSignal.timeout(limitMs);
   let url = source.url;
+  let plain = true;
   for (let hop = 0; hop < 8; hop++) {
-    const host = new URL(url).host;
+    const { host, hostname } = new URL(url);
+    if (DEBRID_HOST.test(hostname) || INFO_HASH.test(decodeURIComponentSafe(url))) plain = false;
     const t0 = Date.now();
     const res = await fetch(url, { redirect: "manual", headers: { range: "bytes=0-0" }, signal }).catch(() => {
       if (signal?.aborted) throw new SlowSource(host, Date.now() - started);
@@ -365,9 +412,17 @@ export async function resolveDirect(
     }
     if (res.status === 404 || res.status === 410) throw new UnavailableSource(`${host} answered ${res.status}`, "brokenLink");
     if (res.status >= 400) throw new SourceError(`The source answered ${res.status}`, "brokenLink");
-    return { url, container: containerOf(res.headers.get("content-type"), url, source.filename) };
+    return { url, container: containerOf(res.headers.get("content-type"), url, source.filename), plain };
   }
   throw new SourceError("The source sent Krida round in circles", "brokenLink");
+}
+
+function decodeURIComponentSafe(s: string) {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
 }
 
 export function playlistUrl(domain: string, presignedToken: string, audio: number) {

@@ -7,12 +7,19 @@ import { itemMeta, scoreSource } from "../../ui/scores";
 import { Rail } from "../../ui/rail";
 import { CardActions } from "./actions";
 import { CardMenu } from "./cardMenu";
+import { useNeedsTmdbKey } from "../../data/keys";
+import { isTitleId } from "../../../shared/ids";
 
-/** The closest titles to this one, scored the same way as your picks. */
+/**
+ * The closest titles to this one, scored the same way as your picks, on TMDB: none without the account's key, or for a
+ * title known only by an addon's own id.
+ */
 export function MoreLikeThis({ meta }: { meta: Meta }) {
+  const needsKey = useNeedsTmdbKey();
+  const asks = !needsKey && isTitleId(meta.id);
   const [items, setItems] = useState<RecItem[] | null>(() => similarCache.get(meta.id) ?? null);
   useEffect(() => {
-    if (similarCache.has(meta.id)) return;
+    if (!asks || similarCache.has(meta.id)) return;
     let alive = true;
     moreLike(meta.id, meta.type).then(
       (r) => {
@@ -24,8 +31,8 @@ export function MoreLikeThis({ meta }: { meta: Meta }) {
     return () => {
       alive = false;
     };
-  }, [meta.id, meta.type]);
-  if (!items || items.length < 4) return null;
+  }, [asks, meta.id, meta.type]);
+  if (!asks || !items || items.length < 4) return null;
   return (
     <div className="mt-12">
       <Rail title="More like this">

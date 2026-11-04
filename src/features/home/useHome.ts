@@ -6,6 +6,8 @@ import type { PersonalRow } from "../../../convex/recs";
 import { useCatalogRows, type RecItem, type ShownRow } from "../../data/api";
 import { useAddons, type InstalledAddon } from "../../data/addons";
 import { catalogRowKey, isRow, type AddonCatalog } from "../../../shared/stremio";
+import { CINEMETA } from "../../../shared/addons";
+import { useHasNoTmdbKey } from "../../data/keys";
 import { useStored, useStoredQuery } from "../../data/stored";
 import { useTables, type Tables } from "../../data/sync";
 
@@ -28,9 +30,22 @@ export type HomeData = Omit<Personal, "rows" | "taste"> & {
   empty: boolean;
 };
 
-/** Every catalog of the profile's enabled addons that can be a row (one that needs a search or a filter can't). */
-export function addonRowsOf(addons: InstalledAddon[]): AddonRow[] {
-  const rows: AddonRow[] = [];
+const CINEMETA_ID = "com.linvo.cinemeta";
+/**
+ * Cinemeta's popular movies and shows, the rows Stremio's Home leads with. Home has them while the account has no TMDB
+ * key, keyed as an installed Cinemeta's are, so one installed too shows once.
+ */
+export const CINEMETA_ROWS: AddonRow[] = (["movie", "series"] as const).map((type) => {
+  const catalog = { type, id: "top", name: "Popular" };
+  return { key: catalogRowKey(CINEMETA_ID, catalog), title: catalog.name, type, base: CINEMETA, addon: "Cinemeta", addonId: CINEMETA_ID, catalog };
+});
+
+/**
+ * Every catalog of the profile's enabled addons that can be a row (one that needs a search or a filter can't), after
+ * Cinemeta's popular rows when `cinemeta` (no TMDB key).
+ */
+export function addonRowsOf(addons: InstalledAddon[], cinemeta = false): AddonRow[] {
+  const rows: AddonRow[] = cinemeta ? [...CINEMETA_ROWS] : [];
   for (const a of addons) {
     if (!a.enabled) continue;
     for (const c of a.manifest.catalogs) {
@@ -95,24 +110,26 @@ export function homeRows(personal: Personal, simkl: HomeRow[], catalog: ShownRow
 /**
  * Home's rows. Krida's own catalogs come from /api/rows (the same for everyone, cached by Vercel), the profile's addon
  * catalogs from its addons (each row loads its own titles), its picks and its friends' plays from two small queries,
- * and its Simkl rows from its synced tables. Opening Krida shows the rows it last saw while these load.
+ * and its Simkl rows from its synced tables. Opening Krida shows the rows it last saw while these load. Without a TMDB
+ * key, Cinemeta's popular rows stand in for Krida's own, as on Stremio.
  */
 export function useHome(token: string): HomeData | undefined {
+  const noKey = useHasNoTmdbKey();
   const personal = useStoredQuery(api.recs.rows, { token });
   const friends = useStoredQuery(api.catalogs.friends, { token });
   const t = useTables();
   const [tracked, progress, viewing] = [t?.tracked, t?.progress, t?.viewing];
   const simkl = useMemo(() => (tracked && progress && viewing ? simklRows({ tracked, progress, viewing }) : undefined), [tracked, progress, viewing]);
-  const fetched = useCatalogRows();
+  const fetched = useCatalogRows(!noKey);
   // Kept across deploys: a deploy empties Vercel's cache too, and rebuilding the catalogs takes 5 to 15 s.
-  const catalog = useStored("api.rows", {}, fetched ?? undefined, { acrossBuilds: true });
-  const rows = catalog?.rows ?? (fetched === null ? NO_ROWS : undefined);
+  const catalog = useStored("api.rows", {}, noKey ? undefined : (fetched ?? undefined), { acrossBuilds: true });
+  const rows = noKey ? NO_ROWS : (catalog?.rows ?? (fetched === null ? NO_ROWS : undefined));
   const addons = useAddons();
   return useMemo(() => {
     if (!personal || !simkl || !friends || !rows || !addons) return undefined;
     const { taste: _taste, rows: _rows, ...rest } = personal;
     const built = homeRows(personal, simkl, rows);
-    const addonRows = addonRowsOf(addons);
+    const addonRows = addonRowsOf(addons, noKey);
     return { ...rest, ...built, addonRows, empty: built.empty && addonRows.length === 0, friends };
-  }, [personal, simkl, friends, rows, addons]);
+  }, [personal, simkl, friends, rows, addons, noKey]);
 }

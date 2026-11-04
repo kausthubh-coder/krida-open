@@ -84,9 +84,14 @@ describe("external players", () => {
     expect(playerApps(url, "ios")).toEqual([
       { name: "VLC", href: `vlc-x-callback://x-callback-url/stream?url=${enc}` },
       { name: "Infuse", href: `infuse://x-callback-url/play?url=${enc}` },
+      { name: "Outplayer", href: "outplayer://https://cdn.invalid/d/AB/Film%20(2024).mkv" },
+      { name: "SenPlayer", href: `senplayer://x-callback-url/play?url=${enc}` },
     ]);
     expect(playerApps(url, "android")).toEqual([
       { name: "VLC", href: "intent://cdn.invalid/d/AB/Film (2024).mkv#Intent;scheme=https;type=video/*;package=org.videolan.vlc;end" },
+      { name: "MX Player", href: "intent://cdn.invalid/d/AB/Film (2024).mkv#Intent;scheme=https;type=video/*;package=com.mxtech.videoplayer.ad;end" },
+      { name: "MX Player Pro", href: "intent://cdn.invalid/d/AB/Film (2024).mkv#Intent;scheme=https;type=video/*;package=com.mxtech.videoplayer.pro;end" },
+      { name: "Just Player", href: "intent://cdn.invalid/d/AB/Film (2024).mkv#Intent;scheme=https;type=video/*;package=com.brouken.player;end" },
       { name: "Another app", href: "intent://cdn.invalid/d/AB/Film (2024).mkv#Intent;scheme=https;type=video/*;end" },
     ]);
     expect(playerApps(url, "mac").map((a) => a.name)).toEqual(["IINA", "Infuse"]);

@@ -1,21 +1,21 @@
-import { KeyIcon, LockSimpleIcon } from "@phosphor-icons/react";
+import { LockSimpleIcon } from "@phosphor-icons/react";
 import { Link } from "react-router";
-import { ButtonLink, cx, EmptyState } from "./ui";
+import { cx } from "./ui";
 
-/** What Home and Search show while the account has no TMDB key: why they're empty, and where to add it. */
-export function NeedsTmdbKey({ className }: { className?: string }) {
+const keyLink = "font-medium text-fg underline decoration-fg-faint underline-offset-2 hover:decoration-fg";
+
+/**
+ * Where something only TMDB has would be (trending rows, picks, people, genre browsing), while the account has no TMDB
+ * key that works: one quiet line to Settings → Connections, never an error. The rest runs on the addons and Cinemeta.
+ */
+export function TmdbForMore({ className }: { className?: string }) {
   return (
-    <EmptyState
-      className={className}
-      icon={<KeyIcon />}
-      title="Add your TMDB key to see titles"
-      description="Krida finds films and shows with your own TMDB key. It’s free: make a TMDB account, copy the API key from its settings, and paste it in Connections."
-      action={
-        <ButtonLink to="/settings/connections" variant="primary">
-          Add your TMDB key
-        </ButtonLink>
-      }
-    />
+    <p className={cx("text-body text-pretty text-fg-faint", className)}>
+      <Link to="/settings/connections" className={keyLink}>
+        Add a TMDB key for more
+      </Link>
+      : trending rows, picks for you, people and browsing by genre.
+    </p>
   );
 }
 
@@ -29,7 +29,7 @@ export function PlayNeedsDebrid({ id, className }: { id?: string; className?: st
       <LockSimpleIcon aria-hidden className="mt-0.5 shrink-0 text-fg-faint" />
       <span>
         Playing needs a debrid service.{" "}
-        <Link to="/settings/connections" className="font-medium text-fg underline decoration-fg-faint underline-offset-2 hover:decoration-fg">
+        <Link to="/settings/connections" className={keyLink}>
           Add a debrid key
         </Link>
       </span>

@@ -1,13 +1,13 @@
 // Settings → Addons: this profile's Stremio addons, installing more (a link, a suggestion, a Stremio account, another
 // profile), and each one's switch, order, reload, setup page and removal.
-import { useState } from "react";
-import { Link } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { useAction, useMutation } from "convex/react";
 import { useQuery } from "convex-helpers/react/cache/hooks";
 import { ArrowClockwiseIcon, ArrowDownIcon, ArrowUpIcon, CaretDownIcon, CheckCircleIcon, GearSixIcon, PuzzlePieceIcon, TrashIcon } from "@phosphor-icons/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { AIOSTREAMS_SETUP, hasResource, isRow } from "../../../shared/stremio";
+import { AIOSTREAMS_SETUP, COMMUNITY_ADDONS, addonBase, hasResource, isRow, stremioPage } from "../../../shared/stremio";
 import { useAddons, type InstalledAddon } from "../../data/addons";
 import { useAuthed } from "../../data/session";
 import { toast } from "../../ui/toast";
@@ -161,7 +161,19 @@ export function InstalledAddons() {
 export function InstallByLink({ quiet = false }: { quiet?: boolean }) {
   const { token } = useAuthed();
   const install = useAction(api.addons.install);
-  const [url, setUrl] = useState("");
+  const [params, setParams] = useSearchParams();
+  const incoming = params.get("addon");
+  const [url, setUrl] = useState(() => {
+    const page = incoming && stremioPage(incoming.replace(/^https:\/\//, "stremio://"));
+    return page?.startsWith("/settings/addons?") ? incoming! : "";
+  });
+  useEffect(() => {
+    if (!incoming) return;
+    // The input keeps the link in memory; it needn't stay in browser history.
+    const clean = new URLSearchParams(params);
+    clean.delete("addon");
+    setParams(clean, { replace: true });
+  }, [incoming, params, setParams]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ message: string; configure?: string } | null>(null);
 
@@ -174,7 +186,7 @@ export function InstallByLink({ quiet = false }: { quiet?: boolean }) {
       if (!result.ok) return setError(result);
       setUrl("");
       setError(null);
-      toast(`${result.name} installed.`);
+      toast(result.updated ? `Updated ${result.name}.` : `${result.name} installed.`);
     } catch (err) {
       setError({ message: errorMessage(err, "Couldn’t install it. Try again.") });
     } finally {
@@ -207,6 +219,7 @@ export function InstallByLink({ quiet = false }: { quiet?: boolean }) {
           </Button>
         </div>
       </Field>
+      <p className="text-caption text-fg-faint">On an addon’s page, use Copy link instead of Install.</p>
       {error?.configure && (
         <a href={error.configure} target="_blank" rel="noreferrer" className={cx(link, "text-body")}>
           Open its setup page
@@ -415,10 +428,43 @@ export function AddonsSection() {
         <Group>
           <Suggestions />
           <InstallByLink />
+          <BrowseAddons />
           <StremioImport />
           <CopyFromProfile />
         </Group>
       </div>
+    </div>
+  );
+}
+
+function BrowseAddons() {
+  const { token } = useAuthed();
+  const install = useAction(api.addons.install);
+  const [busy, setBusy] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col gap-3">
+      <h3 className="text-body font-medium">Browse addons</h3>
+      {COMMUNITY_ADDONS.map((addon) => (
+        <div key={addon.url} className="flex min-h-12 items-center gap-3">
+          <span className="min-w-0 flex-1 text-body">{addon.name}</span>
+          {addon.configurationRequired ? (
+            <a href={`${addonBase(addon.url)}/configure`} target="_blank" rel="noreferrer" className={link}>Set up</a>
+          ) : (
+            <Button loading={busy === addon.url} disabled={busy !== null} onClick={async () => {
+              setBusy(addon.url);
+              try {
+                const result = await install({ token, url: addon.url });
+                if (result.ok) toast(result.updated ? `Updated ${result.name}.` : `${result.name} installed.`);
+                else toast.error(result.message);
+              } catch (err) {
+                toast.error(errorMessage(err, "Couldn’t install it. Try again."));
+              } finally {
+                setBusy(null);
+              }
+            }}>Install</Button>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

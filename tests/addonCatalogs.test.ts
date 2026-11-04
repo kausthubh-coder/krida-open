@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { proxiedUrl, proxyAddon } from "../server/addonProxy";
-import { released, toRowItem } from "../src/data/addons";
+import { addonMeta, released, toRowItem } from "../src/data/addons";
 import { stremioAddonUrls, stremioProblem } from "../src/features/settings/stremioImport";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -52,8 +52,16 @@ describe("a catalog's titles", () => {
     });
   });
 
-  test("ids Krida can't open and kinds it doesn't play are left out", () => {
-    expect(toRowItem({ id: "tmdb:603", type: "movie", name: "The Matrix" }, "movie")).toBe(null);
+  test("any addon's own id opens, as on Stremio: TMDB's, MyAnimeList's, a debrid library's", () => {
+    for (const id of ["tmdb:603", "mal:5114", "anilist:21", "tbx-9f2c1a"])
+      expect(toRowItem({ id, type: "movie", name: "A title" }, "movie")).toEqual({
+        id, type: "movie", name: "A title", poster: undefined, background: undefined, logo: undefined, year: undefined,
+        description: undefined, rating: undefined, genres: [],
+      });
+  });
+
+  test("ids that can't be a link's path and kinds Krida doesn't play are left out", () => {
+    for (const id of ["", "a/b", "a b", "a?b", "a#b", "a%2Fb", "x".repeat(201)]) expect(toRowItem({ id, type: "movie", name: "A title" }, "movie")).toBe(null);
     expect(toRowItem({ id: "tt0111161", type: "channel", name: "A channel" }, "channel")).toBe(null);
     expect(toRowItem({ id: "tt0111161", name: "The Shawshank Redemption", poster: "javascript:alert(1)" }, "movie")?.poster).toBe(undefined);
   });
@@ -61,6 +69,53 @@ describe("a catalog's titles", () => {
   test("a title from next year isn't out yet", () => {
     const now = new Date("2026-11-03");
     expect([released({ year: "2027" }, now), released({ year: "2026" }, now), released({}, now)]).toEqual([false, true, true]);
+  });
+});
+
+describe("a title's details from the profile's addons", () => {
+  const manifest = (resources: { name: string; types: string[]; idPrefixes?: string[] }[]) =>
+    ({ id: "x", name: "X", version: "1.0.0", types: ["movie", "series"], resources, catalogs: [] });
+  const library = { url: "https://library.example/k", enabled: true, manifest: manifest([{ name: "meta", types: ["movie", "series"], idPrefixes: ["tbx-"] }]) };
+  const tmdb = { url: "https://tmdb.example", enabled: true, manifest: manifest([{ name: "meta", types: ["movie", "series"], idPrefixes: ["tmdb:", "tt"] }]) };
+  const anime = { url: "https://anime.example", enabled: true, manifest: manifest([{ name: "meta", types: ["anime"], idPrefixes: ["mal:"] }]) };
+  const anyId = { url: "https://catalog.example", enabled: true, manifest: manifest([{ name: "meta", types: ["movie"] }]) };
+  const cinemeta = { url: "https://v3-cinemeta.strem.io", enabled: true, manifest: manifest([{ name: "meta", types: ["movie", "series"], idPrefixes: ["tt"] }]) };
+
+  function answers(metas: Record<string, unknown>) {
+    const asked: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      asked.push(url);
+      return url in metas ? Response.json({ meta: metas[url] }) : Response.json({ err: "not found" }, { status: 404 });
+    }));
+    return asked;
+  }
+
+  test("the first enabled addon that serves the type and id prefix answers, under the id asked for", async () => {
+    const asked = answers({ "https://library.example/k/meta/series/tbx-1.json": { id: "other", name: "Home videos", videos: [{ id: "tbx-1:1:1", season: 1, episode: 1 }] } });
+    expect(await addonMeta([tmdb, { ...library, enabled: false }, library], "series", "tbx-1")).toEqual({
+      id: "tbx-1", type: "series", name: "Home videos", videos: [{ id: "tbx-1:1:1", season: 1, episode: 1 }],
+    });
+    expect(asked).toEqual(["https://library.example/k/meta/series/tbx-1.json"]);
+  });
+
+  test("an addon that fails or has nothing passes to the next; none that serves it is null", async () => {
+    const asked = answers({ "https://catalog.example/meta/movie/tmdb%3A603.json": { name: "The Matrix" } });
+    expect(await addonMeta([tmdb, anyId], "movie", "tmdb:603")).toEqual({ id: "tmdb:603", type: "movie", name: "The Matrix" });
+    expect(asked).toEqual(["https://tmdb.example/meta/movie/tmdb%3A603.json", "https://catalog.example/meta/movie/tmdb%3A603.json"]);
+    expect(await addonMeta([library], "movie", "tmdb:603")).toBe(null);
+  });
+
+  test("an anime addon's shows are asked for as anime", async () => {
+    const asked = answers({ "https://anime.example/meta/anime/mal%3A5114.json": { name: "Fullmetal Alchemist: Brotherhood" } });
+    expect(await addonMeta([anime], "series", "mal:5114")).toEqual({ id: "mal:5114", type: "series", name: "Fullmetal Alchemist: Brotherhood" });
+    expect(asked).toEqual(["https://anime.example/meta/anime/mal%3A5114.json"]);
+  });
+
+  test("IMDb ids go to an addon only when it names their prefix, and never to Cinemeta, which Krida asks itself", async () => {
+    const asked = answers({ "https://tmdb.example/meta/movie/tt0133093.json": { name: "The Matrix" } });
+    expect(await addonMeta([cinemeta, anyId], "movie", "tt0133093")).toBe(null);
+    expect(await addonMeta([cinemeta, anyId, tmdb], "movie", "tt0133093")).toEqual({ id: "tt0133093", type: "movie", name: "The Matrix" });
+    expect(asked).toEqual(["https://tmdb.example/meta/movie/tt0133093.json"]);
   });
 });
 

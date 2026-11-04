@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation } from "convex/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowClockwiseIcon, ArrowLeftIcon, CornersOutIcon, FastForwardIcon, FilmStripIcon, PlayIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, ArrowLeftIcon, ClosedCaptioningIcon, CornersOutIcon, FastForwardIcon, FilmStripIcon, PlayIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { api } from "../../../convex/_generated/api";
 import { useAuthed } from "../../data/session";
 import { logProblem } from "../../data/log";
@@ -15,7 +15,9 @@ import { AUTO_SKIPS, joinNames, MIN_AUTO_SKIP, useAutomatic, type SkipPart } fro
 import { fade } from "./chrome";
 import { useFramePreview } from "./framePreview";
 import { FilmEnded, NextCards, StillWatching } from "./endCards";
-import { useAutoHide, usePlayerKeys, type PlayerMenu } from "./keys";
+import { PLAYER_SHORTCUTS, useAutoHide, usePlayerKeys, type PlayerMenu } from "./keys";
+import { Sheet } from "../../ui/sheet";
+import { shiftSubtitleDelay } from "./subtitles";
 import { useFloatingChat, useRoomNotes } from "./notes";
 import { ChatOverlay, GesturePill, LevelMeter, ScrubCard, SeekRipple, SkipStack, StatusPills, TouchTransport } from "./overlays";
 import { speedLabel, usePictureInPicture, useSpeed } from "./playback";
@@ -108,14 +110,16 @@ export function Player({
   const [audio, setAudio] = useState(preferredAudio);
   const src = `${SITE}/hls/playlist.m3u8?s=${stream._id}&a=${audio}&t=${token}`;
   // The timeline's preview has no sound, so it keeps the first track and its frames through an audio switch.
-  // Another service's file has no HLS and isn't in TorBox's keyframe store, so it has no preview pictures.
-  const torbox = mode !== "file";
+  // Only a TorBox file is in TorBox's keyframe store: another service's file and an addon's own link (a plain file or
+  // its .m3u8) have no preview pictures.
+  const torbox = !stream.direct;
   const preview = useFramePreview(torbox ? `${SITE}/hls/playlist.m3u8?s=${stream._id}&a=0&t=${token}` : "", torbox ? stream.size : undefined, video);
 
   const fullscreen = useFullscreen();
   const [blocked, setBlocked] = useState(false);
   const [fatal, setFatal] = useState<string | null>(null);
   const [menu, setMenu] = useState<PlayerMenu>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   // Menus and panels open from the same capsule, so one gives way to the other.
   const openMenu = useCallback(
     (next: PlayerMenu | ((menu: PlayerMenu) => PlayerMenu)) => {
@@ -316,6 +320,12 @@ export function Player({
     pictureInPicture: pip?.toggle ?? null,
     cycleFit,
     toggleBars,
+    shortcuts: () => setShortcutsOpen(true),
+    subtitleDelay: (by) => {
+      const offset = shiftSubtitleDelay(subtitles.subOffset, by);
+      subtitles.setSubOffset(offset);
+      touch.showFlash("subtitles", `Subtitle delay ${offset > 0 ? "+" : ""}${offset.toFixed(1)} s`);
+    },
   });
 
   useMediaSession({ media: m, video, togglePlay, seekTo, skipBy, playNext: nextUp ? next.playNext : null });
@@ -362,6 +372,14 @@ export function Player({
       onPointerMove={wakeFor}
       onPointerDown={wakeFor}
     >
+      <Sheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} title="Player shortcuts">
+        <dl className="flex flex-col gap-3">
+          {PLAYER_SHORTCUTS.map((s) => <div key={s.action} className="flex items-start justify-between gap-4 text-body">
+            <dt className="text-fg-muted">{s.description}</dt>
+            <dd className="shrink-0 font-mono text-caption">{s.label}</dd>
+          </div>)}
+        </dl>
+      </Sheet>
       <video
         ref={setElement}
         playsInline
@@ -387,7 +405,7 @@ export function Player({
       <SeekRipple seek={touch.seek} />
       <LevelMeter level={touch.level} />
       <GesturePill
-        icon={held || touch.flash?.kind === "speed" ? <FastForwardIcon weight="fill" size={18} /> : <CornersOutIcon size={18} />}
+        icon={held || touch.flash?.kind === "speed" ? <FastForwardIcon weight="fill" size={18} /> : touch.flash?.kind === "subtitles" ? <ClosedCaptioningIcon size={18} /> : <CornersOutIcon size={18} />}
         text={held ? "2× speed" : (touch.flash?.text ?? null)}
       />
       <ScrubCard scrub={touch.scrub} preview={preview} />
@@ -578,6 +596,8 @@ export function Player({
       )}
 
       <PlayerControls
+        speed={speed}
+        onShortcuts={() => { setMenu(null); setShortcutsOpen(true); }}
         room={room}
         video={video}
         visible={visible}

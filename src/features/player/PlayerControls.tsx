@@ -24,7 +24,8 @@ import { cx, IconButton, Kbd, Toggle } from "../../ui/ui";
 import { mediaLabel, ReactionPicker, type RoomData, type UpNext } from "../party";
 import { AUTO_ROWS, type AutoKey } from "./automatic";
 import { CAP, CAPSULE, capOpen, capsuleBubble, fade } from "./chrome";
-import { MenuRow, Popover, SubtitleMenu, Timeline, Volume } from "./controls";
+import { MenuLabel, MenuRow, Popover, SubtitleMenu, Timeline, Volume } from "./controls";
+import { SpeedChoice } from "./SpeedChoice";
 import type { BarsState } from "./desktop";
 import type { FramePreview } from "./framePreview";
 import type { PlayerMenu } from "./keys";
@@ -79,6 +80,8 @@ export function PlayerControls(props: {
   /** Evening out colour banding: only in the app, where mpv can. */
   deband: { on: boolean; set: (on: boolean) => void } | null;
   pip: { on: boolean; toggle: () => void } | null;
+  speed: { speed: number; setSpeed: (speed: number) => void } | null;
+  onShortcuts: () => void;
   onEpisodes: () => void;
   onSources: () => void;
   onReact: (emoji: string) => void;
@@ -111,6 +114,9 @@ export function PlayerControls(props: {
   // picture in picture, and the keys for the first two.
   const pictureRows = (
     <>
+      <SpeedChoice speed={props.speed} />
+      <MenuRow selected={false} onClick={props.onShortcuts} hint="?">Keyboard shortcuts</MenuRow>
+      <MenuLabel>Picture</MenuLabel>
       {fit &&
         FITS.map((x) => (
           <MenuRow key={x.fit} selected={fit.fit === x.fit} onClick={() => fit.setFit(x.fit)} hint={x.hint}>
@@ -203,8 +209,8 @@ export function PlayerControls(props: {
       {/*
         Every button shows, always: nothing folds away. Each is 44px and the capsules are 52px tall. Play, ±10 and
         Volume (+88 while its slider shows) on the left, 272; then React (parties), Next, Episodes, Picture,
-        Automatic, Subtitles, Audio, Source, Party and Full screen, at most 448. Speed has no button: > and <, or
-        hold the picture for 2×. On touch, or a window too narrow for both (`compact:`), the left capsule gives way
+        Automatic, Subtitles, Audio, Source, Party and Full screen, at most 448. Picture also offers Speed.
+        On touch, or a window too narrow for both (`compact:`), the left capsule gives way
         to play and the skips in the middle of the picture (TouchTransport), and the right one sits in the middle.
         Panels and menus open over the picture, so nothing here moves for them.
       */}
@@ -265,9 +271,9 @@ export function PlayerControls(props: {
                 <ListNumbersIcon weight={episodesOpen ? "fill" : "regular"} />
               </IconButton>
             )}
-            {(fit || pip) && (
+            <>
               <IconButton
-                label="Picture (V)"
+                label="Picture and speed"
                 aria-haspopup="dialog"
                 aria-expanded={menu === "picture"}
                 onClick={() => setMenu(menu === "picture" ? null : "picture")}
@@ -275,7 +281,7 @@ export function PlayerControls(props: {
               >
                 <CropIcon weight={menu === "picture" || (fit && fit.fit !== "fit") ? "fill" : "regular"} />
               </IconButton>
-            )}
+            </>
             <IconButton
               label="Automatic (A)"
               aria-haspopup="dialog"
@@ -334,6 +340,9 @@ export function PlayerControls(props: {
                 error={subtitles.subError}
                 offset={subtitles.subOffset}
                 onOffset={subtitles.setSubOffset}
+                localSubs={subtitles.localSubs}
+                onLoadFile={subtitles.loadFile}
+                fileError={subtitles.fileError}
                 onPick={(id) => subtitles.setSubPick(id)}
               />
           </Popover>

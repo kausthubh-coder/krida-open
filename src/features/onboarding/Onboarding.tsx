@@ -14,7 +14,7 @@ import { route, stepBefore, STEPS, type Status, type Step } from "./route";
 
 /*
  * The steps between making a profile and Home (docs/models/Onboarding.tla): the TMDB key, a debrid service, this
- * profile's addons, then the optional keys. The server says which step is next (onboarding.status, `route`); Back and
+ * profile's addons, then the optional keys. Each can be skipped. The server says which step is next (onboarding.status, `route`); Back and
  * an addons step someone is still filling in are held here. Each step is saved as it's done, so leaving and coming
  * back, on any device, resumes where it stopped.
  */
@@ -237,17 +237,29 @@ type StepProps = { status: Status; headingRef: React.Ref<HTMLHeadingElement>; on
 function TmdbStep({ status, headingRef, onNext }: StepProps) {
   const { token } = useAuthed();
   const connections = useQuery(api.accounts.connections, { token });
+  const skipTmdb = useMutation(api.onboarding.skipTmdb);
   const [replacing, setReplacing] = useState(false);
+  const [skipping, setSkipping] = useState(false);
   const stopped = status.tmdb === "invalid";
   const keep = status.tmdb === "valid" && !replacing;
+  const skip = async () => {
+    setSkipping(true);
+    try {
+      await skipTmdb({ token });
+      onNext();
+    } finally {
+      setSkipping(false);
+    }
+  };
   return (
     <>
       <Heading headingRef={headingRef} title={stopped ? "Your TMDB key stopped working" : "Connect TMDB"}>
         {stopped ? (
-          <p>TMDB no longer accepts the key saved for this account, so Krida can’t find titles. Paste a new one and you’re back where you were.</p>
+          <p>TMDB no longer accepts the key saved for this account. Paste a new one and you’re back where you were.</p>
         ) : (
           <p>
-            Krida finds films, shows and their artwork with your own TMDB key. It’s free and takes about two minutes.
+            A free TMDB key adds trending rows, picks for you, people’s pages and browsing by genre. It takes about two
+            minutes. Without one, Krida finds titles through your addons and Cinemeta.
           </p>
         )}
       </Heading>
@@ -287,6 +299,17 @@ function TmdbStep({ status, headingRef, onNext }: StepProps) {
           </ol>
           <TmdbApiPage />
           <KeyField id="tmdb-key" label="TMDB API key" kind="tmdb" onSaved={onNext} />
+          <Actions>
+            {replacing ? (
+              <Button variant="ghost" onClick={() => setReplacing(false)}>
+                Keep the saved key
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={() => void skip()} loading={skipping}>
+                Skip for now
+              </Button>
+            )}
+          </Actions>
         </>
       )}
     </>

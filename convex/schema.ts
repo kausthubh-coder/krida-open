@@ -203,7 +203,9 @@ export default defineSchema({
     clerkUserId: v.optional(v.string()),
     createdAt: v.number(),
     // Onboarding (convex/onboarding.ts): when the account went past the debrid step and the optional keys step,
-    // whether it added something or skipped. Kept here so it resumes on another device.
+    // whether it added something or skipped, and when it last skipped the TMDB step. Kept here so it resumes on
+    // another device.
+    tmdbAskedAt: v.optional(v.number()),
     debridAskedAt: v.optional(v.number()),
     extrasAskedAt: v.optional(v.number()),
   }).index("by_clerkUserId", ["clerkUserId"]).index("by_name", ["name"]),
@@ -569,10 +571,12 @@ export default defineSchema({
     hash: v.optional(v.string()),
     presignedToken: v.optional(v.string()),
     domain: v.optional(v.string()),
-    // A direct stream (another debrid service): the addon's link, which redirects to the file. It carries the
-    // account's debrid key, so it never leaves the server except to that account's sessions (desktop.fileLink).
-    // `container` and the audio formats say whether a browser can play the file (src/features/player/playsIn.ts).
-    direct: v.optional(v.object({ link: v.string(), container: v.optional(v.string()), audio: v.optional(v.array(v.string())) })),
+    // A direct stream (another debrid service, or a plain web video): the addon's link, which redirects to the file. It
+    // can carry the account's debrid key or the addon's settings, so it never leaves the server; the file's link goes
+    // to that account's sessions, and for a `plain` one (no debrid service, no secret in either link) to the room's
+    // members too (desktop.fileLink, engine.mayPlay). `container` and the audio formats say whether a browser can play
+    // the file (src/features/player/playsIn.ts).
+    direct: v.optional(v.object({ link: v.string(), container: v.optional(v.string()), audio: v.optional(v.array(v.string())), plain: v.optional(v.boolean()) })),
     duration: v.optional(v.number()),
     width: v.optional(v.number()),
     height: v.optional(v.number()),

@@ -3,9 +3,10 @@ import type { api } from "../../../convex/_generated/api";
 
 /*
  * Where Krida sends someone, as docs/models/Onboarding.tla's `Route`: signed out, the landing page; signed in without a
- * profile, the picker (which makes the first one); then the first onboarding step still needed; then Home. Home is
- * never shown without a profile and a TMDB key that works (HomeNeedsProfileAndTmdb). Pure, so tests/onboarding.test.ts
- * checks it with every input.
+ * profile, the picker (which makes the first one); then the first onboarding step still needed; then Home. Home needs
+ * a profile (HomeNeedsProfile), and the TMDB step offered first: a key that works, or skipped since the saved one
+ * last stopped working (TmdbAskedBeforeHome). Without a key Home still works, on the addons and Cinemeta. Pure, so
+ * tests/onboarding.test.ts checks it with every input.
  */
 
 export type Status = NonNullable<FunctionReturnType<typeof api.onboarding.status>>;
@@ -25,7 +26,7 @@ export function route({ signedIn, profile, status }: RouteInput): Screen {
   if (!signedIn) return "landing";
   if (!profile) return "picker";
   if (status === null) return "home";
-  if (status.tmdb !== "valid") return "tmdbKey";
+  if (status.tmdb !== "valid" && !status.tmdbAsked) return "tmdbKey";
   if (!status.debridAsked) return "debrid";
   if (status.addons === "todo") return "addons";
   if (!status.extrasAsked) return "extras";

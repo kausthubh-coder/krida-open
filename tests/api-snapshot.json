@@ -1504,6 +1504,17 @@
       }
     }
   },
+  "onboarding:skipTmdb": {
+    "kind": "mutation",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      }
+    }
+  },
   "onboarding:status": {
     "kind": "query",
     "args": {

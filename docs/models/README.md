@@ -9,7 +9,7 @@ keep its model passing and its tests below green. The owner's page is
 | --- | --- | --- |
 | `AccountIsolation.tla` | Clerk sign-in, profiles (max per account, optional PIN), profile sessions, per-account keys, room listings | 343,644 states, 2 s |
 | `PartyInvites.tla` | One room across accounts: invite link, same-account join, guests (24 h), leave, kick, host leaves, end; liveness | 156,257 states, 12 s |
-| `Onboarding.tla` | One account on one device: sign in, profile, TMDB key, debrid, addons, Home; back, skip, keys dying later | 1,114 states, under 1 s |
+| `Onboarding.tla` | One account on one device: sign in, profile, TMDB key (or skip), debrid, per-profile stream addons or none, extras, Home with or without TMDB; back, skip, profile switches, keys removed or dying later | 7,600 states |
 | `StreamAccess.tla` | Who may load a room's stream (the HLS playlist), warm a title with its host's keys, and get in by a party or guest link: leave, kick, sweep, hand-off, close | 1,404,928 states, 13 s |
 
 The hand-off rule (the owner's choice): the host leaving hands the room to a member whose account has TorBox,
@@ -87,12 +87,14 @@ account-status query, so both are testable.
 
 | Invariant | Seeded bug | Test to add | It asserts |
 | --- | --- | --- | --- |
-| `HomeNeedsProfileAndTmdb` | `route_ignores_tmdb`, `home_ignores_dead_key` | `route sends to the first step still needed`, `a refused TMDB key is marked invalid` | `route()` gives `tmdbKey` for no key or an invalid one, whatever else is set; when TMDB answers 401, the account-status query returns `tmdb: "invalid"` |
+| `HomeNeedsProfile` | `signin_skips_picker` | `route sends to the first step still needed` | `route({ profile: false })` is `picker` whatever the status says |
+| `TmdbAskedBeforeHome` | `route_ignores_tmdb`, `home_ignores_dead_key` | `route sends to the first step still needed`, `the TMDB step can be skipped, and Home comes without a key`, `a refused TMDB key is marked invalid`, `a key that stops working asks once more, and can be skipped then too`, `a TMDB key removed in Settings leaves the account at Home` | `route()` gives `tmdbKey` for no key or an invalid one until `tmdbAsked`; `onboarding.skipTmdb` sets it on the account (both profiles); a refusal after the skip clears it (`tmdb: "invalid", tmdbAsked: false`); a key cleared in Settings keeps it |
+| `HomeNeverErrsForTmdb` | `home_needs_tmdb`, `key_saved_counts` | `addonRowsOf` and `useNeedsTmdbKey` (`src/data/keys.ts`, from the status's `tmdb`, so a refused key counts as none), checked on screen | Without a working key Home has Cinemeta's popular rows and the addons' (`CINEMETA_ROWS`), asks `/api/rows` and `/api/recs` nothing, and shows one "Add a TMDB key for more" link (`TmdbForMore`), never an error. No browser test covers it yet: look at Home, Search, a title page and a person link with a QA profile whose TMDB key is cleared |
 | `SignedOutSeesLanding` | `signout_keeps_screen` | `signed out, the route is the landing page` | `route({ signedIn: false, ... })` is `landing` for every other input |
-| `NoTorBoxShownUnavailable` | `stale_torbox_gate` | `TorBox gates follow the account's debrid` | The status query's `play` is `false` for no debrid or a key its service refuses, and `torbox` is `false` for no debrid, another service, or a TorBox key TorBox refuses, right after each change |
-| `NeverFailsForMissingTorBox` | `play_ignores_gate` | `Play without a debrid service and parties without TorBox refuse up front` | `rooms.create` without a working debrid key throws `NEEDS_DEBRID`, and `createParty` without TorBox `NEEDS_TORBOX`, before any stream job starts |
+| `NoTorBoxShownUnavailable` | `stale_torbox_gate`, `play_without_either` | `TorBox gates follow the account's debrid`; `tests/plainStreams.test.ts` | `play` is false only when there is neither a working debrid key nor an enabled stream addon on this profile; `torbox` is false without a working TorBox key, regardless of addons. Gates follow key changes and profile switches |
+| `NeverFailsForMissingTorBox` | `play_ignores_gate` | `Play without a debrid service and parties without TorBox refuse up front`; `tests/plainStreams.test.ts` | `rooms.create` throws `NEEDS_DEBRID` before scheduling only with neither a working debrid key nor an enabled stream addon; `createParty` without TorBox throws `NEEDS_TORBOX`. Room admission does not promise playable sources: plain HTTP files and .m3u8 play without debrid, but torrent-only results say "These sources need a debrid service" |
 | `TorBoxShownAvailable` | `torbox_hidden_always` | `a working TorBox key opens both` | With a TorBox key TorBox accepts, the status query's `torbox` and `play` are `true` |
-| `DebridShownPlayable` | `play_needs_torbox` | `another debrid service plays alone, but hosts no party` | With another service's working key, `play` is `true`, `rooms.create` starts a room, and `createParty` refuses |
+| `DebridShownPlayable` | `play_needs_torbox` | `another debrid service plays alone, but hosts no party`, `follows the steps, and resumes from the account and profile on any device`; `tests/plainStreams.test.ts` | `play` is true with any working debrid key or the current profile's enabled stream addon. An addon without the stream resource does not qualify. The model's `addons = "stream"` means an enabled stream addon; `"installed"` means only other addons, and `"skipped"` means none |
 
 ## Where today's code breaks the design
 
@@ -126,7 +128,8 @@ list stays as the record of what each seeded bug stands for, and the tests above
 Exact timers (10 min sweep, 30 min idle, 60 s reopen: folded into single steps), `leaveOtherParties` across two
 rooms, knocks and per-person `invites`, playback sync, PIN lockout, the 8-profile and 8-guest-link limits (2 and 1
 here), more than one Clerk session per account per device, Stremio import and addon order, and keys other than TMDB
-and debrid (MDBList is optional and gates nothing).
+and debrid (MDBList and Simkl are the extras step, which gates nothing). Onboarding's Home is one screen: Search,
+title pages and person pages follow the same `useNeedsTmdbKey` rule but aren't modeled.
 
 ### StreamAccess (`tests/streamAccess.test.ts`, `tests/partyRooms.test.ts`, `tests/partyInvites.test.ts`)
 

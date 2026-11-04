@@ -58,6 +58,35 @@ export function addonBase(input: string): string {
 
 export const manifestUrl = (base: string) => `${base}/manifest.json`;
 
+/** A Stremio link opens a title or a reviewable addon install, always on Krida. */
+export function stremioPage(input: string): string | null {
+  try {
+    const url = new URL(input);
+    if (url.protocol !== "stremio:" || url.username || url.password) return null;
+    const detail = /^\/detail\/([^/]+)\/([^/]+)$/.exec(url.pathname);
+    if (!url.host && detail) return `/title/${detail[1]}/${detail[2]}`;
+    if (!url.host || !/\/manifest\.json$/i.test(url.pathname)) return null;
+    return `/settings/addons?addon=${encodeURIComponent(manifestUrl(addonBase(input)))}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Curated community manifests checked with curl on 4 November 2026. Torrentio, Comet and MediaFusion aren't here: the
+ * suggestions above this list install them already set up with the account's debrid key, and bare they'd find only
+ * torrents. Peerflix is the same, so it goes to its setup page.
+ */
+export const COMMUNITY_ADDONS = [
+  { name: "Cinemeta", url: "https://v3-cinemeta.strem.io/manifest.json", configurationRequired: false },
+  { name: "OpenSubtitles v3", url: "https://opensubtitles-v3.strem.io/manifest.json", configurationRequired: false },
+  { name: "Anime Kitsu", url: "https://anime-kitsu.strem.fun/manifest.json", configurationRequired: false },
+  { name: "Peerflix", url: "https://peerflix.mov/manifest.json", configurationRequired: true },
+  { name: "TMDB Addon", url: "https://94c8cb9f702d-tmdb-addon.baby-beamup.club/manifest.json", configurationRequired: false },
+  { name: "Streaming Catalogs", url: "https://7a82163c306e-stremio-netflix-catalog-addon.baby-beamup.club/manifest.json", configurationRequired: false },
+  { name: "Trakt lists", url: "https://2ecbbd610840-trakt.baby-beamup.club/manifest.json", configurationRequired: false },
+];
+
 /** Extras in the order Stremio writes them, `skip` last; values are encoded, names never need it. */
 export function extraPath(extra: Record<string, string | number | undefined>) {
   return Object.entries(extra)

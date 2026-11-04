@@ -4,7 +4,7 @@ import { internalMutation, mutation } from "./functions";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { profileFromToken, publicProfile, randomHex, requireProfile } from "./lib/auth";
-import { hasDebrid, hasTorBox, keysRow, needsTorBox, playNeedsDebrid } from "./lib/accounts";
+import { canPlayAlone, hasTorBox, keysRow, needsTorBox, playNeedsDebrid } from "./lib/accounts";
 import { removeProfile } from "./lib/profiles";
 import { mediaValidator, screenValidator, sourceFallbackValidator, sourceSummaryValidator, suggestionValidator } from "./schema";
 import { INVITE_TTL_MS } from "./invites";
@@ -24,8 +24,9 @@ export const create = mutation({
   handler: async (ctx, { token, media, startAt = 0, sourceIndex, sourceKey, screen }) => {
     const profile = await requireProfile(ctx, token);
     if (isGuest(profile)) throw guestOnly();
-    // The stream comes from the account's debrid service: without one, say so now rather than fail once the job runs.
-    if (!(await hasDebrid(ctx, profile.accountId))) throw playNeedsDebrid();
+    // The stream comes from the account's debrid service or an addon's plain web video: with neither, say so now
+    // rather than fail once the job runs.
+    if (!(await canPlayAlone(ctx, profile))) throw playNeedsDebrid();
     const roomId = await newRoom(ctx, profile, "solo", media);
     await upsertMember(ctx, roomId, profile._id, true, screen);
     await startJob(ctx, (await ctx.db.get(roomId))!, { index: sourceIndex, key: sourceKey, startAt, by: profile._id });
@@ -97,10 +98,14 @@ export const get = query({
     }
     const stream = room.streamId ? await ctx.db.get(room.streamId) : null;
     // Whether this profile may have the stream's own file (desktop.fileLink): the app plays it in mpv, and a direct
-    // stream's file is the only way to play it. A guest from another account plays the room's HLS instead.
+    // stream's file is the only way to play it. A guest from another account plays the room's HLS instead, except of a
+    // plain web video, whose link anyone in the room may have (engine.mayPlay says why).
     const ownFile =
-      !!stream && !!me.accountId && stream.accountId === me.accountId &&
-      (!!stream.direct || (await keysRow(ctx, me.accountId))?.debrid?.service === "torbox");
+      !!stream && (
+        (!!me.accountId && stream.accountId === me.accountId &&
+          (!!stream.direct || (await keysRow(ctx, me.accountId))?.debrid?.service === "torbox")) ||
+        !!stream.direct?.plain
+      );
     return {
       _id: room._id,
       kind: room.kind ?? "solo",

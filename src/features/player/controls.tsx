@@ -9,6 +9,7 @@ import { tick } from "../../ui/haptics";
 import { pointIn } from "../../ui/sideways";
 import { cx, IconButton, Spinner } from "../../ui/ui";
 import type { FramePreview, PreviewState } from "./framePreview";
+import { shiftSubtitleDelay } from "./subtitles";
 
 // ---------------------------------------------------------------------------------------------
 // Controls
@@ -438,6 +439,9 @@ export function SubtitleMenu({
   offset,
   onOffset,
   onPick,
+  localSubs,
+  onLoadFile,
+  fileError,
 }: {
   /** The file's own tracks, which only Krida for Windows can show (`filePlayable`). */
   fileTracks: { id: string; lang?: string; title?: string }[];
@@ -448,7 +452,11 @@ export function SubtitleMenu({
   offset: number;
   onOffset: (n: number) => void;
   onPick: (id: string | null) => void;
+  localSubs: { id: string; name: string }[];
+  onLoadFile: (file: File) => Promise<void>;
+  fileError: string | null;
 }) {
+  const input = useRef<HTMLInputElement>(null);
   const grouped = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const o of options ?? []) map.set(o.lang, [...(map.get(o.lang) ?? []), o.id]);
@@ -461,6 +469,14 @@ export function SubtitleMenu({
       <MenuRow selected={current === null} onClick={() => onPick(null)}>
         Off
       </MenuRow>
+      <input ref={input} type="file" accept=".srt,.vtt,.ass,.ssa" className="hidden" aria-label="Subtitle file" onChange={(e) => {
+        const file = e.currentTarget.files?.[0];
+        e.currentTarget.value = "";
+        if (file) void onLoadFile(file);
+      }} />
+      <MenuRow selected={false} onClick={() => input.current?.click()}>Load a subtitle file</MenuRow>
+      {fileError && <p role="alert" className="px-3 py-2 text-body text-danger">{fileError}</p>}
+      {localSubs.map((s) => <MenuRow key={s.id} selected={current === s.id} onClick={() => onPick(s.id)}>{s.name}</MenuRow>)}
       {!filePlayable && fileTracks.length > 0 && (
         <p className="px-3 py-2 text-caption text-fg-faint">
           This file’s own {listLanguages(fileTracks)} subtitles show only in Krida for Windows.
@@ -518,11 +534,11 @@ export function SubtitleMenu({
       {current && (
         <div className="mt-1 flex items-center gap-2 border-t border-line px-3 pt-3 pb-2">
           <span className="flex-1 text-body text-fg-muted">Timing</span>
-          <IconButton label="Show subtitles earlier" size="sm" onClick={() => onOffset(+(offset - 0.5).toFixed(1))}>
+          <IconButton label="Show subtitles 0.1 seconds earlier (G)" size="sm" onClick={() => onOffset(shiftSubtitleDelay(offset, -1))}>
             −
           </IconButton>
           <span className="w-12 text-center text-body tabular-nums">{offset > 0 ? `+${offset}` : offset}s</span>
-          <IconButton label="Show subtitles later" size="sm" onClick={() => onOffset(+(offset + 0.5).toFixed(1))}>
+          <IconButton label="Show subtitles 0.1 seconds later (H)" size="sm" onClick={() => onOffset(shiftSubtitleDelay(offset, 1))}>
             +
           </IconButton>
         </div>

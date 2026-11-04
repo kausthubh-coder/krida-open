@@ -186,7 +186,7 @@ function Shot({ src, small, alt, title, flip, children }: { src: string; small: 
 
 const STEPS: { title: string; body: ReactNode }[] = [
   { title: "Sign in", body: "With Google or a code sent to your email." },
-  { title: "Add your keys", body: "A free TMDB key, so Krida can find titles, and the key of your debrid service. Each one is checked as you paste it." },
+  { title: "Add your keys", body: "Your debrid service’s key, for torrents, and a free TMDB key for richer rows and details. Both are optional, and each is checked as you paste it." },
   { title: "Add addons", body: "Torrentio comes set up with your debrid key in one tap, or bring your addons over from Stremio." },
   { title: "Press Play", body: "Setup takes a few minutes, and Krida walks you through it." },
 ];

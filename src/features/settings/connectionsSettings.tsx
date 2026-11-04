@@ -202,9 +202,10 @@ export function ConnectionsSection() {
   return (
     <div className="flex flex-col gap-8">
       <Group>
-        <KeyRow kind="tmdb" title="TMDB" badge="Required" label="TMDB API key" saved={connections.tmdb}>
+        <KeyRow kind="tmdb" title="TMDB" badge="Recommended" label="TMDB API key" saved={connections.tmdb}>
           <p className="max-w-[60ch] text-body text-fg-faint">
-            Finds films and shows: Home’s rows, Search, title pages and your picks.{" "}
+            Adds trending rows, picks for you, people’s pages and browsing by genre. Without it, your addons and
+            Cinemeta find titles.{" "}
             <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer" className={link}>
               Get a free key on TMDB
             </a>

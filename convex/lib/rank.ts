@@ -61,6 +61,8 @@ export type SourceOption = Omit<SourceInfo, "path"> & {
   dvOnly: boolean;
   score: number;
   unavailable?: boolean;
+  /** Unavailable because it's a torrent and the account has no debrid service. */
+  needsDebrid?: boolean;
 };
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -70,7 +72,8 @@ const LANGUAGE_NAMES: Record<string, string> = {
 };
 export const languageFor = (code?: string) => (code ? LANGUAGE_NAMES[code] : undefined);
 
-type Listing = { name: string; description: string; filename?: string; size?: number; unavailable?: boolean };
+/** `needsDebrid`: a torrent, on an account with no debrid service to play it (it's `unavailable` too). */
+type Listing = { name: string; description: string; filename?: string; size?: number; unavailable?: boolean; needsDebrid?: boolean };
 
 /** A short id for one listing that survives the addon reordering its list: the file and its size, or the addon's
  * text when no file is named. Built from display fields only; the playback URL carries account credentials. */
@@ -254,6 +257,7 @@ export function rankSources(items: Listing[], ctx: RankContext) {
         same.key = listing;
         same.cached = info.cached;
         same.unavailable = undefined;
+        same.needsDebrid = undefined;
       } else {
         same.indices.push(index);
         same.keys.push(listing);
@@ -279,6 +283,7 @@ export function rankSources(items: Listing[], ctx: RankContext) {
       mismatch: mismatchOf(info.filename, ctx),
       dvOnly: info.hdr.includes("DV") && info.hdr.length === 1,
       ...(item.unavailable ? { unavailable: true } : {}),
+      ...(item.needsDebrid ? { needsDebrid: true } : {}),
     };
     options.push(option);
     byFile.set(key, [...(byFile.get(key) ?? []), option]);

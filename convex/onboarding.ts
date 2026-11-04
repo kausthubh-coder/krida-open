@@ -3,11 +3,11 @@ import { action, internalQuery, query } from "./_generated/server";
 import { internalMutation, mutation } from "./functions";
 import { internal } from "./_generated/api";
 import { profileFromToken, sessionOf } from "./lib/auth";
-import { accountOf, debridServiceValidator, debridValidator, keysRow, requireAccount } from "./lib/accounts";
+import { accountOf, canPlayAlone, debridServiceValidator, debridValidator, keysRow, requireAccount } from "./lib/accounts";
 import { askProvider } from "./lib/keyCheck";
 
 /*
- * Onboarding, as docs/models/Onboarding.tla describes it: after a profile, the account's TMDB key (required), its
+ * Onboarding, as docs/models/Onboarding.tla describes it: after a profile, the account's TMDB key (or a skip), its
  * debrid service (or a skip), this profile's addons (or a skip), then the optional keys, then Home. `status` is all the
  * app routes on (src/features/onboarding/route.ts); progress lives on the account and the profile, so it resumes on
  * another device. Keys are checked when pasted (accounts.save) and again now and then (`recheck`), so a key its
@@ -16,11 +16,15 @@ import { askProvider } from "./lib/keyCheck";
 
 const statusValidator = v.object({
   tmdb: v.union(v.literal("none"), v.literal("valid"), v.literal("invalid")),
+  // Past the TMDB step: a key that works, or skipped (since the saved key last stopped working). Unset from servers
+  // before it, when the step couldn't be skipped.
+  tmdbAsked: v.optional(v.boolean()),
   debrid: v.union(v.object({ service: debridServiceValidator, valid: v.boolean() }), v.null()),
   // Parties, timeline previews and playing any file in the browser: a TorBox key TorBox still accepts.
   torbox: v.boolean(),
   // Playing alone: any debrid key its service still accepts (another service's files play in the browser when they're
-  // MP4 or WebM, else in the desktop app or an external player). Unset from servers before it.
+  // MP4 or WebM, else in the desktop app or an external player), or a stream addon, whose plain web videos play with
+  // no debrid service (lib/accounts.ts canPlayAlone). Unset from servers before it.
   play: v.optional(v.boolean()),
   debridAsked: v.boolean(),
   addons: v.union(v.literal("todo"), v.literal("installed"), v.literal("skipped")),
@@ -40,16 +44,38 @@ export const status = query({
     const row = await keysRow(ctx, account._id);
     const debrid = row?.debrid ? { service: row.debrid.service, valid: row.debridRefusedAt === undefined } : null;
     const hasAddon = (await ctx.db.query("addons").withIndex("by_profile", (q) => q.eq("profileId", profile._id)).first()) !== null;
+    const tmdb = !row?.tmdb ? "none" : row.tmdbRefusedAt === undefined ? "valid" : "invalid";
+    const debridAsked = account.debridAskedAt !== undefined || debrid !== null;
+    const skipped = account.tmdbAskedAt;
     return {
-      tmdb: !row?.tmdb ? "none" : row.tmdbRefusedAt === undefined ? "valid" : "invalid",
+      tmdb,
+      // A key that stopped working asks again until it's replaced or skipped after that. Past the debrid step with no
+      // key, the account went past this step before (a key removed in Settings leaves it there).
+      tmdbAsked:
+        tmdb === "valid" ||
+        (tmdb === "invalid" ? skipped !== undefined && skipped >= row!.tmdbRefusedAt! : skipped !== undefined || debridAsked),
       debrid,
       torbox: debrid?.service === "torbox" && debrid.valid,
-      play: debrid?.valid === true,
-      debridAsked: account.debridAskedAt !== undefined || debrid !== null,
+      play: await canPlayAlone(ctx, profile),
+      debridAsked,
       addons: profile.addonsStep ?? (hasAddon ? "installed" : "todo"),
       extrasAsked: account.extrasAskedAt !== undefined || !!row?.mdblist,
       mdblist: !!row?.mdblist,
     };
+  },
+});
+
+/**
+ * Goes past the TMDB step without a key that works: Home, Search and title pages then use the addons and Cinemeta,
+ * and leave out what only TMDB has. Asked again only when a key saved later stops working.
+ */
+export const skipTmdb = mutation({
+  args: { token: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { token }) => {
+    const { account } = await requireAccount(ctx, token);
+    await ctx.db.patch(account._id, { tmdbAskedAt: Date.now() });
+    return null;
   },
 });
 

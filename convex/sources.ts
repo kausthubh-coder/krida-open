@@ -5,7 +5,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { requireProfile, sha256 } from "./lib/auth";
 import { originOfProfile, type SourceOrigin } from "./lib/addons";
-import { fetchSources, fileLink as torboxFileLink, NoList, resolveDirect, resolveToTorbox, SourceError, torboxKeyOf, viaTorBox, type RawSource } from "./lib/providers";
+import { fetchSources, fileLink as torboxFileLink, isTorrent, NoList, PlainFile, resolveDirect, resolveToTorbox, SourceError, torboxKeyOf, viaTorBox, type RawSource } from "./lib/providers";
 import { parseSource } from "./lib/parse";
 import { contextFor, excluder, rankSources, sourceKey } from "./lib/rank";
 import { containerOf, isBrowserContainer } from "../shared/formats";
@@ -240,8 +240,10 @@ type Ranked = {
   pick: number | null;
   olderFrom?: number;
   hidden?: number;
-  /** In a browser, on an account whose files play as they are (another debrid service): MP4 and WebM play here. */
+  /** In a browser, on an account whose files play as they are (another debrid service, or none): MP4, WebM and HLS play here. */
   direct?: boolean;
+  /** The account has no debrid service: its torrents are listed as unavailable (`needsDebrid`) and its web videos play. */
+  noDebrid?: boolean;
 };
 
 export const listRanked = action({
@@ -259,11 +261,14 @@ export const listRanked = action({
     const profileId = await ctx.runQuery(internal.profiles.validate, { token });
     if (!profileId) throw new ConvexError({ code: "UNAUTHENTICATED", message: "Sign in to continue" });
     try {
-      const [{ items, olderFrom }, prefs, { keys }] = await Promise.all([
+      const [{ items: listed, olderFrom }, prefs, { keys }] = await Promise.all([
         loadSources(ctx, type, videoId, await originOf(ctx, profileId), { force: refresh }),
         ctx.runQuery(internal.profiles.prefsOf, { profileId }),
         ctx.runQuery(internal.accounts.keysOfProfile, { profileId }),
       ]);
+      const noDebrid = !keys.debrid;
+      // Without a debrid service nothing plays a torrent: it shows, but can't be picked (as Play leaves it out).
+      const items = noDebrid ? listed.map((item) => (isTorrent(item) ? { ...item, unavailable: true, needsDebrid: true } : item)) : listed;
       const base = contextFor(type, videoId);
       const { options, pick, best } = rankSources(items, {
         ...base,
@@ -277,12 +282,15 @@ export const listRanked = action({
       });
       const excluded = excluder(prefs?.sourceFilter);
       const hidden = excluded ? items.filter(excluded).length : 0;
-      // A browser plays another service's files as they are, so Krida's pick there is one it can play, as Play's is.
-      const direct = !!keys.debrid && !viaTorBox(keys) && screen !== "app";
-      const plays = (o: { indices: number[] }) => o.indices.some((i) => isBrowserContainer(containerOf(items[i]?.filename)));
+      // A browser plays files from their links as they are, so Krida's pick there is one it can play, as Play's is.
+      const direct = !viaTorBox(keys) && screen !== "app";
+      const plays = (o: { indices: number[] }) => o.indices.some((i) => !!items[i] && isBrowserContainer(containerOf(items[i].filename, items[i].url)));
       const shown = direct && pick && !plays(pick) ? (best.find((o) => plays(o) && !o.mismatch) ?? pick) : pick;
       // Only display fields leave the server; the playback URLs carry account credentials.
-      return { options, pick: shown?.index ?? null, olderFrom, ...(hidden ? { hidden } : {}), ...(direct ? { direct } : {}) };
+      return {
+        options, pick: shown?.index ?? null, olderFrom,
+        ...(hidden ? { hidden } : {}), ...(direct ? { direct } : {}), ...(noDebrid ? { noDebrid } : {}),
+      };
     } catch (error) {
       console.error("sources.list failed", error);
       // The browser only sees the friendly message; PostHog keeps the cause.
@@ -323,8 +331,9 @@ export const list = action({
 
 /**
  * One listed file's own link, for an external player (VLC, Infuse, IINA, a playlist): through TorBox for a TorBox
- * account (a torrent too, when TorBox has it), else by following the addon's link to the file. The link plays the
- * account's file, so only that account's sessions ask for it, and only for a file in their own list.
+ * account (a torrent too, when TorBox has it), else, and for a plain web video on any account, by following the addon's
+ * link to the file. The link plays the account's file, so only that account's sessions ask for it, and only for a file
+ * in their own list.
  */
 export const fileLink = action({
   args: { token: v.string(), type: v.union(v.literal("movie"), v.literal("series")), videoId: v.string(), key: v.string() },
@@ -339,8 +348,11 @@ export const fileLink = action({
       if (!item) throw new SourceError("That source isn’t listed anymore. Pick another one.");
       if (viaTorBox(keys)) {
         const torbox = torboxKeyOf(keys);
-        const { torrentId, fileId } = await resolveToTorbox(torbox, item, contextFor(type, videoId));
-        return { url: await torboxFileLink(torbox, torrentId, fileId) };
+        const found = await resolveToTorbox(torbox, item, contextFor(type, videoId)).catch((error) => {
+          if (error instanceof PlainFile) return { url: error.url };
+          throw error;
+        });
+        return "url" in found ? found : { url: await torboxFileLink(torbox, found.torrentId, found.fileId) };
       }
       return { url: (await resolveDirect(item)).url };
     } catch (error) {

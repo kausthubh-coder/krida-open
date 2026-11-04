@@ -20,7 +20,7 @@ export function SeeAllPage() {
   const { me } = useAuthed();
   const addons = useAddons();
   const row = useMemo(
-    () => (addons ? addonRowsOf(addons).find((r) => r.addonId === addonId && r.type === type && r.catalog.id === catalogId) : undefined),
+    () => (addons ? addonRowsOf(addons, true).find((r) => r.addonId === addonId && r.type === type && r.catalog.id === catalogId) : undefined),
     [addons, addonId, type, catalogId],
   );
   const genres = row ? genresOf(row.catalog) : [];

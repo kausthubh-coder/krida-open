@@ -3,6 +3,7 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { createStream, playlistUrl, torboxKeyOf } from "./lib/providers";
+import { fileOf } from "./desktop";
 
 const http = httpRouter();
 
@@ -29,7 +30,13 @@ http.route({
     if (!profileId || !streamId) return new Response("Unauthorized", { status: 401, headers: cors });
 
     const found = await ctx.runQuery(internal.engine.getStream, { streamId }).catch(() => null);
-    // A direct stream (another debrid service) has no HLS: the file plays from its own link.
+    // A plain web video's own HLS (an addon's .m3u8): the player is sent to it, to whoever may have its link
+    // (desktop.fileLink), and hls.js loads its segments from there as Stremio's would.
+    if (found?.direct?.container === "hls") {
+      const link = await fileOf(ctx, profileId, streamId).catch(() => null);
+      return link ? new Response(null, { status: 302, headers: { ...cors, location: link, "cache-control": "no-store" } }) : new Response("Forbidden", { status: 403, headers: cors });
+    }
+    // Any other direct stream (another debrid service's file, a plain MP4) has no HLS: the file plays from its own link.
     if (!found?.accountId || found.torrentId === undefined || found.fileId === undefined || !found.domain || !found.presignedToken)
       return new Response("Not found", { status: 404, headers: cors });
     // A stream id alone isn't a ticket: out of the room (left, kicked, the party over), it stops playing.

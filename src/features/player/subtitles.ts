@@ -101,6 +101,7 @@ function cueHtml(raw: string) {
 }
 
 export function parseSubtitles(text: string): Cue[] {
+  if (/^\s*\[Events\]\s*$/im.test(text)) return parseAss(text);
   const blocks = text.replace(/\r/g, "").replace(/^﻿/, "").split(/\n{2,}/);
   const cues: Cue[] = [];
   for (const block of blocks) {
@@ -115,6 +116,49 @@ export function parseSubtitles(text: string): Cue[] {
     if (html) cues.push({ start, end, html });
   }
   return cues.sort((x, y) => x.start - y.start);
+}
+
+function parseAss(text: string): Cue[] {
+  let events = false;
+  let format = "Marked,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text".toLowerCase().split(",");
+  const cues: Cue[] = [];
+  for (const line of text.replace(/^\uFEFF/, "").split(/\r?\n/)) {
+    if (/^\s*\[/.test(line)) {
+      events = line.trim().toLowerCase() === "[events]";
+      continue;
+    }
+    if (!events) continue;
+    const match = /^\s*(Format|Dialogue):\s*(.*)$/i.exec(line);
+    if (!match) continue;
+    if (match[1].toLowerCase() === "format") {
+      format = match[2].split(",").map((s) => s.trim().toLowerCase());
+      continue;
+    }
+    // Text may contain commas, including when a custom Format puts fields after it.
+    const values = match[2].split(",");
+    const ti = format.indexOf("text");
+    if (ti < 0 || values.length < format.length) continue;
+    values.splice(ti, values.length - format.length + 1, values.slice(ti, ti + values.length - format.length + 1).join(","));
+    const start = toSeconds(values[format.indexOf("start")] ?? "");
+    const end = toSeconds(values[format.indexOf("end")] ?? "");
+    const plain = values[ti].replace(/\{\\[^}]*\}/g, "").replace(/\\[Nn]/g, "\n").replace(/\\h/g, " ").trim();
+    if (Number.isFinite(start) && Number.isFinite(end) && end > start && plain)
+      cues.push({ start, end, html: escapeHtml(plain).replace(/\n/g, "<br>") });
+  }
+  return cues.sort((a, b) => a.start - b.start);
+}
+
+export type LocalSubtitle = { id: string; name: string; cues: Cue[] };
+
+/** Read in the browser without uploading the viewer's file. */
+export async function readSubtitleFile(file: Pick<File, "name" | "text">): Promise<LocalSubtitle> {
+  const cues = parseSubtitles(await file.text());
+  if (!cues.length) throw new Error("This subtitle file has no cues. Try an SRT, VTT, ASS or SSA file.");
+  return { id: `local:${crypto.randomUUID()}`, name: file.name, cues };
+}
+
+export function shiftSubtitleDelay(offset: number, by: -1 | 1) {
+  return Math.round((offset * 10 + by)) / 10;
 }
 
 /** Every cue showing at time t (binary search to the first cue that could still be on screen). */

@@ -26,7 +26,7 @@ import { keepLoading } from "./components/paging";
 import { paramsFor, useSearch, type SearchState } from "./components/useSearch";
 import { useSearchDraft } from "./components/draft";
 import { useNeedsTmdbKey } from "../../data/keys";
-import { NeedsTmdbKey } from "../../ui/needsKey";
+import { TmdbForMore } from "../../ui/needsKey";
 
 type Filter = "all" | "movie" | "series";
 // Messages about the search sit under the field, centred on it rather than on the page.
@@ -65,9 +65,10 @@ export function SearchPage() {
 
   const query = urlQuery.trim();
   const browsing = query.length < 2;
-  const tags = useMemo(() => parseTags(query), [query]);
   const needsKey = useNeedsTmdbKey();
-  const found = useSearch(needsKey ? "" : query);
+  // Genres and languages are TMDB's to find; without its key, every query is a name.
+  const tags = useMemo(() => (needsKey ? null : parseTags(query)), [query, needsKey]);
+  const found = useSearch(query);
   useReadyTiming("search", !browsing && !!found.data, query);
 
   // Once per query, when its first results arrive; later pages don't touch the list.
@@ -89,7 +90,7 @@ export function SearchPage() {
       else next.set("type", type);
       return next;
     }, { replace: true });
-  const typedTags = parseTags(input);
+  const typedTags = needsKey ? null : parseTags(input);
   const editTags = (edit: (t: Tags) => Tags) => setQuery(formatTags(edit(typedTags ?? { genres: [] })));
   const visible = useCallback((r: Result) => filter === "all" || r.type === filter, [filter]);
 
@@ -97,7 +98,7 @@ export function SearchPage() {
     recent.length > 0 && <RecentLine recent={recent} onPick={setQuery} onClear={clearRecent} />
   ) : (
     // Once the search reads as tags, the bar moves under their heading, beside Movies or Shows.
-    !browsing && !tags && looksLikeTags(input) && <TagBar tags={typedTags} onEdit={editTags} />
+    !browsing && !tags && !needsKey && looksLikeTags(input) && <TagBar tags={typedTags} onEdit={editTags} />
   );
 
   return (
@@ -135,7 +136,7 @@ export function SearchPage() {
           }}
           data-search-field
           // Short enough to show whole on a phone.
-          placeholder="Titles, people, or “telugu comedy”"
+          placeholder={needsKey ? "Movies and shows" : "Titles, people, or “telugu comedy”"}
           aria-label="Search titles, people, genres and languages"
           aria-keyshortcuts="/"
           enterKeyHint="search"
@@ -159,10 +160,8 @@ export function SearchPage() {
       </Glass>
       {underField && <div className="-mt-5">{underField}</div>}
 
-      {needsKey ? (
-        <NeedsTmdbKey className={UNDER_FIELD} />
-      ) : browsing ? (
-        <BrowseAll onEdit={editTags} />
+      {browsing ? (
+        needsKey ? <TmdbForMore className={UNDER_FIELD} /> : <BrowseAll onEdit={editTags} />
       ) : tags ? (
         <TagResults
           tags={tags}
@@ -172,9 +171,9 @@ export function SearchPage() {
           onType={(type) => setQuery(formatTags({ ...tags, type: type === "all" ? undefined : type }))}
         />
       ) : (
-        <TitleResults query={query} found={found} filter={filter} onFilter={setFilter} onClear={() => setQuery("")} />
+        <TitleResults query={query} found={found} filter={filter} onFilter={setFilter} onClear={() => setQuery("")} cinemetaOnly={needsKey} />
       )}
-      {!needsKey && !browsing && found.data && !found.loading && !found.error && <SearchMore found={found} visible={tags ? undefined : visible} />}
+      {!browsing && found.data && !found.loading && !found.error && <SearchMore found={found} visible={tags ? undefined : visible} />}
     </main>
   );
 }
@@ -263,12 +262,15 @@ function TitleResults({
   filter,
   onFilter,
   onClear,
+  cinemetaOnly,
 }: {
   query: string;
   found: SearchState;
   filter: Filter;
   onFilter: (filter: Filter) => void;
   onClear: () => void;
+  /** No TMDB key: the search asks Cinemeta (and the addons) alone. */
+  cinemetaOnly: boolean;
 }) {
   // While a refined search loads, the last one stays, dimmed, instead of blanking the page.
   const stale = found.stale && !found.stale.data.tags ? found.stale : undefined;
@@ -302,7 +304,7 @@ function TitleResults({
           found.loading && (
             <Delayed>
               <p role="status" className="text-body text-fg-muted">
-                Searching TMDB and Cinemeta…
+                {cinemetaOnly ? "Searching Cinemeta…" : "Searching TMDB and Cinemeta…"}
               </p>
             </Delayed>
           )
@@ -312,7 +314,7 @@ function TitleResults({
         <EmptyState
           className={UNDER_FIELD}
           title="Search isn’t answering"
-          description="Neither TMDB nor Cinemeta responded. Check your connection and try again."
+          description={`${cinemetaOnly ? "Cinemeta didn’t respond" : "Neither TMDB nor Cinemeta responded"}. Check your connection and try again.`}
           action={<Button onClick={found.retry}>Try again</Button>}
         />
       ) : found.data ? (
@@ -344,6 +346,7 @@ function TitleMatches({
   onClear: () => void;
 }) {
   const { person, anime, results } = data;
+  const needsKey = useNeedsTmdbKey();
   const all = filter === "all";
   // Later batches only append, so the top result and its namesakes stay put while the grid grows.
   const best = useMemo(() => {
@@ -360,7 +363,9 @@ function TitleMatches({
         description={
           !all && results.length > 0
             ? `There ${results.length === 1 ? "is 1 result" : `are ${results.length} results`} in other types.`
-            : "Check the spelling, try fewer words, or search a genre like “telugu comedy”."
+            : needsKey
+              ? "Check the spelling or try fewer words."
+              : "Check the spelling, try fewer words, or search a genre like “telugu comedy”."
         }
         action={!all ? <Button onClick={() => onFilter("all")}>Show all results</Button> : <Button onClick={onClear}>Clear search</Button>}
       />

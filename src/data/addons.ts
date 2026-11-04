@@ -1,21 +1,52 @@
+import { useEffect } from "react";
 import { useQuery } from "convex-helpers/react/cache/hooks";
+import { ConvexHttpClient } from "convex/browser";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
-import { resourceUrl, type AddonCatalog } from "../../shared/stremio";
+import { resourceUrl, serves, type AddonCatalog } from "../../shared/stremio";
+import { CINEMETA, KITSU } from "../../shared/addons";
 import { peekShared, proxied, useShared, type RecItem } from "./api";
-import { useAuthed } from "./session";
+import { CONVEX_URL } from "./backend";
+import { SESSION_KEY, useAuthed } from "./session";
 
 /*
  * A profile's Stremio addons in the browser: the list (Convex), and what the browser reads from them itself: catalogs
- * for Home, See all and Search, and subtitles. Streams are never fetched here; Convex asks the stream addons.
+ * for Home, See all and Search, titles' details, and subtitles. Streams are never fetched here; Convex asks the stream
+ * addons.
  */
 
 export type InstalledAddon = FunctionReturnType<typeof api.addons.list>[number];
 
+// The last list a screen had, for title details asked outside React (getMeta); asked once over HTTP when no screen has
+// loaded it yet (a title page opened from a link).
+let known: { token: string; addons: InstalledAddon[] } | undefined;
+let asking: { token: string; addons: Promise<InstalledAddon[]> } | undefined;
+
 /** The session's profile's addons, in its order; undefined while they load. */
 export function useAddons(): InstalledAddon[] | undefined {
   const { token } = useAuthed();
-  return useQuery(api.addons.list, { token });
+  const addons = useQuery(api.addons.list, { token });
+  useEffect(() => {
+    if (addons) known = { token, addons };
+  }, [token, addons]);
+  return addons;
+}
+
+/** The session's profile's addons, from the last screen that loaded them, else asked for. Empty without a session. */
+export async function sessionAddons(): Promise<InstalledAddon[]> {
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem(SESSION_KEY);
+  } catch {
+    // No storage (a private window that blocks it): no session to read addons for.
+  }
+  if (!token) return [];
+  if (known?.token === token) return known.addons;
+  if (asking?.token !== token) {
+    const addons = new ConvexHttpClient(CONVEX_URL).query(api.addons.list, { token }).catch(() => [] as InstalledAddon[]);
+    asking = { token, addons };
+  }
+  return await asking.addons;
 }
 
 // Addons that didn't answer the browser (no CORS headers, usually) are asked through /api/rows from then on.
@@ -45,8 +76,11 @@ export async function addonJson<T>(url: string): Promise<T> {
   return await proxied<T>(url);
 }
 
-/** Title ids Krida can open: IMDb's, and Kitsu's for anime. Other ids (an addon's own) have no title page yet. */
-const OPENABLE = /^(tt\d+|kitsu:\d+)$/;
+/**
+ * Title ids Krida can open: any an addon gives (IMDb's, Kitsu's, TMDB's, MyAnimeList's, a debrid library's own), as long
+ * as it fits in a link's path.
+ */
+const OPENABLE = /^[^\s/?#%]{1,200}$/;
 
 /** A Stremio meta preview as a Home card. Anime catalogs ("anime" type) hold shows. Null for what Krida can't open. */
 export function toRowItem(meta: any, catalogType: string): RecItem | null {
@@ -107,3 +141,31 @@ export function useMaybeCatalogRow(base?: string, catalog?: Pick<AddonCatalog, "
 
 /** A catalog's first page, if Home has loaded it this visit (for the recommender's candidates). */
 export const loadedCatalogRow = (base: string, catalog: Pick<AddonCatalog, "type" | "id">) => peekShared<RecItem[]>(rowKey(base, catalog));
+
+/** The Stremio types an addon may list a title of this kind under: anime addons serve their shows as "anime". */
+const metaTypes = (type: "movie" | "series") => (type === "movie" ? ["movie"] : ["series", "anime"]);
+/** Cinemeta and Kitsu are asked by Krida itself (data/cinemeta.ts), with retries, when nothing else claims an id. */
+const BUILT_IN = new Set([CINEMETA, KITSU]);
+
+/**
+ * A title's details from the first of `addons` (the profile's, in its order) that is enabled and serves its meta, as
+ * Stremio asks: by type and id prefix (`serves`). IMDb and Kitsu ids go to an addon only when it names their prefix;
+ * Cinemeta and Kitsu answer for them otherwise. Null when no addon has it. The id stays the one asked for, so Play
+ * hands stream addons exactly the id the catalog gave.
+ */
+export async function addonMeta<T extends { id: string; name: string }>(
+  addons: Pick<InstalledAddon, "url" | "manifest" | "enabled">[], type: "movie" | "series", id: string,
+): Promise<(T & { type: "movie" | "series" }) | null> {
+  const builtIn = /^(tt|kitsu:)/.test(id);
+  for (const a of addons) {
+    if (!a.enabled || BUILT_IN.has(a.url)) continue;
+    for (const t of metaTypes(type)) {
+      const claims = a.manifest.resources.some((r) => r.name === "meta" && r.types.includes(t) && r.idPrefixes?.some((p) => id.startsWith(p)));
+      if (!serves(a.manifest, "meta", t, id) || (builtIn && !claims)) continue;
+      const body = await addonJson<{ meta?: Partial<T> | null }>(resourceUrl(a.url, "meta", t, id)).catch(() => null);
+      const meta = body?.meta;
+      if (meta && typeof meta.name === "string" && meta.name) return { ...(meta as T), id, type };
+    }
+  }
+  return null;
+}

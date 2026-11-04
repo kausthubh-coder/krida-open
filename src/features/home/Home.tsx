@@ -4,7 +4,7 @@ import { useAuthed } from "../../data/session";
 import { useReadyTiming } from "../../data/telemetry";
 import { orderRows, rowTitle } from "./homeRows";
 import { released } from "../../data/addons";
-import { useHome, type HomeData } from "./useHome";
+import { CINEMETA_ROWS, useHome, type HomeData } from "./useHome";
 import { useContinueWatching, useMyList } from "../../data/rows";
 import { MakeItYours, StarterSheet } from "../title";
 import { Rail } from "../../ui/rail";
@@ -12,8 +12,8 @@ import { Hero, HeroSkeleton, WelcomeHero } from "./hero";
 import { buildSlides, useHeroItems } from "./slides";
 import { AddonRail, ContinueCard, FriendRail, HomeRail, MyListRail, RowsSkeleton, UpcomingCard } from "./rails";
 import { splitUpcoming, useNextEpisodes } from "./nextUp";
-import { useNeedsTmdbKey } from "../../data/keys";
-import { NeedsTmdbKey } from "../../ui/needsKey";
+import { useHasNoTmdbKey, useNeedsTmdbKey } from "../../data/keys";
+import { TmdbForMore } from "../../ui/needsKey";
 
 export type ProgressRow = Doc<"progress">;
 
@@ -41,10 +41,12 @@ export function Home() {
     [played, nextEpisodes, prefs.upcoming],
   );
   const myList = useMyList();
-  const heroItems = useHeroItems(home, prefs.heroRow);
+  const needsKey = useNeedsTmdbKey();
+  // With no TMDB key there are no picks or Top 10 to lead with: Cinemeta's popular movies do, unless a row was chosen.
+  const noKey = useHasNoTmdbKey();
+  const heroItems = useHeroItems(home, prefs.heroRow ?? (noKey ? CINEMETA_ROWS[0].key : undefined));
   const slides = useMemo(() => buildSlides(continueRows, home, heroItems), [continueRows, home, heroItems]);
   useReadyTiming("home", !!home && slides !== undefined);
-  const needsKey = useNeedsTmdbKey();
 
   const rows = useMemo(() => {
     if (!home) return [];
@@ -88,20 +90,12 @@ export function Home() {
     return orderRows(all, { order: home.order, hidden: home.hidden, pinned: prefs.pinnedRows });
   }, [home, continueRows, upcoming, nextEpisodes, myList, prefs]);
 
-  // Without the account's TMDB key there are no rows to show: say so, rather than a page of empty rows.
-  if (needsKey)
-    return (
-      <main className="flex min-h-dvh flex-col justify-center px-4">
-        <h1 className="sr-only">Home</h1>
-        <NeedsTmdbKey />
-      </main>
-    );
-
   return (
     <main className="flex flex-col gap-8 pb-16 md:gap-10">
       {slides === undefined ? <HeroSkeleton /> : slides.length ? <Hero slides={slides} /> : <WelcomeHero />}
 
-      {home?.coldStart && !dismissed && (
+      {/* The titles it offers to rate are TMDB's best known. */}
+      {home?.coldStart && !dismissed && !needsKey && (
         <MakeItYours
           onRate={() => setRating(true)}
           onDismiss={() => {
@@ -124,6 +118,7 @@ export function Home() {
       {home?.empty && (
         <p className="px-4 text-body text-fg-faint md:px-12">Couldn’t reach the catalogs just now. Their rows come back on their own.</p>
       )}
+      {needsKey && home && <TmdbForMore className="px-4 md:px-12" />}
     </main>
   );
 }

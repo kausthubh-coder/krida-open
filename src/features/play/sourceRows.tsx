@@ -264,7 +264,7 @@ export function SourceRow({
               {audio ?? <span className="text-fg-faint">Audio not listed</span>}
             </span>
             {o.unavailable ? (
-              <span className="truncate text-caption text-fg-muted">Unavailable right now</span>
+              <span className="truncate text-caption text-fg-muted">{o.needsDebrid ? "Needs a debrid service" : "Unavailable right now"}</span>
             ) : o.mismatch ? (
               <span className="truncate text-caption font-medium text-danger">{mismatchLabel(o.mismatch)}</span>
             ) : (
@@ -361,13 +361,15 @@ function SourceDetails({
         </>
       ),
     ],
-    currentScreen() === "app"
+    o.needsDebrid
+      ? ["To play", "This copy is a torrent, which needs a debrid service. Add one in Settings → Connections."]
+      : currentScreen() === "app"
       ? ["In the app", <>The original file, picture and sound as they are. {SPEED_IN_APP[o.speed]}</>]
       : direct
         ? [
             "In the browser",
             isBrowserContainer(container)
-              ? "Plays as it is, straight from your debrid service."
+              ? "Plays as it is, straight from its link."
               : `This is ${fileKind(container)}, which browsers can’t play: it plays in Krida for Mac and Windows, or another player.`,
           ]
         : [

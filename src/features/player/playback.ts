@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 /** The speeds on offer, as YouTube and Netflix have them. */
-export const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+export const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const;
 export const speedLabel = (s: number) => (s === 1 ? "Normal" : `${s}×`);
 
 /** One step faster or slower from `speed`, stopping at the ends; a speed off the list steps from normal. */

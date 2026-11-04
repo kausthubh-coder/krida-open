@@ -34,7 +34,7 @@ export type TouchLevel = { kind: "brightness" | "volume"; value: number };
 /** A finger sliding sideways along the picture: where it would land, and how far that is from where it started. */
 export type TouchScrub = { to: number; by: number };
 /** A change that says itself for a moment at the top of the picture: the zoom, or the speed from the keyboard. */
-export type Flash = { kind: "zoom" | "speed"; text: string };
+export type Flash = { kind: "zoom" | "speed" | "subtitles"; text: string };
 
 /**
  * Brightness as a drag sets it, 0 to 1. The middle is the picture as it comes; below dims it, above lifts dark

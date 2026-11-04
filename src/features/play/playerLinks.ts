@@ -17,7 +17,9 @@ export type PlayerApp = { name: string; href: string };
 
 /** Android's way to hand a link to an app: an intent, to one package or to whichever the person picks. */
 function intent(url: string, pkg?: string) {
-  const [scheme, rest] = url.split("://");
+  const separator = url.indexOf("://");
+  const scheme = url.slice(0, separator);
+  const rest = url.slice(separator + 3);
   return `intent://${rest}#Intent;scheme=${scheme};type=video/*;${pkg ? `package=${pkg};` : ""}end`;
 }
 
@@ -29,10 +31,16 @@ export function playerApps(url: string, platform: Platform): PlayerApp[] {
       return [
         { name: "VLC", href: `vlc-x-callback://x-callback-url/stream?url=${enc}` },
         { name: "Infuse", href: `infuse://x-callback-url/play?url=${enc}` },
+        // Outplayer takes the link as it is after its scheme, so only what a link can't hold (a space) is escaped.
+        { name: "Outplayer", href: `outplayer://${url.replace(/ /g, "%20")}` },
+        { name: "SenPlayer", href: `senplayer://x-callback-url/play?url=${enc}` },
       ];
     case "android":
       return [
         { name: "VLC", href: intent(url, "org.videolan.vlc") },
+        { name: "MX Player", href: intent(url, "com.mxtech.videoplayer.ad") },
+        { name: "MX Player Pro", href: intent(url, "com.mxtech.videoplayer.pro") },
+        { name: "Just Player", href: intent(url, "com.brouken.player") },
         { name: "Another app", href: intent(url) },
       ];
     case "mac":

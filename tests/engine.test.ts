@@ -748,11 +748,13 @@ describe("when the addons give no list", () => {
 });
 
 describe("whose keys play", () => {
-  test("a host without a debrid service hears what to add, and nothing is asked", async () => {
-    const { t, roomId } = await fixture("eng", [item(0)], null);
+  // A web link plays with no debrid service (tests/plainStreams.test.ts); a torrent can't.
+  test("a host without a debrid service, offered only torrents, hears what to add, and nothing is asked", async () => {
+    const torrent = { ...item(0), url: `magnet:?xt=urn:btih:${"c".repeat(40)}` };
+    const { t, roomId } = await fixture("eng", [torrent], null);
     await t.action(internal.engine.prepare, { roomId, jobId: 1, startAt: 0 });
     expect(fetched).toEqual([]);
-    expect((await room(t, roomId))?.error).toBe("Add a debrid service in Settings → Connections to play here.");
+    expect((await room(t, roomId))?.error).toBe("These sources need a debrid service. Add one in Settings → Connections.");
   });
 
   test("TorBox is asked with the host account's key, and the stream is kept in that account", async () => {

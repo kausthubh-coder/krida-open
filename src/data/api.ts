@@ -186,6 +186,7 @@ export const peekShared = <T,>(key: string) => (shared.get(key) as Shared<T> | u
 export const prefetchShared = <T,>(key: string, load: () => Promise<T>, maxAge: number) => refresh(key, load, maxAge);
 
 const ROWS_MAX_AGE = 30 * 60_000;
-/** Home's catalog rows. */
-export const useCatalogRows = () => useShared("rows", rows, ROWS_MAX_AGE);
+const NO_CATALOG = async () => ({ rows: [] as ShownRow[] });
+/** Home's catalog rows. Not asked for while `tmdb` is false: they're TMDB's and Netflix's, found with the account's key. */
+export const useCatalogRows = (tmdb = true) => useShared(tmdb ? "rows" : "rows:none", tmdb ? rows : NO_CATALOG, ROWS_MAX_AGE);
 export const prefetchCatalogRows = () => prefetchShared("rows", rows, ROWS_MAX_AGE);

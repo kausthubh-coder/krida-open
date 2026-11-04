@@ -10,6 +10,7 @@ import { useAuthed } from "../../data/session";
 import { useTables } from "../../data/sync";
 import { catalogPage, loadedCatalogRow, useAddons, type InstalledAddon } from "../../data/addons";
 import { addonRowsOf } from "./useHome";
+import { useNeedsTmdbKey } from "../../data/keys";
 
 /** Catalogs whose titles join the recommender's candidates, and how many titles go in all. */
 const CATALOGS = 8;
@@ -37,10 +38,11 @@ const MIN_GAP_MS = 2 * 60_000;
 /**
  * Keeps this profile's picks up to date. Its taste is worked out here from its synced tables, the rows on the server
  * (POST /api/recs), and they're saved with the taste (recs.save), which the others' "For you and…" rows use. Nothing
- * reads the profile's history from the database.
+ * reads the profile's history from the database. Picks are scored on TMDB, so without the account's key none are asked for.
  */
 export function useRecsRefresh() {
   const { token } = useAuthed();
+  const needsKey = useNeedsTmdbKey();
   const convex = useConvex();
   const tables = useTables();
   const saved = useQuery(api.recs.rows, { token });
@@ -67,8 +69,13 @@ export function useRecsRefresh() {
   const othersUsed = saved?.othersDigest ?? null;
 
   useEffect(() => {
-    if (!tables || !known) return;
     const state = job.current;
+    if (needsKey) {
+      clearTimeout(state.timer);
+      state.timer = undefined;
+      return;
+    }
+    if (!tables || !known) return;
     const first = !state.seen;
     state.seen = true;
     const taste = tasteOf(historyOf(tables), Date.now());
@@ -107,7 +114,7 @@ export function useRecsRefresh() {
         state.key = undefined;
       }
     }, delay);
-  }, [tables, known, digest, computedAt, others, othersUsed, tick, convex, token, save]);
+  }, [tables, known, needsKey, digest, computedAt, others, othersUsed, tick, convex, token, save]);
 
   useEffect(() => () => {
     clearTimeout(job.current.timer);

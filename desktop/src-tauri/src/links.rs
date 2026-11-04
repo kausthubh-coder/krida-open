@@ -10,6 +10,21 @@ const SCHEME: &str = "krida";
 
 /// The page of Krida a krida:// link names, on `home`'s site; None for any other link.
 pub fn page(link: &Url, home: &Url) -> Option<Url> {
+    if link.scheme() == "stremio" {
+        if !link.username().is_empty() || link.password().is_some() { return None; }
+        if link.host_str().is_none() {
+            let parts: Vec<_> = link.path().split('/').collect();
+            if parts.len() != 4 || parts[1] != "detail" || parts[2].is_empty() || parts[3].is_empty() { return None; }
+            return home.join(&format!("/title/{}/{}", parts[2], parts[3])).ok();
+        }
+        if !link.path().to_lowercase().ends_with("/manifest.json") { return None; }
+        let mut manifest = Url::parse(&link.as_str().replacen("stremio://", "https://", 1)).ok()?;
+        manifest.set_query(None);
+        manifest.set_fragment(None);
+        let mut page = home.join("/settings/addons").ok()?;
+        page.query_pairs_mut().append_pair("addon", manifest.as_str());
+        return Some(page);
+    }
     if link.scheme() != SCHEME {
         return None;
     }
@@ -64,5 +79,12 @@ mod tests {
         assert_eq!(at("krida://").as_deref(), Some("https://krida-open.vercel.app/"));
         assert_eq!(at("krida:////elsewhere.example/x"), None);
         assert_eq!(at("https://elsewhere.example/title/movie/tt1"), None);
+    }
+
+    #[test]
+    fn stremio_links_are_reviewed_or_open_a_title() {
+        assert_eq!(at("stremio://torrentio.strem.fun/key/manifest.json").as_deref(), Some("https://krida-open.vercel.app/settings/addons?addon=https%3A%2F%2Ftorrentio.strem.fun%2Fkey%2Fmanifest.json"));
+        assert_eq!(at("stremio:///detail/movie/tt1254207").as_deref(), Some("https://krida-open.vercel.app/title/movie/tt1254207"));
+        assert_eq!(at("stremio://evil.example/elsewhere"), None);
     }
 }

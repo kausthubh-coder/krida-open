@@ -1,12 +1,13 @@
 // A person's page: who they are, then a row for each thing they did (directed, wrote, acted…), best known first.
 import { useParams, useSearchParams } from "react-router";
-import { person as fetchPerson, type PersonPage as Page } from "../../data/api";
+import { NeedsKeyError, person as fetchPerson, type PersonPage as Page } from "../../data/api";
 import { useAsync } from "../../data/cinemeta";
 import { useReadyTiming } from "../../data/telemetry";
 import { Art, ART_FALLBACK } from "../../ui/artwork";
 import { PosterCard } from "../../ui/posterCard";
 import { Rail } from "../../ui/rail";
 import { Button, ButtonLink, cx, EmptyState } from "../../ui/ui";
+import { TmdbForMore } from "../../ui/needsKey";
 import { CardActions, CardMenu, Description } from "../title";
 
 type Group = Page["groups"][number];
@@ -19,6 +20,9 @@ export function PersonPage() {
   const page = useAsync(id ? `person:${id}:${title ?? ""}` : null, () => fetchPerson(id, title));
   useReadyTiming("person", !!page.data, id);
 
+  // People's pages are TMDB's: an old link opened without the account's key says where to add one, not that it failed.
+  if (page.error instanceof NeedsKeyError)
+    return <EmptyState className="min-h-[70dvh] pt-24" title="People’s pages come from TMDB" action={<TmdbForMore />} />;
   if (page.error)
     return page.error.message === "No such person" ? (
       <EmptyState

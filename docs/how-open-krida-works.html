@@ -109,12 +109,12 @@ svg .head { fill: var(--muted); }
 <main data-type="teach">
 
 <h1>Every account brings its own keys</h1>
-<p class="lede">Open Krida stores no video and holds no provider keys of its own. A Clerk sign-in makes an account, the account pastes a TMDB key and a debrid key, each profile installs Stremio addons, and three services move the rest: Convex syncs, Vercel serves public data, and the user's debrid service sends the picture.</p>
+<p class="lede">Open Krida stores no video and holds no provider keys of its own. A Clerk sign-in makes an account. TMDB and debrid keys are optional; each profile can install Stremio addons. Convex syncs, Vercel serves public data, and video comes from debrid or an addon's plain web link.</p>
 
 <figure>
 <svg viewBox="0 0 360 470" role="img" aria-labelledby="ov-t ov-d">
   <title id="ov-t">How the parts of open Krida connect</title>
-  <desc id="ov-d">The app on a device talks to Clerk for sign-in, Convex for accounts, keys, rooms and Play, and Vercel for public data. Convex asks stream addons and the debrid service. The browser reads addon catalogs itself and loads video segments straight from TorBox.</desc>
+  <desc id="ov-d">The app on a device talks to Clerk for sign-in, Convex for accounts, keys, rooms and Play, and Vercel for public data. Convex asks stream addons and, when needed, the debrid service. The browser reads addon catalogs itself and loads video from TorBox or an addon's web link.</desc>
   <defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L8,4 L0,8 z"/></marker></defs>
   <rect class="box" x="40" y="8" width="280" height="62" rx="8"/>
   <text x="180" y="33" text-anchor="middle" font-size="14" font-weight="600">Your device</text>
@@ -162,25 +162,25 @@ svg .head { fill: var(--muted); }
   <rect class="theirs" x="180" y="428" width="22" height="14" rx="3"/>
   <text class="sub" x="208" y="440" font-size="12">user's own accounts</text>
 </svg>
-<figcaption>Solid boxes are services the owner runs; dashed ones are accounts each user brings. Two paths skip the middle row: the browser reads addon catalogs directly, and video segments come from TorBox's CDN without a key.</figcaption>
+<figcaption>Solid boxes are services the owner runs; dashed ones are accounts each user brings. The browser reads addon catalogs directly. Video comes from TorBox's CDN without a key, or from an addon's plain web link.</figcaption>
 </figure>
 
 <ol>
   <li><strong>Sync runs on Convex.</strong> Clerk only says who signed in; picking a profile mints the session token every other call takes.</li>
   <li><strong>Public data runs on Vercel</strong>, asked with the caller's own TMDB and MDBList keys, and cached for everyone.</li>
-  <li><strong>Play runs on Convex.</strong> It asks the profile's stream addons at once, ranks the answers, and plays through TorBox's HLS or straight from another service's file link.</li>
+  <li><strong>Play runs on Convex.</strong> It asks the profile's stream addons at once, ranks the answers, and plays through TorBox's HLS or from a file link. Plain web videos need no debrid service.</li>
   <li><strong>Every app shows krida-open.vercel.app</strong>, so a push to <code>main</code> reaches all of them. Only native code needs a release.</li>
 </ol>
 <p class="small">Read from the code at commit <code>b40b95f</code>, which is what <code>/version.json</code> serves live today (3 Nov 2026). References are <code>file:line</code> in <code>~/dev/krida-open</code>.</p>
 
-<h2>Six things look wrong</h2>
-<p>Found while reading. None was exploited or reproduced; the first two are certain from the code, the rest need a test to confirm.</p>
+<h2>Review findings and fixes</h2>
+<p>The stream-access finding is fixed in the working code. The remaining findings came from reading; none was exploited or reproduced for this page.</p>
 <div class="scroll">
 <table>
   <colgroup><col style="width:45%"><col></colgroup>
   <thead><tr><th scope="col">What</th><th scope="col">Effect</th></tr></thead>
   <tbody>
-    <tr><td><span class="bad">Broken.</span> The HLS playlist checks only that the token is a session<br><span class="small"><code>convex/http.ts:27-39</code></span></td><td>Anyone signed in who holds a stream id (a kicked party member, or a guest inside its 24 hours) keeps playing from that account's TorBox. <code>desktop.fileLink</code> does check the account (<code>convex/desktop.ts:21-22</code>).</td></tr>
+    <tr><td><span class="good">Fixed.</span> Stream access checks the account or current room membership<br><span class="small"><code>convex/engine.ts</code>, <code>mayPlay</code> and <code>mayHaveFile</code></span></td><td>A stream id and a session alone grant no access. Leaving, being kicked, closing the party or changing its stream ends another account's access. File links carrying account keys or addon settings stay within the account.</td></tr>
     <tr><td><span class="bad">Broken.</span> Torrentio and Comet keep the debrid key they were built with<br><span class="small"><code>convex/accounts.ts:102-111</code>, <code>convex/addons.ts:131</code></span></td><td>Changing the key or the service leaves those addons searching with the old one. Nothing rebuilds the suggestion links.</td></tr>
     <tr><td><span class="mixed">Likely.</span> The addon proxy follows redirects after its private-host check<br><span class="small"><code>server/addonProxy.ts:25,32</code></span></td><td>A public https link that redirects to a private address gets fetched. Hostnames aren't resolved either. Installing (<code>convex/addons.ts:77</code>) has the same gap.</td></tr>
     <tr><td><span class="mixed">Likely.</span> CDN-cached answers skip the session check<br><span class="small"><code>server/http.ts:43-47</code>, <code>api/frame.ts:15-20</code></span></td><td>No <code>Vary</code> on the session header, so a cache hit on <code>/api/frame</code> or <code>/api/rows?addon=</code> is served to anyone with the URL. Low harm, but "signed-in only" holds only on a miss.</td></tr>
@@ -189,17 +189,15 @@ svg .head { fill: var(--muted); }
   </tbody>
 </table>
 </div>
-<details><summary>The stale docs, 5 places</summary>
+<details><summary>The stale docs, 3 places</summary>
 <ul>
   <li><code>docs/ops.md</code>, "Secrets": still names <code>TORBOX_API_KEY</code>, <code>TMDB_API_KEY</code> and <code>MDBLIST_API_KEY</code> as Convex and Vercel env. The code reads every key from the account (<code>server/session.ts:53-64</code>).</li>
-  <li><code>docs/models/README.md:4</code>: "the code does not exist yet for most of it". It does, with tests.</li>
-  <li><code>docs/models/Onboarding.tla:38</code>: its screens have no extras step; the app has one (<code>src/features/onboarding/route.ts:31</code>).</li>
   <li><code>docs/recommendations.md</code>: "Because you watched (×2)". The code makes up to 3 (<code>server/recs.ts:309</code>).</li>
   <li><code>convex/lib/rank.ts:192</code>: "Your AIOStreams sort order still counts". It is now the merged addon order.</li>
 </ul>
 </details>
 
-<h2>Onboarding asks four things, one required</h2>
+<h2>Only the profile step is required</h2>
 <p>One pure function decides the screen (<code>src/features/onboarding/route.ts:24-33</code>). Signed out gives the landing page, no profile gives the picker, then the first step still needed, then Home.</p>
 <div class="scroll">
 <table>
@@ -207,7 +205,7 @@ svg .head { fill: var(--muted); }
   <thead><tr><th scope="col">Step</th><th scope="col">Checked how</th><th scope="col">Skip?</th><th scope="col">Kept on</th></tr></thead>
   <tbody>
     <tr><td>Profile</td><td>Name 1 to 24 characters, unique in the account; at most 8; optional 4-digit PIN (<code>convex/profiles.ts:143-164</code>)</td><td>No</td><td>profile</td></tr>
-    <tr><td>TMDB key</td><td><code>GET /3/configuration</code> must answer 200; a pasted read token (<code>eyJ…</code>) is refused with a hint (<code>convex/lib/keyCheck.ts:29,75</code>)</td><td><span class="bad">No</span>: Home needs it</td><td>account</td></tr>
+    <tr><td>TMDB key</td><td><code>GET /3/configuration</code> must answer 200; a pasted read token (<code>eyJ…</code>) is refused with a hint (<code>convex/lib/keyCheck.ts</code>)</td><td>Yes, Skip for now (<code>onboarding.skipTmdb</code>)</td><td>account</td></tr>
     <tr><td>Debrid</td><td>Each service's "who am I" call (<code>keyCheck.ts:31-46</code>)</td><td>Yes (<code>convex/onboarding.ts:65-66</code>)</td><td>account</td></tr>
     <tr><td>Addons</td><td>Convex fetches and parses each manifest</td><td>Yes (<code>onboarding.ts:69-71</code>)</td><td>profile</td></tr>
     <tr><td>Extras</td><td>MDBList <code>GET /user</code>; Simkl shows only when <code>SIMKL_CLIENT_ID</code> is set</td><td>Yes</td><td>account</td></tr>
@@ -215,11 +213,12 @@ svg .head { fill: var(--muted); }
 </table>
 </div>
 <p>Because keys live on the account and addons on the profile, a second profile in the same account skips TMDB and debrid and lands straight on its own addons step. Progress is server-side, so it resumes on another device.</p>
-<p>A provider that is down or busy gets "try again", never "wrong key" (<code>keyCheck.ts:58-70</code>). On open, and at most every 6 hours, <code>onboarding.recheck</code> asks again; if TMDB now refuses, the next screen is "Your TMDB key stopped working" (<code>onboarding.ts:78-103</code>, <code>src/features/onboarding/Onboarding.tsx:245</code>).</p>
+<p>Without a working TMDB key, Home, Search and title pages use Cinemeta and addons. TMDB-only rows, picks and people are left out, with an "Add a TMDB key for more" link to Settings. Skipping is remembered as <code>tmdbAsked</code>; removing a key in Settings keeps Home available.</p>
+<p>A provider that is down or busy gets "try again", never "wrong key" (<code>keyCheck.ts</code>). On open, and at most every 6 hours, <code>onboarding.recheck</code> asks again. If TMDB refuses a saved key, the TMDB step asks once more; replacing the key or skipping it returns to the remaining steps or Home.</p>
 <h3>Skipping debrid, or picking another service</h3>
 <ul>
-  <li><strong>No debrid:</strong> Home, search and title pages work. Play refuses before any job starts with <code>NEEDS_DEBRID</code> (<code>convex/rooms.ts:28</code>, <code>convex/lib/accounts.ts:53-55</code>); parties refuse with <code>NEEDS_TORBOX</code> (<code>rooms.ts:51</code>); the addon suggestions list is empty (<code>convex/addons.ts:57</code>).</li>
-  <li><strong>Not TorBox:</strong> saved like any key. The step then shows the note that parties and previews need TorBox and that the browser plays only MP4 and WebM (<code>Onboarding.tsx:421-429</code>).</li>
+  <li><strong>No debrid:</strong> an enabled stream addon makes Play available on that profile. Plain HTTP videos, including .m3u8, play from their links. Torrents are unavailable; if every source is a torrent, Play says "These sources need a debrid service". With neither a working key nor a stream addon, <code>rooms.create</code> refuses with <code>NEEDS_DEBRID</code> before any job starts (<code>convex/lib/accounts.ts</code>, <code>canPlayAlone</code>).</li>
+  <li><strong>Another debrid service:</strong> a working key also makes Play available. The browser plays MP4, WebM and HLS links; other files need the app or an external player. Parties still require a working TorBox key, regardless of addons.</li>
 </ul>
 <details><summary>Sign-in: which Clerk methods, and what is unconfirmed</summary>
 <p>The sign-in screen is Clerk's own <code>&lt;SignIn&gt;</code> component (<code>src/features/settings/ProfileGate.tsx:57</code>), so Google and email code are whatever the Clerk dashboard turns on; the code can't show that. The first sign-in makes the <code>accounts</code> row (<code>convex/lib/accounts.ts:23-28</code>). In the desktop app, Google opens in the computer's own browser and returns to a loopback page on 127.0.0.1, since Google refuses embedded web views (<code>desktop/src-tauri/src/signin.rs:1-5</code>).</p>
@@ -253,7 +252,7 @@ svg .head { fill: var(--muted); }
   <li><strong>Party link</strong>: 16 random bytes, made by any member who isn't a guest (<code>rooms.ts:917-931</code>). Anyone signed in, of any account, joins with it.</li>
   <li><strong>Guest link</strong>: host only, one use, 24 hours, at most 8 per party; makes a temporary profile with no account and no keys (<code>profiles.ts:23-87</code>).</li>
 </ul>
-<p>Everyone in a party watches the host's stream, found by the host's addons and played from the host's TorBox (<code>convex/engine.ts:26-31</code>). A link shared widely spends the host's TorBox.</p>
+<p>Everyone in a party watches the host's stream, found by the host's addons. A party needs the host's TorBox key, but a plain web video plays from its link without using TorBox (<code>convex/engine.ts</code>).</p>
 <h3>The host hand-off rule</h3>
 <p>When the host leaves and others remain (<code>convex/lib/rooms.ts:184-197</code>):</p>
 <ol>
@@ -266,8 +265,8 @@ svg .head { fill: var(--muted); }
 <details><summary>Check yourself: a hand-off across accounts</summary>
 <p>Profile A1 hosts on account A's TorBox. B1, from account B, joins by link; then A2, A's other profile, joins. A1 leaves. Who hosts? <strong>A2</strong>: step 3 prefers the old host's account, though B1 joined first. Had TorBox refused A's key since, B1 would host if B has TorBox, and otherwise the party would end.</p>
 </details>
-<details><summary>Proof: 3 TLA+ models and the tests behind them</summary>
-<p><code>docs/models/</code> holds AccountIsolation (343,644 states), PartyInvites (156,257) and Onboarding (1,114), each with seeded bugs <code>check.sh</code> must catch. Their invariants map to <code>tests/accounts.test.ts</code>, <code>tests/partyInvites.test.ts</code> and <code>tests/onboarding.test.ts</code> (22, 16 and 11 <code>test(</code> calls). I did not run TLC or the tests for this page.</p>
+<details><summary>Proof: four TLA+ models</summary>
+<p><code>docs/models/check.sh</code> passed all four models on 4 Nov 2026, and caught every seeded bug. Onboarding explores 7,600 states, including profiles with and without an enabled stream addon. AccountIsolation, PartyInvites and StreamAccess check account boundaries, party membership and stream access; the README maps each rule to tests.</p>
 </details>
 
 <h2>Addons are Stremio links per profile</h2>
@@ -299,7 +298,7 @@ svg .head { fill: var(--muted); }
   <li>Each stream is normalised: a <code>[TB+]</code> or <code>[RD⚡]</code> mark becomes a <code>⚡</code> cached mark, a bare info hash becomes a magnet link, YouTube and external links are dropped (<code>shared/stremio.ts:234-257</code>).</li>
   <li>Lists are joined in addon order, repeated URLs dropped, 300 kept (<code>stremio.ts:260-270</code>).</li>
   <li>Copies of one file (same cleaned file name, size within 1%) fold into one option with the cached copy first, then each option is scored (<code>convex/lib/rank.ts:227-295</code>).</li>
-  <li>Up to 4 candidates are tried, 15 s each except the last (<code>convex/engine.ts:41,54</code>). TorBox: follow redirects to a torrent and file id, or add a cached hash, then <code>createstream</code>. Another service: follow the addon's redirect to the file, rejecting the "downloading" placeholder clips (<code>providers.ts:140-375</code>).</li>
+  <li>Up to 4 candidates are tried, 15 s each except the last (<code>convex/engine.ts</code>). TorBox files use a torrent and file id, then <code>createstream</code>. Plain HTTP files bypass TorBox and play directly. Other debrid links follow the addon's redirects, rejecting "downloading" placeholder clips. Without debrid, torrent sources are unavailable (<code>convex/lib/providers.ts</code>).</li>
 </ol>
 <p>The score adds points for picture and subtracts for risk (<code>convex/lib/rank.ts:175-221</code>). For the browser:</p>
 <div class="formula">score = R(res) + Q(quality)
@@ -334,7 +333,7 @@ svg .head { fill: var(--muted); }
 </table>
 </div>
 <p>Krida plays B: the pick is the best-scoring option that is smooth, cached, not upscaled and the right episode, else the best right episode (<code>rank.ts:291-293</code>).</p>
-<p>With another debrid service in the browser, MP4 and WebM copies are tried first (<code>engine.ts:93-117,191</code>).</p>
+<p>For links played directly in the browser, MP4, WebM and HLS copies are tried first. Without debrid, torrents are excluded from the pick and retries (<code>convex/engine.ts</code>).</p>
 
 <h3>Catalogs become Home rows</h3>
 <p>A catalog of type movie, series or anime that needs nothing but paging is a row (<code>shared/stremio.ts:150-155</code>), keyed <code>addon:{manifestId}:{type}:{id}</code> so a reinstall keeps its place (<code>stremio.ts:163</code>). The browser fetches the first page and shares it for 30 minutes; only IMDb and Kitsu ids are kept, since other ids have no title page (<code>src/data/addons.ts:48-99</code>).</p>
@@ -410,7 +409,7 @@ other rows:   1100 + default rank</div>
   <caption>Where each kind of debrid plays</caption>
   <thead><tr><th scope="col">Where</th><th scope="col">TorBox</th><th scope="col">Any other service</th></tr></thead>
   <tbody>
-    <tr><td>Browser and PWA</td><td><span class="good">Any file</span>, as TorBox's HLS re-encoded to 8-bit H.264 and stereo AAC</td><td><span class="mixed">MP4 and WebM only</span> (<code>shared/formats.ts:30</code>)</td></tr>
+    <tr><td>Browser and PWA</td><td><span class="good">TorBox files</span>, as HLS re-encoded to 8-bit H.264 and stereo AAC; plain web videos play directly</td><td><span class="mixed">MP4, WebM and HLS</span> (<code>shared/formats.ts</code>)</td></tr>
     <tr><td>Mac and Windows app</td><td><span class="good">Original file</span> in mpv, from TorBox's download link (<code>convex/desktop.ts:13-26</code>)</td><td><span class="good">Original file</span> in mpv, from the addon's link</td></tr>
     <tr><td>External player</td><td colspan="2">Offered in the copy (<code>Onboarding.tsx:424-426</code>); I didn't trace the handoff</td></tr>
     <tr><td>Parties</td><td><span class="good">Yes</span>, the host's</td><td><span class="bad">No</span>: <code>NEEDS_TORBOX</code></td></tr>
@@ -418,8 +417,13 @@ other rows:   1100 + default rank</div>
   </tbody>
 </table>
 </div>
-<p>Parties need TorBox because one TorBox stream can play in every member's browser: Convex serves its playlist with the host's key on the server, and segments load from TorBox's CDN with no key (<code>convex/http.ts:14-71</code>).</p>
-<p>Another service gives a file link, which plays only where its container does; that last reason is my reading, not a comment in the code.</p>
+<p>TorBox files go through its HLS stream. Convex serves the playlist with the account's key kept on the server; video segments load from TorBox's CDN. A plain HTTP video bypasses debrid even when the account has TorBox (<code>convex/engine.ts</code>, <code>convex/lib/providers.ts</code>).</p>
+<p>An addon's plain MP4 or WebM plays from its file link. A plain .m3u8 uses HLS; Krida's playlist route redirects to that link. This works with no debrid key. Torrents still need a debrid service to turn them into files.</p>
+<h3>Which links a party member gets</h3>
+<p><code>engine.mayPlay</code> allows the stream's own account and members of an open room playing that stream. A phone counted away by the sweep is still a member; someone who pressed Leave or was kicked is out. The <code>StreamAccess</code> model checks those membership rules, warming and party links.</p>
+<p><code>engine.mayHaveFile</code> keeps TorBox download links and other debrid file links within the stream's account. TorBox's link contains the account's key; another debrid service's file belongs to that account. Members of other accounts get TorBox HLS with the key kept on the server.</p>
+<p>A plain web video marked <code>direct.plain</code> is different. No debrid service supplied it, it was not marked cached on debrid, and neither its addon link nor its resolved link carries an account key or addon settings. Members allowed by <code>mayPlay</code> may get that file link too, including a redirect to its .m3u8. Sharing it costs the host's account nothing and is how they play it.</p>
+<p>A direct link carrying those secrets stays within the account even in a party. It has no TorBox HLS fallback, so other accounts cannot play it. <code>tests/plainStreams.test.ts</code> checks plain-link sharing and refusal for a configured addon's link; <code>StreamAccess</code> does not model the distinction between file links.</p>
 <h3>Previews read keyframes from the file itself</h3>
 <p><code>/api/frames</code> reads the film's MKV index out of the account's TorBox by file size, and <code>/api/frame</code> reads one keyframe, a few hundred KB of a file that can be 30 GB (<code>api/frames.ts</code>, <code>api/frame.ts</code>). The frames Worker does the same on Cloudflare, which doesn't bill bandwidth.</p>
 <p>The Worker holds no TorBox key. <code>/api/frames?ticket</code> seals the caller's key with AES-GCM under SHA-256 of <code>"krida frames ticket " + FRAMES_SECRET</code>, with the file size and expiry as associated data, valid one day plus 5 minutes of clock skew (<code>server/frameTicket.ts:15-66</code>). It isn't deployed, so <code>FRAMES_URL</code> is unset and the player falls back to <code>/api/frame</code> at one picture every 90 s instead of every 10 s (<code>docs/ops.md:57-66</code>).</p>
@@ -473,14 +477,15 @@ other rows:   1100 + default rank</div>
     <tr><td>iPhone PWA</td><td><span class="mixed">Untested on a phone</span></td><td>Install from Safari and play</td></tr>
     <tr><td>Clerk production</td><td><span class="mixed">Blocked</span></td><td>A custom domain; then change the hard-coded dev domain in <code>convex/auth.config.ts:11</code> and the publishable key</td></tr>
     <tr><td>Desktop 0.1.11</td><td><span class="mixed">In code</span></td><td><code>krida://</code> links are in <code>links.rs</code>, but <code>tauri.conf.json</code> still says 0.1.10; needs a release</td></tr>
-    <tr><td>The two broken items above</td><td><span class="bad">Open</span></td><td>Check room membership in <code>/hls/playlist.m3u8</code>; rebuild suggestion links when the debrid key changes</td></tr>
+    <tr><td>Stream access and addon key changes</td><td><span class="mixed">Access fixed</span></td><td>Stream access now checks membership and file-link permission; suggestion links still need review when the debrid key changes</td></tr>
   </tbody>
 </table>
 </div>
 
 <details><summary>What I read, and what I didn't check</summary>
 <p>Read: the spec and <code>AGENTS.md</code>; <code>convex/</code> onboarding, accounts, profiles, invites, rooms, addons, catalogs, engine, sources, http, desktop and <code>lib/</code> accounts, auth, profiles, rooms, addons, keyCheck, rank, providers, deployment; <code>shared/</code> stremio, taste, addons; <code>server/</code> recs, score, session, cache, addonProxy, catalogs, frameTicket; <code>api/</code> rows, recs, frames, frame; the onboarding and home-row UI; <code>public/sw.js</code>; <code>Updates.kt</code>; the Tauri config, <code>update.rs</code>, <code>links.rs</code>, <code>signin.rs</code>; <code>scripts/release.ts</code>; <code>docs/models/README.md</code>, <code>ops.md</code>, <code>recommendations.md</code>, <code>database-reads.md</code>.</p>
-<p>Checked live: <code>/version.json</code> and the releases repo through <code>gh</code>. Not run: TLC, the tests, the app, or any attempt at the findings. Not read: <code>~/.krida-open/</code>, the Clerk, Vercel and Cloudflare dashboards, and the plans' current terms.</p>
+<p>The original review checked <code>/version.json</code> and the releases repo through <code>gh</code>. This documentation update read the working code, passed all four TLC models and their seeded bugs, and passed all 25 tests in <code>tests/onboarding.test.ts</code> and <code>tests/plainStreams.test.ts</code>.</p>
+<p>This update did not run the app, check live services or attempt the remaining findings. Not read: <code>~/.krida-open/</code>, the Clerk, Vercel and Cloudflare dashboards, and the plans' current terms.</p>
 </details>
 
 </main>

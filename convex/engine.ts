@@ -1,9 +1,9 @@
 import { v } from "convex/values";
-import { internalAction, internalQuery, type ActionCtx } from "./_generated/server";
+import { internalAction, internalQuery, type ActionCtx, type QueryCtx } from "./_generated/server";
 import { internalMutation } from "./functions";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { createStream, fetchSegments, requireDebrid, resolveDirect, resolveToTorbox, SlowSource, SourceError, torboxKeyOf, UnavailableSource, viaTorBox, type FailKind, type RawSource } from "./lib/providers";
+import { carriesSecret, createStream, fetchSegments, isTorrent, NEEDS_DEBRID_SOURCES, PlainFile, resolveDirect, resolveToTorbox, SlowSource, SourceError, torboxKeyOf, UnavailableSource, viaTorBox, type FailKind, type RawSource } from "./lib/providers";
 import type { AccountKeys } from "./lib/accounts";
 import type { SourceOrigin } from "./lib/addons";
 import { parseSource } from "./lib/parse";
@@ -26,7 +26,7 @@ type Choice = { index?: number; key?: string };
 /**
  * Whose keys and addons a stream is built with: the room host's (a party plays the host's TorBox stream for everyone,
  * found by the host's addons). Streams are kept per account, since torrent and file ids mean something only in that
- * account's TorBox, and a direct link carries that account's debrid key.
+ * account's TorBox, and a direct link can carry that account's debrid key or its addons' settings.
  */
 type Access = { accountId: Id<"accounts"> | null; keys: AccountKeys; origin: SourceOrigin };
 
@@ -164,8 +164,8 @@ function segmentsFor(media: Media) {
 }
 
 /**
- * Find sources, hand one to TorBox, and start TorBox's browser stream. Tries the given source, or the
- * best few automatically. `step` reports progress and throws Superseded if nobody wants this anymore.
+ * Find sources, hand one to TorBox and start TorBox's browser stream, or play it from its link. Tries the given source,
+ * or the best few automatically. `step` reports progress and throws Superseded if nobody wants this anymore.
  */
 async function buildStream(
   ctx: ActionCtx,
@@ -176,20 +176,32 @@ async function buildStream(
   step: Step = async () => {},
   attempts: Attempt[] = [],
 ): Promise<Doc<"streams">> {
-  // Another debrid service's files play from the addon's link, as they are; TorBox's go through TorBox's HLS.
+  // TorBox's files go through TorBox's HLS. Another debrid service's files, and an addon's plain web videos whatever
+  // keys the account has (none too), play from their link as they are. A torrent needs a debrid service.
   const torbox = viaTorBox(access.keys);
-  const key = torbox ? torboxKeyOf(access.keys) : (requireDebrid(access.keys), "");
+  const key = torbox ? torboxKeyOf(access.keys) : "";
+  const debrid = !!access.keys.debrid;
   const { origin } = access;
   await step("Finding sources…");
-  const { items, olderFrom } = await loadSources(ctx, media.type, media.videoId, origin, {
+  const { items: listed, olderFrom } = await loadSources(ctx, media.type, media.videoId, origin, {
     onNote: (note) => step("Finding sources…", note),
   });
+  if (listed.length === 0) throw new SourceError("No sources found for this title yet.");
+  if (!debrid && listed.every(isTorrent)) throw new SourceError(NEEDS_DEBRID_SOURCES, "torrent");
   const segmentsLookup = segmentsFor(media);
-  if (items.length === 0) throw new SourceError("No sources found for this title yet.");
+  // Without a debrid service nothing plays a torrent, so those copies are left out of Krida's pick and of the tries.
+  const items = debrid ? listed : listed.map((item) => (isTorrent(item) ? { ...item, unavailable: true } : item));
   const ranking = rankContext(media, viewer);
-  // A browser plays another service's MP4 and WebM files itself, so those go first there; the app plays them all.
-  const playable = torbox || viewer.screen === "app" ? undefined : (item: RawSource) => isBrowserContainer(containerOf(item.filename));
+  // A browser plays MP4, WebM and HLS from a link itself, so those go first there; the app plays them all.
+  const playable =
+    torbox || viewer.screen === "app" ? undefined : (item: RawSource) => isBrowserContainer(containerOf(item.filename, item.url));
   const { indices: candidates, fallback } = chosenCandidates(items, ranking, choice, viewer.binge, playable);
+  if (candidates.length === 0 && !debrid) {
+    const at = choice.key === undefined ? choice.index : listed.findIndex((item) => sourceKey(item) === choice.key);
+    if (at !== undefined && listed[at] && isTorrent(listed[at]))
+      throw new SourceError("This copy is a torrent, which needs a debrid service. Add one in Settings → Connections.", "torrent");
+  }
+  const addonUrls = origin.addons.map((a) => a.url);
 
   const errors: unknown[] = [];
   let note = olderFrom === undefined ? undefined : "Your addons aren’t answering, so Krida is using the sources they found earlier.";
@@ -222,17 +234,18 @@ async function buildStream(
           bingeGroup: item.bingeGroup,
         },
       };
-      if (!torbox) {
-        // Asking the addon for the file makes it ask the debrid service, which can take a moment.
-        await step("Asking your debrid service…", note);
-        const { container } = await resolveDirect(item, timing);
-        const resolvedMs = Date.now() - t0;
-        if (resolvedMs > SLOW_LOG_MS) await slow(slowest.host, slowest.ms);
+      /**
+       * A stream played from its link. `plain` when no debrid service gave it (nothing on the way, and the addon didn't
+       * mark it ⚡, on your debrid service) and neither the addon's link nor the file's carries one of the account's
+       * secrets: then a party's members from other accounts may have the file too (see mayPlay).
+       */
+      const insertDirect = async (resolved: { url: string; container?: string; plain: boolean }) => {
+        const plain =
+          resolved.plain && !info.cached && !carriesSecret(item.url, access.keys, addonUrls) && !carriesSecret(resolved.url, access.keys, addonUrls);
         const segments = await segmentsLookup;
-        attempts.push({ source: i, ms: resolvedMs, resolveMs: resolvedMs, slowestHost: slowest.host || undefined });
         return await ctx.runMutation(internal.engine.insertStream, {
           ...kept,
-          direct: { link: item.url, container, audio: info.audio },
+          direct: { link: item.url, container: resolved.container, audio: info.audio, ...(plain ? { plain } : {}) },
           videoCodec: info.codec,
           size: info.size,
           height: info.resolution ? Number.parseInt(info.resolution) || undefined : undefined,
@@ -241,9 +254,29 @@ async function buildStream(
           recap: segments.recap,
           outro: segments.outro,
         });
+      };
+      if (!torbox) {
+        // Asking the addon for the file makes it ask the debrid service, which can take a moment.
+        await step(debrid ? "Asking your debrid service…" : "Opening the source…", note);
+        const resolved = await resolveDirect(item, timing);
+        const resolvedMs = Date.now() - t0;
+        if (resolvedMs > SLOW_LOG_MS) await slow(slowest.host, slowest.ms);
+        attempts.push({ source: i, ms: resolvedMs, resolveMs: resolvedMs, slowestHost: slowest.host || undefined });
+        return await insertDirect(resolved);
       }
       await step("Adding to TorBox…", note);
-      const { torrentId, fileId, hash } = await resolveToTorbox(key, item, ranking, timing);
+      let found: Awaited<ReturnType<typeof resolveToTorbox>>;
+      try {
+        found = await resolveToTorbox(key, item, ranking, timing);
+      } catch (error) {
+        if (!(error instanceof PlainFile)) throw error;
+        // A plain web video: TorBox has nothing to add, so it plays from its link, as on an account without TorBox.
+        const resolvedMs = Date.now() - t0;
+        if (resolvedMs > SLOW_LOG_MS) await slow(slowest.host, slowest.ms);
+        attempts.push({ source: i, ms: resolvedMs, resolveMs: resolvedMs, slowestHost: slowest.host || undefined });
+        return await insertDirect({ url: error.url, container: error.container, plain: true });
+      }
+      const { torrentId, fileId, hash } = found;
       const resolvedMs = Date.now() - t0;
       if (resolvedMs > SLOW_LOG_MS) await slow(slowest.host, slowest.ms);
       await step("Starting stream…", note);
@@ -312,11 +345,10 @@ async function sharedStream(
   access: Access,
   step?: Step,
 ): Promise<{ stream: Doc<"streams">; warm: boolean } | null> {
-  // Checked before claiming, so an account without a debrid service hears why at once.
-  requireDebrid(access.keys);
   const key = { videoId: media.videoId, rankedFor: rankKey(viewer), accountId: access.accountId ?? undefined };
-  // A browser can't play another service's MKV, so one picked there before isn't started again on its own.
-  const playableOnly = !viaTorBox(access.keys) && viewer.screen !== "app";
+  // A browser can't play an MKV from its link (another service's, or a plain web video's), so one picked there before
+  // isn't started again on its own. TorBox's own streams are HLS and always kept.
+  const playableOnly = viewer.screen !== "app";
   let claimId: Id<"streamBuilds">;
   let earlier: Doc<"streams"> | null;
   for (;;) {
@@ -451,7 +483,7 @@ export const warm = internalAction({
  * stream from the past month to restart first.
  */
 export const claimBuild = internalMutation({
-  // `playableOnly`: leave out direct streams a browser can't play (another service's MKV).
+  // `playableOnly`: leave out direct streams a browser can't play (an MKV played from its link).
   args: { videoId: v.string(), rankedFor: v.string(), accountId: v.optional(v.id("accounts")), playableOnly: v.optional(v.boolean()) },
   handler: async (ctx, { videoId, rankedFor, accountId, playableOnly }) => {
     const now = Date.now();
@@ -532,7 +564,7 @@ export const insertStream = internalMutation({
     hash: v.optional(v.string()),
     presignedToken: v.optional(v.string()),
     domain: v.optional(v.string()),
-    direct: v.optional(v.object({ link: v.string(), container: v.optional(v.string()), audio: v.optional(v.array(v.string())) })),
+    direct: v.optional(v.object({ link: v.string(), container: v.optional(v.string()), audio: v.optional(v.array(v.string())), plain: v.optional(v.boolean()) })),
     duration: v.optional(v.number()),
     width: v.optional(v.number()),
     height: v.optional(v.number()),
@@ -560,9 +592,15 @@ export const getStream = internalQuery({
 });
 
 /**
- * Whether a profile may play a stream, which plays from its account's TorBox: a profile of that account, or someone in
- * an open room playing it now. Someone who pressed Leave or was kicked is out; one the sweep counted as gone (a phone
- * asleep) is still in, since their next heartbeat puts them back.
+ * Whether a profile may play a stream, which plays from its account's TorBox or from a link: a profile of that account,
+ * or someone in an open room playing it now. Someone who pressed Leave or was kicked is out; one the sweep counted as
+ * gone (a phone asleep) is still in, since their next heartbeat puts them back.
+ *
+ * Who of them may have the link itself is `mayHaveFile`. A TorBox stream's file link holds the account's TorBox key,
+ * and another debrid service's file is the account's own, so those stay with the account and everyone else plays the
+ * HLS. A plain web video (`direct.plain`) is another matter: no debrid service gave it, and neither the addon's link
+ * nor the file's holds one of the account's keys or an addon's settings, so it's a link anyone could have found with
+ * that addon. Handing it to the people in the room costs the account nothing, and it's the only way they can play it.
  */
 export const mayPlay = internalQuery({
   args: { profileId: v.id("profiles"), streamId: v.id("streams") },
@@ -571,13 +609,33 @@ export const mayPlay = internalQuery({
     const [profile, stream] = await Promise.all([ctx.db.get(profileId), ctx.db.get(streamId)]);
     if (!profile || !stream) return false;
     if (profile.accountId && stream.accountId === profile.accountId) return true;
-    const rows = await ctx.db.query("roomMembers").withIndex("by_profile", (q) => q.eq("profileId", profileId)).collect();
-    for (const row of rows) {
-      if (row.kicked || (row.left && !row.swept)) continue;
-      const room = await ctx.db.get(row.roomId);
-      if (room && !room.closedAt && room.streamId === streamId) return true;
-    }
-    return false;
+    return await inRoomPlaying(ctx, profileId, streamId);
+  },
+});
+
+/** Whether the profile is in an open room playing this stream now (mayPlay). */
+async function inRoomPlaying(ctx: QueryCtx, profileId: Id<"profiles">, streamId: Id<"streams">) {
+  const rows = await ctx.db.query("roomMembers").withIndex("by_profile", (q) => q.eq("profileId", profileId)).collect();
+  for (const row of rows) {
+    if (row.kicked || (row.left && !row.swept)) continue;
+    const room = await ctx.db.get(row.roomId);
+    if (room && !room.closedAt && room.streamId === streamId) return true;
+  }
+  return false;
+}
+
+/**
+ * Whether a profile may have the stream's own file link (desktop.fileLink, the HLS route of a plain .m3u8): a profile
+ * of the stream's account, or, for a plain web video only, anyone mayPlay lets play it (see there for why).
+ */
+export const mayHaveFile = internalQuery({
+  args: { profileId: v.id("profiles"), streamId: v.id("streams") },
+  returns: v.boolean(),
+  handler: async (ctx, { profileId, streamId }): Promise<boolean> => {
+    const [profile, stream] = await Promise.all([ctx.db.get(profileId), ctx.db.get(streamId)]);
+    if (!profile || !stream) return false;
+    if (profile.accountId && stream.accountId === profile.accountId) return true;
+    return !!stream.direct?.plain && (await inRoomPlaying(ctx, profileId, streamId));
   },
 });
 

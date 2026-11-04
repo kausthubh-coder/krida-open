@@ -3,6 +3,7 @@ import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
 import { addonsOf } from "./addons";
+import { hasResource } from "../../shared/stremio";
 import { requireProfile } from "./auth";
 
 /*
@@ -43,12 +44,24 @@ export function needsTorBox() {
 }
 
 /**
- * Playing alone needs a debrid service the service still accepts: TorBox streams any file to the browser; another
- * service's files play in the browser when they're MP4 or WebM, and otherwise in the desktop app or an external player.
+ * A debrid service the service still accepts: TorBox streams any file to the browser; another service's files play in
+ * the browser when they're MP4 or WebM, and otherwise in the desktop app or an external player.
  */
-export async function hasDebrid(ctx: QueryCtx, accountId: Id<"accounts"> | undefined) {
+async function hasDebrid(ctx: QueryCtx, accountId: Id<"accounts"> | undefined) {
   const row = accountId === undefined ? null : await keysRow(ctx, accountId);
   return !!row?.debrid && row.debridRefusedAt === undefined;
+}
+
+/**
+ * Playing alone needs a working debrid service or a stream addon: an addon's plain web videos (an MP4, a WebM, an
+ * .m3u8) play with no debrid service, as in Stremio and Nuvio. Its torrents need one, and Play says so when a title has
+ * only those (engine.buildStream). Reads the profile's addons only until the first stream addon.
+ */
+export async function canPlayAlone(ctx: QueryCtx, profile: Doc<"profiles">) {
+  if (await hasDebrid(ctx, profile.accountId)) return true;
+  for await (const addon of ctx.db.query("addons").withIndex("by_profile", (q) => q.eq("profileId", profile._id)))
+    if (addon.enabled && hasResource(addon.manifest, "stream")) return true;
+  return false;
 }
 
 /** Said before any stream job starts, rather than letting Play fail on the way (docs/models/Onboarding.tla). */

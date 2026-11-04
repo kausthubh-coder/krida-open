@@ -6,13 +6,16 @@ const names = {
   tmdbKey: "TMDB key step",
   debrid: "Debrid step",
   addons: "Addons step",
+  extras: "Extras step",
   settings: "Settings",
 };
 export const title = "Open Krida onboarding";
 export const state = (v) => {
   if (v.screen !== "home") return names[v.screen];
-  if (!v.debridValid || v.debrid === "none") return "Home, Play and parties unavailable";
-  return v.debrid === "torbox" ? "Home, TorBox works" : "Home, Play works, parties unavailable";
+  const place = v.tmdb === "valid" ? "Home" : "Home on addons and Cinemeta";
+  if (!v.debridValid || v.debrid === "none")
+    return v.playUI === "available" ? `${place}, Play from addons, parties unavailable` : `${place}, Play and parties unavailable`;
+  return v.debrid === "torbox" ? `${place}, TorBox works` : `${place}, Play works, parties unavailable`;
 };
 export const group = (v) =>
   v.screen === "landing" ? "out" : v.screen === "home" ? "home" : v.screen === "settings" ? "settings" : "onboarding";
@@ -26,11 +29,14 @@ const labels = {
   SwitchProfile: "you switch profile",
   PasteTmdb: "you give a TMDB key that works",
   KeepTmdb: "you give a TMDB key that works",
+  SkipTmdb: "you skip the TMDB key",
+  RemoveTmdb: "you remove the TMDB key",
   ChooseDebrid: "you add a debrid key or skip",
   SkipDebrid: "you add a debrid key or skip",
   RemoveDebrid: "you remove the debrid key",
-  InstallAddons: "you install or skip addons",
+  InstallAddons: "you install addons, with or without streams",
   SkipAddons: "you install or skip addons",
+  PassExtras: "you add extras or skip",
   Back: "you go back",
   OpenSettings: "you open Settings",
   CloseSettings: "you close Settings",

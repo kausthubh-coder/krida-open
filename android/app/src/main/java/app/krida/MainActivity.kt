@@ -214,6 +214,20 @@ class MainActivity : ComponentActivity() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             if (!request.isForMainFrame) return false
             val url = request.url
+            if (url.scheme == "intent") {
+                try {
+                    startActivity(Intent.parseUri(url.toString(), Intent.URI_INTENT_SCHEME).apply {
+                        addCategory(Intent.CATEGORY_BROWSABLE)
+                        component = null
+                        selector = null
+                    })
+                } catch (_: ActivityNotFoundException) {
+                    // Stay on the page when the selected player isn't installed.
+                } catch (_: java.net.URISyntaxException) {
+                    // Ignore a malformed external-player link.
+                }
+                return true
+            }
             val host = url.host ?: return false
             // Krida stays here, and so does connecting Simkl, whose sign-in comes back to Krida. Anything else (a
             // trailer on YouTube, a title on IMDb) opens in its own app or the browser.
@@ -312,6 +326,7 @@ class MainActivity : ComponentActivity() {
         val link = intent?.data ?: return BuildConfig.START_URL
         // A sign-in that came back to a closed app finishes on the sign-in page, which reads it (signInCallback).
         if (isSignInCallback(intent)) return origin.buildUpon().encodedPath("/sign-in").build().toString()
+        if (link.scheme == "stremio") return stremioPage(link, origin)?.toString() ?: BuildConfig.START_URL
         return origin.buildUpon().encodedPath(link.encodedPath).encodedQuery(link.encodedQuery).build().toString()
     }
 

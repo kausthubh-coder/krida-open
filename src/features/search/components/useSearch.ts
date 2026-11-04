@@ -3,6 +3,7 @@ import { parseTags, tagsTitle } from "../../../../shared/tags";
 import { search, searchPage } from "../../../data/api";
 import { useAuthed } from "../../../data/session";
 import { searchAll, useAsync } from "../../../data/cinemeta";
+import { useNeedsTmdbKey } from "../../../data/keys";
 import type { Found, Result } from "./Results";
 
 const NO_BATCHES: Result[][] = [];
@@ -38,14 +39,26 @@ export const paramsFor = (q: string) => (current: URLSearchParams): Record<strin
   return q ? { q, ...(type ? { type } : {}) } : {};
 };
 
-/** Search through Krida's server (TMDB, Cinemeta, Kitsu); straight to Cinemeta if the server can't answer. */
+/** Names searched on Cinemeta alone: what Krida's server finds without TMDB, or when it can't answer. */
+const fromCinemeta = async (query: string): Promise<Found> => ({
+  results: (await searchAll(query)).map((m) => ({ id: m.id, type: m.type, name: m.name, poster: m.poster, year: m.releaseInfo })),
+  person: null,
+  anime: [],
+  genre: null,
+});
+
+/**
+ * Search through Krida's server (TMDB, Cinemeta, Kitsu); straight to Cinemeta if the server can't answer, or while the
+ * account has no TMDB key (no people, anime seasons or genre and language searches then: those are TMDB's).
+ */
 export function useSearch(query: string) {
   const { token } = useAuthed();
+  const needsKey = useNeedsTmdbKey();
   const [attempt, setAttempt] = useState(0);
-  const key = query.length >= 2 ? `search:${token}:${query.toLowerCase()}:${attempt}` : null;
+  const key = query.length >= 2 ? `search:${token}:${needsKey ? "cinemeta" : "krida"}:${query.toLowerCase()}:${attempt}` : null;
   const state = useAsync<Found>(key, () =>
     remember(key!, () =>
-      search(query)
+      needsKey ? fromCinemeta(query) : search(query)
         .then((found) => {
           if (parseTags(query) && !found.tags) throw new Error("Tag search is unavailable");
           return found;
@@ -53,12 +66,7 @@ export function useSearch(query: string) {
         .catch(async (error: unknown) => {
           // Cinemeta searches names, so it cannot recover a language/genre discovery request.
           if (parseTags(query)) throw error;
-          return {
-            results: (await searchAll(query)).map((m) => ({ id: m.id, type: m.type, name: m.name, poster: m.poster, year: m.releaseInfo })),
-            person: null,
-            anime: [],
-            genre: null,
-          };
+          return await fromCinemeta(query);
         }),
     ),
   );

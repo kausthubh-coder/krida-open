@@ -12,6 +12,7 @@ import {
 import { api } from "../../../convex/_generated/api";
 import { useAuthed } from "../../data/session";
 import { PlayNeedsDebrid } from "../../ui/needsKey";
+import { useNeedsTmdbKey } from "../../data/keys";
 import { useReadyTiming } from "../../data/telemetry";
 import { art, getMeta, useAsync, type Meta } from "../../data/cinemeta";
 import { useAnimeFill } from "./animeFill";
@@ -32,6 +33,7 @@ import { Episodes } from "./titleEpisodes";
 import { MoreLikeThis } from "./moreLikeThis";
 import { lookupOf } from "./lookup";
 import { useArtTint } from "../../ui/artTint";
+import { isTitleId } from "../../../shared/ids";
 
 export function TitlePage() {
   const { type, id } = useParams<{ type: "movie" | "series"; id: string }>();
@@ -46,7 +48,7 @@ export function TitlePage() {
       <EmptyState
         className="min-h-[70dvh] pt-24"
         title="We couldn’t find this title"
-        description="The catalog has nothing at this link. Search for it by name instead."
+        description="No catalog or addon has this title. Search for it by name instead."
         action={<ButtonLink to="/search">Search</ButtonLink>}
       />
     ) : (
@@ -91,7 +93,8 @@ function TitleSkeleton() {
 function Backdrop({ meta, filling }: { meta: Meta; filling: boolean }) {
   const src = meta.background ?? art.backgroundLarge(meta.id);
   useArtTint(src ?? meta.poster);
-  if (!src && !filling && meta.id.startsWith("kitsu:") && meta.poster)
+  // Only IMDb titles have Metahub's backdrops: the rest without one of their own (Kitsu, an addon's) blur the poster.
+  if (!src && !filling && !meta.id.startsWith("tt") && meta.poster)
     return (
       <Art
         src={meta.poster}
@@ -142,7 +145,9 @@ function TitleView({ meta, filling }: { meta: Meta; filling: boolean }) {
   const suggestedIds = new Set(room?.suggestions.map((s) => s.media.videoId));
 
   const simkl = useQuery(api.simkl.forTitle, { token, id: meta.id });
-  const infoId = meta.id.startsWith("tt") ? meta.id : meta.imdb_id?.startsWith("tt") ? meta.imdb_id : undefined;
+  // MDBList's ratings come through /api/title, which asks with the account's TMDB key; without one, Cinemeta's IMDb score shows.
+  const needsKey = useNeedsTmdbKey();
+  const infoId = needsKey ? undefined : meta.id.startsWith("tt") ? meta.id : meta.imdb_id?.startsWith("tt") ? meta.imdb_id : undefined;
   const info = useTitleInfo(meta.type, infoId);
   const trailers = useMemo(() => trailerIds(meta, info?.trailer), [meta, info?.trailer]);
   const [trailerOpen, setTrailerOpen] = useState(false);
@@ -297,8 +302,11 @@ function TitleView({ meta, filling }: { meta: Meta; filling: boolean }) {
                   <span className="max-sm:sr-only">Trailer</span>
                 </button>
               )}
-              <ListButton item={item} variant="toolbar" className="max-md:flex-1" />
-              <RateButton item={item} variant="toolbar" />
+              {/* Kept by IMDb or Kitsu id, as Simkl knows titles; an addon's own id has neither. */}
+              {isTitleId(meta.id) && <>
+                <ListButton item={item} variant="toolbar" className="max-md:flex-1" />
+                <RateButton item={item} variant="toolbar" />
+              </>}
               {picking ? null : party ? (
                 <AfterThisButton
                   size="md"

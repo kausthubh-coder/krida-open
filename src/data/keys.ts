@@ -11,10 +11,22 @@ export function useConnections() {
   return useQuery(api.accounts.connections, { token });
 }
 
-/** True once it's known the account has no TMDB key: Home, Search and title pages have nothing to show without one. */
+/**
+ * True once it's known the account has no TMDB key that works (none, or one TMDB refuses). Home, Search and title pages
+ * then run on the addons and Cinemeta, and leave out what only TMDB has (trending rows, picks, people, genre browsing)
+ * rather than asking for it and failing. A party guest, with no account, plays on as before.
+ */
 export function useNeedsTmdbKey() {
-  const connections = useConnections();
-  return !!connections && !connections.tmdb;
+  const status = useOnboardingStatus();
+  return !!status && status.tmdb !== "valid";
+}
+
+/**
+ * True once it's known the account has no TMDB key at all. /api/rows refuses only then: with a key TMDB turned down it
+ * still answers its Cinemeta rows (popular, top-rated by genre), leaving out only TMDB's and Netflix's.
+ */
+export function useHasNoTmdbKey() {
+  return useOnboardingStatus()?.tmdb === "none";
 }
 
 /**
@@ -36,9 +48,10 @@ export function useNeedsTorBox() {
 }
 
 /**
- * True once it's known the account can't play: alone, Play streams from the account's debrid service, so it needs a
- * debrid key its service still accepts. TorBox's play anywhere; another service's play in the browser when they're MP4
- * or WebM, and in the desktop app or an external player otherwise.
+ * True once it's known the profile can't play: alone, Play streams from the account's debrid service or an addon's
+ * plain web video, so it needs a debrid key its service still accepts or a stream addon. TorBox's play anywhere;
+ * another service's and plain web videos play in the browser when they're MP4, WebM or HLS, and in the desktop app or
+ * an external player otherwise.
  */
 export function useNeedsDebrid() {
   const status = useOnboardingStatus();

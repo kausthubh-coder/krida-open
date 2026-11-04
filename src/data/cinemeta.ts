@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { CINEMETA, KITSU } from "../../shared/addons";
+import { addonMeta, sessionAddons } from "./addons";
 import { logProblem } from "./log";
 import { track } from "./telemetry";
 
-/** Anime from the AniList rows uses Kitsu ids; this public addon has their details and episodes. */
+/**
+ * Titles' details: from the profile's addons when one serves the id (data/addons.ts `addonMeta`), else Cinemeta for
+ * IMDb ids and the public Kitsu addon for anime (`kitsu:` ids, with their episodes).
+ */
 
 export type MediaType = "movie" | "series";
 
@@ -119,15 +123,21 @@ export async function searchAll(query: string) {
   return out;
 }
 
-export function getMeta(type: MediaType, id: string) {
-  return cached(`meta:${type}:${id}`, async () => {
-    const base = id.startsWith("kitsu:") ? KITSU : CINEMETA;
-    const body = await getJson<{ meta?: Meta }>(`${base}/meta/${type}/${encodeURIComponent(id)}.json`);
-    if (!body.meta) {
+export async function getMeta(type: MediaType, id: string) {
+  // Details can come from the profile's own addons, so another profile, or the same one after changing them, asks
+  // afresh instead of reusing what the last list found.
+  const addons = await sessionAddons();
+  const scope = addons.filter((a) => a.enabled).map((a) => a.url).join(" ");
+  return cached(`meta:${type}:${id}:${scope}`, async () => {
+    const own = await addonMeta<Meta>(addons, type, id);
+    // Only IMDb and Kitsu ids have a catalog of Krida's own to fall back on; any other id is an addon's.
+    const base = own || !/^(tt|kitsu:)/.test(id) ? null : id.startsWith("kitsu:") ? KITSU : CINEMETA;
+    const found = own ?? (base ? (await getJson<{ meta?: Meta }>(`${base}/meta/${type}/${encodeURIComponent(id)}.json`)).meta : undefined);
+    if (!found) {
       logProblem("meta", `No details for ${type} ${id}`);
       throw new Error("Not found");
     }
-    const meta = { ...body.meta, type };
+    const meta = { ...found, type };
     meta.videos = (meta.videos ?? [])
       .filter((v) => typeof v.season === "number" && typeof v.episode === "number")
       .sort((a, b) => a.season - b.season || a.episode - b.episode);

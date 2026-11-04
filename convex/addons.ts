@@ -26,10 +26,10 @@ const addonView = v.object({
 });
 
 const outcome = v.union(
-  v.object({ ok: v.literal(true), name: v.string() }),
+  v.object({ ok: v.literal(true), name: v.string(), updated: v.optional(v.boolean()) }),
   v.object({ ok: v.literal(false), message: v.string(), configure: v.optional(v.string()) }),
 );
-type Outcome = { ok: true; name: string } | { ok: false; message: string; configure?: string };
+type Outcome = { ok: true; name: string; updated?: boolean } | { ok: false; message: string; configure?: string };
 
 /** The session's profile's addons, in its order. Their links go only to that profile's own browsers, for catalogs. */
 export const list = query({
@@ -338,6 +338,13 @@ export const insert = internalMutation({
   handler: async (ctx, { profileId, url, manifest, suggestion }): Promise<Outcome> => {
     const mine = await addonsOf(ctx, profileId);
     if (mine.some((a) => a.url === url)) return { ok: false, message: `${manifest.name} is already installed.` };
+    const existing = mine.find((a) => a.manifest.id === manifest.id);
+    if (existing) {
+      // A pasted configuration belongs to this profile and keeps its place and switch.
+      // Clear a suggestion marker so a future key change cannot overwrite a manual setup.
+      await ctx.db.patch(existing._id, { url, manifest, suggestion });
+      return { ok: true, name: manifest.name, updated: true };
+    }
     if (suggestion && mine.some((a) => a.suggestion === suggestion)) return { ok: false, message: `${manifest.name} is already installed.` };
     if (mine.length >= MAX_ADDONS) return { ok: false, message: `A profile can have up to ${MAX_ADDONS} addons. Remove one first.` };
     await ctx.db.insert("addons", {

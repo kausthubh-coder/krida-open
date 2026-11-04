@@ -8,7 +8,7 @@ import { useAddons } from "../../data/addons";
 import type { RoomData } from "../party";
 import type { MpvVideo } from "./desktop";
 import { choiceFor, recallSubtitles, rememberSubtitles, startingSubtitles } from "./subtitleMemory";
-import { bestSubtitles, cuesAt, loadCues, nextCueChange, useSubtitleOptions, type Cue, type FileSubtitle } from "./subtitles";
+import { bestSubtitles, cuesAt, loadCues, nextCueChange, readSubtitleFile, useSubtitleOptions, type Cue, type FileSubtitle, type LocalSubtitle } from "./subtitles";
 
 export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me: Me, mpv: MpvVideo | null) {
   const m = room.media!;
@@ -31,6 +31,18 @@ export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me:
   const filePlayable = mpv !== null;
   const [subPick, setSubPick] = useState<string | null | undefined>(undefined); // undefined = automatic
   const [subOffset, setSubOffset] = useState(0);
+  const [localSubs, setLocalSubs] = useState<LocalSubtitle[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const loadFile = async (file: File) => {
+    setFileError(null);
+    try {
+      const local = await readSubtitleFile(file);
+      setLocalSubs((old) => [...old, local]);
+      setSubPick(local.id);
+    } catch (error) {
+      setFileError(error instanceof Error ? error.message : "Could not read this subtitle file. Try another.");
+    }
+  };
   const bestIn = (lang: string) => bestSubtitles(lang, filePlayable ? fileSubs : [], subs);
   // Read once per episode (the player remounts for each stream), so a pick here doesn't change what it starts with.
   const [remembered] = useState(() => recallSubtitles(me._id, m.imdbId));
@@ -54,9 +66,14 @@ export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me:
   }, [mpv, fileTrack, subOffset]);
   const [cues, setCues] = useState<Cue[]>([]);
   const [subError, setSubError] = useState(false);
+  const local = localSubs.find((s) => s.id === subId);
   useEffect(() => {
     setCues([]);
     setSubError(false);
+    if (local) {
+      setCues(local.cues);
+      return;
+    }
     if (!subOption) return;
     let alive = true;
     loadCues(subOption.url).then(
@@ -66,7 +83,7 @@ export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me:
     return () => {
       alive = false;
     };
-  }, [subOption]);
+  }, [subOption, local]);
   const [cueHtml, setCueHtml] = useState("");
   useEffect(() => {
     if (!video || cues.length === 0) {
@@ -104,5 +121,5 @@ export function useSubtitles(video: HTMLVideoElement | null, room: RoomData, me:
   /** C on the keyboard: off, or back on in this title's language, else yours (English when none is set). */
   const onLang = (remembered && "lang" in remembered ? remembered.lang : undefined) ?? me.prefs.subLang ?? "eng";
   const toggle = () => pick(subId ? null : bestIn(onLang));
-  return { subs, fileSubs, filePlayable, subId, setSubPick: pick, toggle, subOffset, setSubOffset, subError, cueHtml };
+  return { subs, fileSubs, filePlayable, subId, setSubPick: pick, toggle, subOffset, setSubOffset, subError, cueHtml, localSubs, loadFile, fileError };
 }

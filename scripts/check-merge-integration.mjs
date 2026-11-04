@@ -189,6 +189,8 @@ await check("source APIs keep the legacy array and offer ranked results without 
       if (name === "profiles:prefsOf") return { audioLang: "eng" };
       // Since sources come from each profile's addons: this profile's stream addons and the cache scope they make.
       if (name === "addons:originOf") return { addons: [], scope: "controlled~none" };
+      // Plain links play without a debrid key, so the sources read the account's keys; here it has none.
+      if (name === "accounts:keysOfProfile") return { accountId: null, keys: {} };
       throw Error(name);
     },
     // A cached list: the claim hands it back without fetching.

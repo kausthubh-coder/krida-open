@@ -1,12 +1,12 @@
 import { ConvexError, v } from "convex/values";
-import { action, internalQuery, query, type ActionCtx, type MutationCtx } from "./_generated/server";
+import { action, internalAction, internalQuery, query, type ActionCtx, type MutationCtx } from "./_generated/server";
 import { internalMutation, mutation } from "./functions";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { profileFromToken, requireProfile } from "./lib/auth";
-import { keysOf } from "./lib/accounts";
+import { keysOf, profilesOfAccount } from "./lib/accounts";
 import { addonsOf, manifestValidator, MAX_ADDONS, originOfProfile, addonSuggestionValidator } from "./lib/addons";
-import { addonBase, AddonUrlError, manifestUrl, parseManifest, SUGGESTIONS, suggestionBase, type AddonManifest } from "../shared/stremio";
+import { addonBase, AddonUrlError, manifestUrl, parseManifest, SUGGESTIONS, suggestionBase, type AddonManifest, type SuggestionId } from "../shared/stremio";
 
 /*
  * Settings → Addons: a profile's Stremio addons. Installing fetches and checks the manifest here, never in the browser,
@@ -96,7 +96,7 @@ async function sessionProfile(ctx: ActionCtx, token: string) {
   return who;
 }
 
-async function installAt(ctx: ActionCtx, profileId: Id<"profiles">, base: string, suggestion?: "torrentio" | "comet"): Promise<Outcome> {
+async function installAt(ctx: ActionCtx, profileId: Id<"profiles">, base: string, suggestion?: SuggestionId): Promise<Outcome> {
   const fetched = await fetchManifest(base);
   if (!fetched.ok) return fetched;
   return await ctx.runMutation(internal.addons.insert, { profileId, url: base, manifest: fetched.manifest, suggestion });
@@ -121,14 +121,76 @@ export const install = action({
 });
 
 /** Installs one of Krida's suggestions, set up here with the account's debrid key (the browser never builds it). */
-export const installSuggested = action({
+export const installSuggestion = action({
   args: { token: v.string(), suggestion: addonSuggestionValidator },
   returns: outcome,
-  handler: async (ctx, { token, suggestion }): Promise<Outcome> => {
-    const { profileId, accountId } = await sessionProfile(ctx, token);
-    const keys = accountId ? await ctx.runQuery(internal.accounts.keysOfAccount, { accountId }) : {};
-    if (!keys.debrid) return { ok: false, message: "Add your debrid key in Settings → Connections first." };
-    return await installAt(ctx, profileId, suggestionBase(suggestion, keys.debrid), suggestion);
+  handler: async (ctx, { token, suggestion }): Promise<Outcome> => await installSuggestionFor(ctx, token, suggestion),
+});
+
+/** The same, as sites built before MediaFusion was suggested call it (they offer only these two). */
+export const installSuggested = action({
+  args: { token: v.string(), suggestion: v.union(v.literal("torrentio"), v.literal("comet")) },
+  returns: outcome,
+  handler: async (ctx, { token, suggestion }): Promise<Outcome> => await installSuggestionFor(ctx, token, suggestion),
+});
+
+async function installSuggestionFor(ctx: ActionCtx, token: string, suggestion: SuggestionId): Promise<Outcome> {
+  const { profileId, accountId } = await sessionProfile(ctx, token);
+  const keys = accountId ? await ctx.runQuery(internal.accounts.keysOfAccount, { accountId }) : {};
+  if (!keys.debrid) return { ok: false, message: "Add your debrid key in Settings → Connections first." };
+  let base: string;
+  try {
+    base = await suggestionBase(suggestion, keys.debrid);
+  } catch (error) {
+    if (error instanceof AddonUrlError) return { ok: false, message: error.message };
+    throw error;
+  }
+  return await installAt(ctx, profileId, base, suggestion);
+}
+
+/**
+ * A suggestion's link carries the debrid key it was made with, so a new key (or service) remakes the account's
+ * suggested addons with it, each profile's in place. One that can't be remade keeps its old link and says so in the
+ * logs; Play then shows that addon's own error.
+ */
+export const rebuildSuggested = internalAction({
+  args: { accountId: v.id("accounts") },
+  returns: v.null(),
+  handler: async (ctx, { accountId }) => {
+    const keys = await ctx.runQuery(internal.accounts.keysOfAccount, { accountId });
+    if (!keys.debrid) return null;
+    const installed = await ctx.runQuery(internal.addons.suggestedOfAccount, { accountId });
+    for (const suggestion of new Set(installed.map((a) => a.suggestion))) {
+      try {
+        const base = await suggestionBase(suggestion, keys.debrid);
+        const fetched = await fetchManifest(base);
+        if (!fetched.ok) throw new Error(fetched.message);
+        const addonIds = installed.filter((a) => a.suggestion === suggestion).map((a) => a._id);
+        await ctx.runMutation(internal.addons.relink, { addonIds, url: base, manifest: fetched.manifest });
+      } catch (error) {
+        console.error(`addons.rebuildSuggested: ${suggestion} kept its old link`, error instanceof Error ? error.message : error);
+      }
+    }
+    return null;
+  },
+});
+
+export const suggestedOfAccount = internalQuery({
+  args: { accountId: v.id("accounts") },
+  handler: async (ctx, { accountId }) => {
+    const found: { _id: Id<"addons">; suggestion: SuggestionId }[] = [];
+    for (const profile of await profilesOfAccount(ctx, accountId))
+      for (const a of await addonsOf(ctx, profile._id)) if (a.suggestion) found.push({ _id: a._id, suggestion: a.suggestion });
+    return found;
+  },
+});
+
+export const relink = internalMutation({
+  args: { addonIds: v.array(v.id("addons")), url: v.string(), manifest: manifestValidator },
+  returns: v.null(),
+  handler: async (ctx, { addonIds, url, manifest }) => {
+    for (const id of addonIds) if (await ctx.db.get(id)) await ctx.db.patch(id, { url, manifest });
+    return null;
   },
 });
 

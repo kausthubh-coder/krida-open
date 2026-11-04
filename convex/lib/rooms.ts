@@ -57,13 +57,15 @@ export function removedFromParty() {
 }
 
 /**
- * Reading or acting on a room takes having joined it. Any row counts, left or swept: a laptop waking may send a
- * pause before its heartbeat puts it back. Not one the host kicked.
+ * Reading or acting on a room takes being in it. One the sweep counted out still is: a laptop waking may send a pause
+ * before its heartbeat puts it back. Not one who pressed Leave (joining again lets them back in), nor one the host
+ * kicked.
  */
 export async function requireMember(ctx: QueryCtx, roomId: Id<"rooms">, profileId: Id<"profiles">) {
   const member = await memberRow(ctx, roomId, profileId);
   if (!member) throw new ConvexError({ code: "FORBIDDEN", message: "You're not in this party" });
   if (member.kicked) throw removedFromParty();
+  if (member.left && !member.swept) throw new ConvexError({ code: "FORBIDDEN", message: "You left this party" });
   return member;
 }
 

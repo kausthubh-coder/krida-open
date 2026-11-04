@@ -207,6 +207,37 @@
       }
     }
   },
+  "addons:installSuggestion": {
+    "kind": "action",
+    "args": {
+      "token": {
+        "fieldType": {
+          "type": "string"
+        },
+        "optional": false
+      },
+      "suggestion": {
+        "fieldType": {
+          "type": "union",
+          "value": [
+            {
+              "type": "literal",
+              "value": "torrentio"
+            },
+            {
+              "type": "literal",
+              "value": "comet"
+            },
+            {
+              "type": "literal",
+              "value": "mediafusion"
+            }
+          ]
+        },
+        "optional": false
+      }
+    }
+  },
   "addons:list": {
     "kind": "query",
     "args": {

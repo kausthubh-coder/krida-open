@@ -1,8 +1,8 @@
 # Formal models of open Krida
 
-Three TLA+ models of what `.agents/plans/open-krida-spec.md` asks for, each checked by TLC. They describe the
-design; the code does not exist yet for most of it. Each implementation step that touches accounts, profiles,
-parties or onboarding must keep its model passing and add the convex-test tests listed below. The owner's page is
+Four TLA+ models of what `.agents/plans/open-krida-spec.md` asks for, each checked by TLC, and the convex-test tests
+that hold the code to them. A change that touches accounts, profiles, parties, onboarding or who may play a stream must
+keep its model passing and its tests below green. The owner's page is
 `models.html`.
 
 | Model | What it covers | Clean run |
@@ -10,6 +10,7 @@ parties or onboarding must keep its model passing and add the convex-test tests 
 | `AccountIsolation.tla` | Clerk sign-in, profiles (max per account, optional PIN), profile sessions, per-account keys, room listings | 343,644 states, 2 s |
 | `PartyInvites.tla` | One room across accounts: invite link, same-account join, guests (24 h), leave, kick, host leaves, end; liveness | 156,257 states, 12 s |
 | `Onboarding.tla` | One account on one device: sign in, profile, TMDB key, debrid, addons, Home; back, skip, keys dying later | 1,114 states, under 1 s |
+| `StreamAccess.tla` | Who may load a room's stream (the HLS playlist), warm a title with its host's keys, and get in by a party or guest link: leave, kick, sweep, hand-off, close | 1,404,928 states, 13 s |
 
 The hand-off rule (the owner's choice): the host leaving hands the room to a member whose account has TorBox,
 someone of the host's own account first; with none, the party ends. `allowed` records who was let in (link, the host's
@@ -126,3 +127,19 @@ Exact timers (10 min sweep, 30 min idle, 60 s reopen: folded into single steps),
 rooms, knocks and per-person `invites`, playback sync, PIN lockout, the 8-profile and 8-guest-link limits (2 and 1
 here), more than one Clerk session per account per device, Stremio import and addon order, and keys other than TMDB
 and debrid (MDBList is optional and gates nothing).
+
+### StreamAccess (`tests/streamAccess.test.ts`, `tests/partyRooms.test.ts`, `tests/partyInvites.test.ts`)
+
+Its seeded bugs are what the code did before 4 Nov 2026, when Sol's review of the code against these models found them.
+
+| Invariant | Seeded bug | Test | It asserts |
+| --- | --- | --- | --- |
+| `OnlyAllowedReads` | `hls_token_only` | `the host's account and the room's members, nobody else` | `/hls/playlist.m3u8` answers 200 to the host, a profile of the host's account and a member from another account; 403 to a stranger with a valid token; 401 without one |
+| `OnlyAllowedReads` | `left_keeps_access` | `a member who was kicked or left stops getting it…`, `stays out after pressing Leave on another device` | A swept member still gets 200, one who pressed Leave or was kicked 403; after Leave, `rooms.get` and `messages.list` throw `You left this party`; once the room moves to another stream or closes, a friend's old stream id answers 403 |
+| `OnlyMembersWarm` | `warm_any_room` | `spends the host's keys only for someone in that room` | `rooms.warm` with a room id throws for a stranger and for someone who left, scheduling nothing; the host's call schedules one warm-up |
+| `NoGuestWithoutHost` | `guest_after_host_left` | `a guest link used while the host has just left alone finds the party over too` | `joinTemporary` throws `This party has ended` while the host's row is left, and `closeIfEmpty` then closes the room |
+| `OthersNeedTorBox` | `link_without_torbox` | `watching alone on another debrid service, no party or guest link can be made` | `rooms.shareLink` and `profiles.inviteTemporary` throw `NEEDS_TORBOX` for a host without TorBox, and the room stays solo |
+
+Not modeled: a host leaving mid-title leaves the current stream on the departed host's TorBox until the next title
+(rebuilding it would stop everyone's picture); playlist segment links TorBox already handed out keep working until
+they expire, which no check here can recall.

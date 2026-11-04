@@ -193,10 +193,35 @@ describe("OneHostPresent and HostHasTorBox", () => {
     expect(await t.run((ctx) => ctx.db.query("rooms").collect())).toEqual([]);
   });
 
+  test("watching alone on another debrid service, no party or guest link can be made", async () => {
+    const { t, cy } = await accounts();
+    const roomId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("rooms", {
+        hostId: cy, hostAccountId: (await ctx.db.get(cy))!.accountId, kind: "solo", status: "ready",
+        playback: { playing: false, position: 0, anchorAt: now, seq: 0 }, createdAt: now, lastActiveAt: now,
+      });
+      await ctx.db.insert("roomMembers", { roomId: id, profileId: cy, joinedAt: now, lastSeenAt: now, buffering: false, position: 0, left: false });
+      return id;
+    });
+    const needsTorBox = expect.objectContaining({ data: { code: "NEEDS_TORBOX", message: "Parties need TorBox. Add a TorBox key in Settings → Connections." } });
+    await expect(t.mutation(api.rooms.shareLink, { token: "cy", roomId })).rejects.toThrow(needsTorBox);
+    await expect(t.mutation(api.profiles.inviteTemporary, { token: "cy", roomId, name: "Gil" })).rejects.toThrow(needsTorBox);
+    expect((await t.run((ctx) => ctx.db.get(roomId)))?.kind).toBe("solo");
+  });
+
   test("joining while the host has just left alone finds the party over", async () => {
     const { t, roomId } = await party();
     await t.mutation(api.rooms.leave, { token: "ana", roomId });
     await expect(t.mutation(api.rooms.join, { token: "arun", roomId })).rejects.toThrow(notFound);
+  });
+
+  test("a guest link used while the host has just left alone finds the party over too", async () => {
+    const { t, roomId } = await party();
+    const { code: guestCode } = await t.mutation(api.profiles.inviteTemporary, { token: "ana", roomId, name: "Gil" });
+    await t.mutation(api.rooms.leave, { token: "ana", roomId });
+    await expect(t.mutation(api.profiles.joinTemporary, { code: guestCode })).rejects.toThrow(notFound);
+    await t.mutation(internal.rooms.closeIfEmpty, { roomId });
+    expect((await t.run((ctx) => ctx.db.get(roomId)))?.closedAt).toBeTypeOf("number");
   });
 });
 

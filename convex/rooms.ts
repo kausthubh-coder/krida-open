@@ -784,7 +784,12 @@ export const warm = mutation({
   },
   handler: async (ctx, { token, media, screen, roomId }) => {
     const profile = await requireProfile(ctx, token);
-    const room = roomId ? await ctx.db.get(roomId) : null;
+    // Warming for a room spends its host's keys, so only someone in that room, while it's open, may ask.
+    const room = roomId ? await getRoomOrThrow(ctx, roomId) : null;
+    if (room) {
+      await requireMember(ctx, room._id, profile._id);
+      if (room.closedAt) return;
+    }
     await ctx.scheduler.runAfter(0, internal.engine.warm, {
       media,
       profileId: profile._id,
@@ -923,6 +928,8 @@ export const shareLink = mutation({
     const room = await getRoomOrThrow(ctx, roomId);
     await requireMember(ctx, roomId, me._id);
     if (room.linkCode) return room.linkCode;
+    // A link lets in other accounts, who can play only TorBox's stream of the host's file.
+    if (!(await hasTorBox(ctx, room.hostAccountId))) throw needsTorBox();
     const linkCode = randomHex(16);
     await ctx.db.patch(roomId, { linkCode, kind: "party" });
     return linkCode;

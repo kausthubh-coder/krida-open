@@ -1,9 +1,11 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   addonBase, catalogRowKey, extraPath, genresOf, importableUrls, isRow, isSearchable, mergeStreams, parseManifest, resourceUrl, serves,
   suggestionBase, toStream,
 } from "../shared/stremio";
 import { parseSource } from "../convex/lib/parse";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("an addon's link", () => {
   test("a manifest link, a stremio:// link and a bare address all become the addon's base", () => {
@@ -148,17 +150,33 @@ describe("streams", () => {
 });
 
 describe("suggestions", () => {
-  test("Torrentio takes the debrid service and key in its path", () => {
-    expect(suggestionBase("torrentio", { service: "realdebrid", key: "rd/key" })).toBe("https://torrentio.strem.fun/realdebrid=rd%2Fkey");
+  test("Torrentio takes the debrid service and key in its path", async () => {
+    expect(await suggestionBase("torrentio", { service: "realdebrid", key: "rd/key" })).toBe("https://torrentio.strem.fun/realdebrid=rd%2Fkey");
   });
 
-  test("Comet's settings are base64 JSON with no slash to split the path", () => {
+  test("Comet's settings are base64 JSON with no slash to split the path", async () => {
     for (const key of ["a", "abc???", "zz>>>?", "key-with/slash", "ü?é"]) {
-      const base = suggestionBase("comet", { service: "torbox", key });
+      const base = await suggestionBase("comet", { service: "torbox", key });
       const config = base.replace("https://comet.elfhosted.com/", "");
       expect(config.includes("/")).toBe(false);
       expect(JSON.parse(atob(config)).debridServices).toEqual([{ service: "torbox", apiKey: key }]);
     }
+  });
+
+  test("MediaFusion seals the service and key on its own server, and its refusal comes back in its words", async () => {
+    const asked: { url: string; body: unknown }[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body)) as { streaming_provider: { token: string } };
+      asked.push({ url, body });
+      return body.streaming_provider.token === "good"
+        ? Response.json({ status: "success", encrypted_str: "D-abc_123" })
+        : Response.json({ status: "error", message: "Failed to validate TorBox credentials (HTTP 401 Unauthorized)" }, { status: 400 });
+    }));
+    expect(await suggestionBase("mediafusion", { service: "torbox", key: "good" })).toBe("https://mediafusion.elfhosted.com/D-abc_123");
+    await expect(suggestionBase("mediafusion", { service: "torbox", key: "bad" })).rejects.toThrow(
+      "MediaFusion: Failed to validate TorBox credentials (HTTP 401 Unauthorized)",
+    );
+    expect(asked[0]).toEqual({ url: "https://mediafusion.elfhosted.com/encrypt-user-data", body: { streaming_provider: { service: "torbox", token: "good" } } });
   });
 });
 

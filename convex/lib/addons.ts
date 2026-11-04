@@ -31,7 +31,7 @@ export const manifestValidator = v.object({
 const _sameShape: AddonManifest = {} as Infer<typeof manifestValidator>;
 void _sameShape;
 
-export const addonSuggestionValidator = v.union(v.literal("torrentio"), v.literal("comet"));
+export const addonSuggestionValidator = v.union(v.literal("torrentio"), v.literal("comet"), v.literal("mediafusion"));
 
 /** A profile's addons in its order. */
 export async function addonsOf(ctx: QueryCtx, profileId: Id<"profiles">) {

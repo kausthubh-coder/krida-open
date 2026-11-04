@@ -179,17 +179,26 @@ export function digest(value: string) {
 // ---------- Suggestions ----------
 
 export type DebridService = "torbox" | "realdebrid" | "alldebrid" | "premiumize" | "debridlink" | "offcloud" | "easydebrid";
-export type SuggestionId = "torrentio" | "comet";
+export type SuggestionId = "torrentio" | "comet" | "mediafusion";
 
 /**
- * Addons Krida offers to install, set up with the account's debrid key. Each URL format was checked against the live
- * service on 3 Nov 2026 (Torrentio answers `{service}={key}` for all seven; Comet takes its settings as base64 JSON).
- * TorBox's own addon (stremio.torbox.app) no longer resolves, so it isn't offered.
+ * Addons Krida offers to install, set up with the account's debrid key. Each format was checked against the live
+ * service on 4 Nov 2026 (Torrentio answers `{service}={key}` for all seven; Comet takes its settings as base64 JSON;
+ * MediaFusion seals them on its own server). TorBox's own addon (stremio.torbox.app) no longer resolves, so it isn't
+ * offered.
  */
 export const SUGGESTIONS: { id: SuggestionId; name: string; description: string }[] = [
   { id: "torrentio", name: "Torrentio", description: "Torrents from the big public trackers, checked against your debrid service." },
   { id: "comet", name: "Comet", description: "A fast debrid search, with files already in your debrid account first." },
+  { id: "mediafusion", name: "MediaFusion", description: "Torrents from many more sites and trackers, with your debrid service’s cached files." },
 ];
+
+/**
+ * AIOStreams puts many addons behind one link, but it keeps each setup on its own server behind a password, and its
+ * public instance won't run Torrentio, so it's set up on its page and its link pasted here like any other.
+ */
+export const AIOSTREAMS_SETUP = "https://aiostreams.elfhosted.com/stremio/configure";
+const MEDIAFUSION = "https://mediafusion.elfhosted.com";
 
 /**
  * Comet's settings go in the path as base64 JSON, which Comet reads with Python's plain `b64decode`. A `/` in it would
@@ -204,10 +213,24 @@ function cometConfig(service: DebridService, key: string) {
   return btoa(json.replace(/[?\u007f-\uffff]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`));
 }
 
-/** A suggestion's base URL, with the debrid key in it (so it's built on the server, from the account's key). */
-export function suggestionBase(id: SuggestionId, debrid: { service: DebridService; key: string }) {
+/**
+ * A suggestion's base URL, with the debrid key in it (so it's built on the server, from the account's key). MediaFusion
+ * checks the key with the debrid service and seals the settings into its link itself; what it says when it refuses
+ * comes back as an AddonUrlError, in its words.
+ */
+export async function suggestionBase(id: SuggestionId, debrid: { service: DebridService; key: string }): Promise<string> {
   if (id === "torrentio") return `https://torrentio.strem.fun/${debrid.service}=${encodeURIComponent(debrid.key)}`;
-  return `https://comet.elfhosted.com/${cometConfig(debrid.service, debrid.key)}`;
+  if (id === "comet") return `https://comet.elfhosted.com/${cometConfig(debrid.service, debrid.key)}`;
+  const res = await fetch(`${MEDIAFUSION}/encrypt-user-data`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ streaming_provider: { service: debrid.service, token: debrid.key } }),
+    signal: AbortSignal.timeout(15_000),
+  }).catch(() => null);
+  if (!res) throw new AddonUrlError("Couldn’t reach MediaFusion. Try again.");
+  const body = (await res.json().catch(() => null)) as { status?: string; encrypted_str?: string; message?: string } | null;
+  if (res.ok && body?.status === "success" && body.encrypted_str && /^[\w.=-]+$/.test(body.encrypted_str)) return `${MEDIAFUSION}/${body.encrypted_str}`;
+  throw new AddonUrlError(body?.message ? `MediaFusion: ${body.message}` : `MediaFusion answered ${res.status}. Try again.`);
 }
 
 // ---------- Streams ----------

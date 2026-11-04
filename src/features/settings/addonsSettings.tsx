@@ -7,7 +7,7 @@ import { useQuery } from "convex-helpers/react/cache/hooks";
 import { ArrowClockwiseIcon, ArrowDownIcon, ArrowUpIcon, CaretDownIcon, CheckCircleIcon, GearSixIcon, PuzzlePieceIcon, TrashIcon } from "@phosphor-icons/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { hasResource, isRow } from "../../../shared/stremio";
+import { AIOSTREAMS_SETUP, hasResource, isRow } from "../../../shared/stremio";
 import { useAddons, type InstalledAddon } from "../../data/addons";
 import { useAuthed } from "../../data/session";
 import { toast } from "../../ui/toast";
@@ -224,7 +224,7 @@ export function InstallByLink({ quiet = false }: { quiet?: boolean }) {
 export function Suggestions() {
   const { token } = useAuthed();
   const suggestions = useQuery(api.addons.suggestions, { token });
-  const install = useAction(api.addons.installSuggested);
+  const install = useAction(api.addons.installSuggestion);
   const [busy, setBusy] = useState<string | null>(null);
   if (!suggestions) return null;
   if (!suggestions.service)
@@ -272,6 +272,15 @@ export function Suggestions() {
           )}
         </div>
       ))}
+      <div className="flex min-h-12 items-center gap-3">
+        <span className="min-w-0 flex-1">
+          <span className="block text-body font-medium">AIOStreams</span>
+          <span className="block text-body text-fg-faint">Many addons behind one link, sorted and filtered your way. Set it up on its page, then paste the link it gives you.</span>
+        </span>
+        <a href={AIOSTREAMS_SETUP} target="_blank" rel="noreferrer" className={`${link} shrink-0 text-body`}>
+          Set up AIOStreams
+        </a>
+      </div>
     </div>
   );
 }

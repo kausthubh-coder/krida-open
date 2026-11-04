@@ -1,5 +1,5 @@
 #!/bin/sh
-# Checks the three models with TLC: each .cfg as written (must pass), then each seeded bug
+# Checks the four models with TLC: each .cfg as written (must pass), then each seeded bug
 # (must break the rule it names). Usage: docs/models/check.sh [outdir]
 # Finds TLC like the statechart skill does (mise), or set TLA2TOOLS and JAVA.
 set -eu
@@ -27,7 +27,7 @@ summary() { # log
 }
 
 fail=0
-for m in AccountIsolation PartyInvites Onboarding; do
+for m in AccountIsolation PartyInvites Onboarding StreamAccess; do
   log="$out/$m.out"
   tlc "$m" "$here/$m.cfg" "$log"
   if grep -q "No error has been found" "$log"; then echo "PASS  $m: $(summary "$log")"
@@ -50,6 +50,11 @@ while read -r m bug rule; do
     echo "CAUGHT $m $bug -> $rule ($steps-state trace, $(summary "$log"))"
   else echo "MISSED $m $bug -> $rule: see $log"; fail=1; fi
 done <<'EOF'
+StreamAccess hls_token_only OnlyAllowedReads
+StreamAccess warm_any_room OnlyMembersWarm
+StreamAccess left_keeps_access OnlyAllowedReads
+StreamAccess guest_after_host_left NoGuestWithoutHost
+StreamAccess link_without_torbox OthersNeedTorBox
 AccountIsolation today_choose_any_profile SessionInOwnAccount
 AccountIsolation signout_keeps_sessions SignOutEndsSessions
 AccountIsolation skip_pin PinRespected

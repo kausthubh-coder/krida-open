@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { proxiedUrl } from "../server/addonProxy";
+import { proxiedUrl, proxyAddon } from "../server/addonProxy";
 import { released, toRowItem } from "../src/data/addons";
 import { stremioAddonUrls, stremioProblem } from "../src/features/settings/stremioImport";
 
@@ -28,6 +28,19 @@ describe("the addon proxy", () => {
       "not a link",
     ])
       expect(() => proxiedUrl(url)).toThrow(/Only public https addons|Not an addon resource|Not a link/);
+  });
+
+  test("follows a redirect to another public addon, and refuses one into a private network", async () => {
+    const asked: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: URL) => {
+      asked.push(String(url));
+      if (url.host === "old.example") return new Response(null, { status: 301, headers: { location: "https://new.example/manifest.json" } });
+      if (url.host === "evil.example") return new Response(null, { status: 302, headers: { location: "https://169.254.169.254/latest/meta-data" } });
+      return Response.json({ id: "moved" });
+    }));
+    expect(await proxyAddon("https://old.example/manifest.json")).toEqual({ id: "moved" });
+    await expect(proxyAddon("https://evil.example/manifest.json")).rejects.toThrow("evil.example redirected somewhere Krida won't follow");
+    expect(asked).toEqual(["https://old.example/manifest.json", "https://new.example/manifest.json", "https://evil.example/manifest.json"]);
   });
 });
 

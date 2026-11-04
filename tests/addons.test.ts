@@ -103,9 +103,30 @@ describe("installing an addon", () => {
       ok: false, message: "Add your debrid key in Settings → Connections first.",
     });
     await t.action(api.addons.installSuggested, { token: "a1", suggestion: "torrentio" });
-    expect((await t.query(api.addons.suggestions, { token: "a1" })).items.map((s) => [s.id, s.installed])).toEqual([["torrentio", true], ["comet", false]]);
+    expect((await t.query(api.addons.suggestions, { token: "a1" })).items.map((s) => [s.id, s.installed])).toEqual([["torrentio", true], ["comet", false], ["mediafusion", false]]);
     // The key never goes to the browser by way of suggestions.
     expect(JSON.stringify(await t.query(api.addons.suggestions, { token: "a1" }))).not.toContain("A-key");
+  });
+
+  test("a new debrid key remakes every profile's suggested addons with it, and removing the key removes them", async () => {
+    const { t, a1, names } = await setup();
+    manifests["https://torrentio.strem.fun/realdebrid=new-key"] = manifest("com.stremio.torrentio.addon", "Torrentio RD");
+    await t.action(api.addons.install, { token: "a1", url: "https://addon.example" });
+    await t.action(api.addons.installSuggested, { token: "a1", suggestion: "torrentio" });
+    await t.action(api.addons.installSuggested, { token: "a2", suggestion: "torrentio" });
+    const accountId = (await t.run(async (ctx) => await ctx.db.get(a1)))!.accountId!;
+    vi.useFakeTimers();
+    await t.mutation(internal.accounts.setKey, { accountId, kind: "debrid", key: "new-key", service: "realdebrid" });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    vi.useRealTimers();
+    const urls = async (token: string) => (await t.query(api.addons.list, { token })).map((x) => x.url);
+    expect([await urls("a1"), await urls("a2")]).toEqual([
+      ["https://addon.example", "https://torrentio.strem.fun/realdebrid=new-key"],
+      ["https://torrentio.strem.fun/realdebrid=new-key"],
+    ]);
+    expect(await names("a1")).toEqual([["Example catalogs", true], ["Torrentio RD", true]]);
+    await t.mutation(api.accounts.clear, { token: "a2", kind: "debrid" });
+    expect([await urls("a1"), await urls("a2")]).toEqual([["https://addon.example"], []]);
   });
 
   test("a temporary guest, with no account, gets no suggestions", async () => {

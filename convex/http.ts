@@ -32,6 +32,9 @@ http.route({
     // A direct stream (another debrid service) has no HLS: the file plays from its own link.
     if (!found?.accountId || found.torrentId === undefined || found.fileId === undefined || !found.domain || !found.presignedToken)
       return new Response("Not found", { status: 404, headers: cors });
+    // A stream id alone isn't a ticket: out of the room (left, kicked, the party over), it stops playing.
+    if (!(await ctx.runQuery(internal.engine.mayPlay, { profileId, streamId }).catch(() => false)))
+      return new Response("Forbidden", { status: 403, headers: cors });
     let stream = { ...found, accountId: found.accountId, torrentId: found.torrentId, fileId: found.fileId, domain: found.domain, presignedToken: found.presignedToken };
     // The key of the account whose TorBox holds the file, whoever in the room is watching.
     let key: string;

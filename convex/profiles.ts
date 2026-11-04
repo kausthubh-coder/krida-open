@@ -6,8 +6,9 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { assertSafeTarget, qaSignInAllowed } from "./lib/deployment";
 import { mergePrefs, prefsPatchValidator } from "./lib/prefs";
-import { accountNamed, accountOfClerk, ensureAccount as ensureAccountRow, MAX_PROFILES } from "./lib/accounts";
+import { accountNamed, accountOfClerk, ensureAccount as ensureAccountRow, hasTorBox, MAX_PROFILES, needsTorBox } from "./lib/accounts";
 import { checkSecret, hashPin, isPin, removeProfile } from "./lib/profiles";
+import { memberRow } from "./lib/rooms";
 import {
   hashPassword,
   profileFromToken,
@@ -34,6 +35,8 @@ export const inviteTemporary = mutation({
     const invites = await ctx.db.query("temporaryInvites").withIndex("by_room", (q) => q.eq("roomId", roomId)).collect();
     if (invites.filter((i) => i.expiresAt > Date.now()).length >= 8)
       throw new ConvexError({ code: "LIMIT", message: "This party already has 8 temporary profiles" });
+    // A guest has no account of its own, so it plays TorBox's stream of the host's file.
+    if (!(await hasTorBox(ctx, room.hostAccountId))) throw needsTorBox();
     const code = randomHex(32);
     const expiresAt = Date.now() + TEMPORARY_PROFILE_TTL_MS;
     const inviteId = await ctx.db.insert("temporaryInvites", {
@@ -67,7 +70,9 @@ export const joinTemporary = mutation({
     if (!invite || invite.profileId || invite.expiresAt <= Date.now())
       throw new ConvexError({ code: "INVALID", message: "This link has expired or was already used. Ask the host for a new one." });
     const room = await ctx.db.get(invite.roomId);
-    if (!room || room.closedAt) throw new ConvexError({ code: "NOT_FOUND", message: "This party has ended" });
+    // As rooms.join: the host left alone a moment ago and the room is about to close, so there's nobody to watch with.
+    if (!room || room.closedAt || (await memberRow(ctx, room._id, room.hostId))?.left)
+      throw new ConvexError({ code: "NOT_FOUND", message: "This party has ended" });
     const profileId = await ctx.db.insert("profiles", {
       name: invite.name, hue: invite.hue, expiresAt: invite.expiresAt, order: 1000, failedAttempts: 0,
       prefs: { audioLang: "eng", sounds: true },

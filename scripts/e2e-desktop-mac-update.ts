@@ -1,7 +1,7 @@
 // Krida for Mac updating itself: two release copies of a renamed test app ("Krida Update Test", so the Krida in use
 // is never touched), 0.9.0 and 0.9.1, each with mpv bundled. The older one, opened with KRIDA_UPDATE_URL pointing at a
 // latest.json served here, finds the newer as it opens, before anything has played, checks its signature, replaces
-// itself and opens again on it. Signed with the real update key in ~/.krida, as releases are.
+// itself and opens again on it. Signed with open Krida's update key in ~/.krida-open, as releases are.
 // Usage: npm run qa -- up; node scripts/e2e-desktop-mac-update.ts [outDir]   (takes about 10 minutes: two release builds)
 import { execFileSync, spawn } from "node:child_process";
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";

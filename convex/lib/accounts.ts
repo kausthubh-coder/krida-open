@@ -1,6 +1,8 @@
 import { ConvexError, v, type Infer } from "convex/values";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
+import { internal } from "../_generated/api";
+import { addonsOf } from "./addons";
 import { requireProfile } from "./auth";
 
 /*
@@ -111,6 +113,17 @@ export async function writeKey(ctx: MutationCtx, accountId: Id<"accounts">, kind
   };
   if (row) await ctx.db.patch(row._id, patch);
   else if (value !== undefined) await ctx.db.insert("accountKeys", { accountId, ...patch });
+  // Suggested addons carry the debrid key in their links: a new one remakes them, and removing it removes them.
+  if (kind !== "debrid" || JSON.stringify(row?.debrid) === JSON.stringify(value)) return;
+  if (value) await ctx.scheduler.runAfter(0, internal.addons.rebuildSuggested, { accountId });
+  else
+    for (const profile of await profilesOfAccount(ctx, accountId))
+      for (const addon of await addonsOf(ctx, profile._id)) if (addon.suggestion) await ctx.db.delete(addon._id);
+}
+
+/** Every profile in an account, its party guests aside (they have none). */
+export async function profilesOfAccount(ctx: QueryCtx, accountId: Id<"accounts">) {
+  return await ctx.db.query("profiles").withIndex("by_account", (q) => q.eq("accountId", accountId)).take(MAX_PROFILES * 2);
 }
 
 /** The account named `name`, made if there's none: seeds and the CLI put QA profiles in one account this way. */

@@ -35,8 +35,8 @@ async function friends() {
         .first(),
     );
   const room = (roomId: Id<"rooms">) => t.run((ctx) => ctx.db.get(roomId));
-  const names = async (roomId: Id<"rooms">) =>
-    (await t.query(api.rooms.get, { token: "host", roomId }))!.members.map((m) => m.name).sort();
+  const names = async (roomId: Id<"rooms">, token = "host") =>
+    (await t.query(api.rooms.get, { token, roomId }))!.members.map((m) => m.name).sort();
   return { t, host, friend, profile, member, room, names };
 }
 
@@ -461,7 +461,7 @@ describe("a laptop that slept through being counted as gone", () => {
     const other = await t.mutation(api.rooms.createParty, { token: "host", inviteIds: [] });
     await t.mutation(api.rooms.heartbeat, { token: "host", roomId, watching: true });
     expect(await member(roomId, host)).toMatchObject({ left: true, swept: false });
-    expect(await names(roomId)).toEqual(["Ravi"]);
+    expect(await names(roomId, "friend")).toEqual(["Ravi"]);
     expect((await t.query(api.rooms.mine, { token: "host" }))?._id).toBe(other);
   });
 
@@ -470,7 +470,10 @@ describe("a laptop that slept through being counted as gone", () => {
     await t.mutation(api.rooms.leave, { token: "host", roomId, announce: true });
     await t.mutation(api.rooms.heartbeat, { token: "host", roomId, watching: true });
     expect(await member(roomId, host)).toMatchObject({ left: true, swept: false });
-    expect(await names(roomId)).toEqual(["Ravi"]);
+    // Out means out: the party's people and chat are no longer theirs to read.
+    await expect(t.query(api.rooms.get, { token: "host", roomId })).rejects.toThrow("You left this party");
+    await expect(t.query(api.messages.list, { token: "host", roomId })).rejects.toThrow("You left this party");
+    expect(await names(roomId, "friend")).toEqual(["Ravi"]);
   });
 
   test("stays out of a party that ended and was opened again", async () => {
@@ -481,7 +484,7 @@ describe("a laptop that slept through being counted as gone", () => {
     // Ravi comes back within the grace period, which opens the party again.
     await t.mutation(api.rooms.join, { token: "friend", roomId });
     await t.mutation(api.rooms.heartbeat, { token: "host", roomId, watching: true });
-    expect(await names(roomId)).toEqual(["Ravi"]);
+    expect(await names(roomId, "friend")).toEqual(["Ravi"]);
   });
 
   test("asleep for longer than a party lasts, it stays out of one that's still going", async () => {

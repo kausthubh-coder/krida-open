@@ -47,7 +47,11 @@ const page = await (await device.webView({ pkg: "app.krida" })).page();
 const { check, finish } = checks(page);
 check("the app opens the QA app", page.url().startsWith(url), page.url());
 await signIn(page, url, s.profiles[0]!);
-await sleep(3000);
+// The emulator is slower than a phone: wait for the row itself, and say how long it took.
+const homeAt = Date.now();
+await page.locator('[aria-label^="Resume "]').first().waitFor({ timeout: 30_000 }).catch(() => {});
+console.log(`Continue watching showed ${Date.now() - homeAt} ms after sign-in`);
+await sleep(1000);
 shot("home.png");
 check("Home shows after sign-in", await page.getByRole("navigation").first().isVisible(), page.url());
 check("the page hears the Android bridge", await page.evaluate(() => !!(window as { KridaAndroid?: unknown }).KridaAndroid));
@@ -121,7 +125,9 @@ await sleep(800);
 shot("playing.png");
 
 await page.goto(`${url}/settings`, { waitUntil: "domcontentloaded" });
-await sleep(2500);
+const settingsAt = Date.now();
+await page.getByRole("link", { name: /^Display and sound/ }).first().waitFor({ timeout: 30_000 }).catch(() => {});
+console.log(`Settings showed ${Date.now() - settingsAt} ms after opening`);
 shot("settings.png");
 // Display and sound is in the list on every device, so the list was read.
 const sections = { display: await page.getByRole("link", { name: /^Display and sound/ }).count(), desktop: await page.getByRole("link", { name: /^Krida for (Windows|Mac)/ }).count() };

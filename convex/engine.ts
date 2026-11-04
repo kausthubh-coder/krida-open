@@ -559,6 +559,28 @@ export const getStream = internalQuery({
   handler: async (ctx, { streamId }) => await ctx.db.get(streamId),
 });
 
+/**
+ * Whether a profile may play a stream, which plays from its account's TorBox: a profile of that account, or someone in
+ * an open room playing it now. Someone who pressed Leave or was kicked is out; one the sweep counted as gone (a phone
+ * asleep) is still in, since their next heartbeat puts them back.
+ */
+export const mayPlay = internalQuery({
+  args: { profileId: v.id("profiles"), streamId: v.id("streams") },
+  returns: v.boolean(),
+  handler: async (ctx, { profileId, streamId }) => {
+    const [profile, stream] = await Promise.all([ctx.db.get(profileId), ctx.db.get(streamId)]);
+    if (!profile || !stream) return false;
+    if (profile.accountId && stream.accountId === profile.accountId) return true;
+    const rows = await ctx.db.query("roomMembers").withIndex("by_profile", (q) => q.eq("profileId", profileId)).collect();
+    for (const row of rows) {
+      if (row.kicked || (row.left && !row.swept)) continue;
+      const room = await ctx.db.get(row.roomId);
+      if (room && !room.closedAt && room.streamId === streamId) return true;
+    }
+    return false;
+  },
+});
+
 export const patchSegments = internalMutation({
   args: {
     streamId: v.id("streams"),

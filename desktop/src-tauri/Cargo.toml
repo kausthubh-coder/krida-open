@@ -1,6 +1,6 @@
 [package]
 name = "krida"
-version = "0.1.10"
+version = "0.1.11"
 description = "Krida for Windows"
 edition = "2021"
 

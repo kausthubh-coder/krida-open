@@ -261,7 +261,7 @@ export function SourceRow({
           </span>
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-body text-fg" title={o.languages.join(", ")}>
-              {audio ?? <span className="text-fg-faint">Audio not listed</span>}
+              {audio ?? (o.audio.length ? o.audio.join(", ") : <span className="text-fg-faint">Audio not listed</span>)}
             </span>
             {o.unavailable ? (
               <span className="truncate text-caption text-fg-muted">{o.needsDebrid ? "Needs a debrid service" : "Unavailable right now"}</span>

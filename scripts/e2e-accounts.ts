@@ -1,10 +1,11 @@
 // Accounts end to end, with real Clerk sign-ins (test users, code 424242): A signs in, makes a profile and sets the
 // account up (onboarding), makes a second profile with a PIN and switches between them; B, in another browser, signs in and sees none of A's profiles or rooms; A hosts a
-// party and copies its invite link; B's profile joins through it; both see the same title and chat; A leaves and the
+// party and copies its invite link; B's profile joins through it; both see the same title, play it in step from A's
+// TorBox (A installs Torrentio first), and chat; A leaves and the
 // party goes to B, whose account has TorBox. Screenshots in .artifacts/accounts/.
-// Needs the QA app (npm run qa -- up, with its stand-in providers) with Clerk set up (VITE_CLERK_PUBLISHABLE_KEY in
-// .env.local), TMDB_API_KEY in .env.test.local (onboarding checks it with TMDB; never printed), and two Clerk test users
-// with no profiles yet: npx clerk users create --email <name>+clerk_test@example.com
+// Needs the QA app (npm run qa -- up, with or without --real) with Clerk set up (VITE_CLERK_PUBLISHABLE_KEY in
+// .env.local), TMDB_API_KEY and TORBOX_API_KEY in .env.test.local (onboarding checks them with TMDB and TorBox; never
+// printed), and two Clerk test users with no profiles yet: npx clerk users create --email <name>+clerk_test@example.com
 // Usage: node scripts/e2e-accounts.ts <a>+clerk_test@example.com <b>+clerk_test@example.com
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
@@ -17,8 +18,11 @@ if (!emailA?.endsWith("+clerk_test@example.com") || !emailB?.endsWith("+clerk_te
   throw new Error("Usage: node scripts/e2e-accounts.ts <a>+clerk_test@example.com <b>+clerk_test@example.com (Clerk test users only)");
 const s = qaSession();
 assertLocal(s.url);
-const tmdbKey = existsSync(".env.test.local") ? parseEnv(readFileSync(".env.test.local", "utf8")).TMDB_API_KEY : undefined;
-if (!tmdbKey) throw new Error("No TMDB_API_KEY in .env.test.local: onboarding needs a key TMDB accepts");
+const keys = existsSync(".env.test.local") ? parseEnv(readFileSync(".env.test.local", "utf8")) : {};
+const tmdbKey = keys.TMDB_API_KEY;
+const torboxKey = keys.TORBOX_API_KEY;
+// The stand-in TorBox takes any key, and a real one too; without stand-ins (--real) only a real key is taken.
+if (!tmdbKey || !torboxKey) throw new Error("No TMDB_API_KEY or TORBOX_API_KEY in .env.test.local: onboarding needs keys TMDB and TorBox accept");
 const out = ".artifacts/accounts";
 mkdirSync(out, { recursive: true });
 const browser = await launchBrowser({ headless: true });
@@ -67,12 +71,12 @@ const key = async (page: Page, label: string, value: string) => {
   await page.getByLabel(label, { exact: true }).locator("xpath=ancestor::form").getByRole("button", { name: "Check key" }).click();
 };
 
-/** Onboarding with the account's keys (TorBox is the QA app's stand-in, which takes any key); no addons, no extras. */
+/** Onboarding with the account's keys; no addons, no extras. */
 async function onboard(page: Page) {
   await page.getByRole("heading", { name: "Connect TMDB" }).waitFor({ timeout: 60_000 });
   await key(page, "TMDB API key", tmdbKey!);
   await page.getByRole("heading", { name: "Pick your debrid service" }).waitFor({ timeout: 30_000 });
-  await key(page, "TorBox API key", "stand-in-torbox-key");
+  await key(page, "TorBox API key", torboxKey!);
   await skipToHome(page);
 }
 
@@ -163,7 +167,7 @@ try {
   // B: another account sees none of A's.
   await clerkSignIn(b, emailB);
   await b.getByRole("heading", { name: "Make your profile" }).waitFor({ timeout: 60_000 });
-  // Both accounts get TorBox in onboarding (the stand-in accepts any key): A to host, B so the party can go to B.
+  // Both accounts get TorBox in onboarding: A to host, B so the party can go to B.
   await firstProfile(b, "Ben");
   await onboard(b);
   await switchProfile(b);
@@ -171,6 +175,13 @@ try {
   const bNames = await b.getByRole("main").getByRole("listitem").getByRole("button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") ?? e.textContent));
   check("B's picker lists only Ben", bNames.join("|") === "Ben|Add profile", bNames.join("|"));
   await choose(b, "Ben");
+
+  // A's profile gets a stream addon, so the party plays a real stream from A's TorBox.
+  await a.goto(`${s.url}/settings/addons`, { waitUntil: "domcontentloaded" });
+  const torrentio = a.getByRole("switch", { name: /^Use Torrentio/ });
+  await a.getByRole("button", { name: "Install Torrentio" }).or(torrentio).first().waitFor({ timeout: 30_000 });
+  if (!(await torrentio.isVisible())) await a.getByRole("button", { name: "Install Torrentio" }).click();
+  await torrentio.waitFor({ timeout: 30_000 });
 
   // A starts a party and copies its link.
   await a.goto(`${s.url}/`, { waitUntil: "domcontentloaded" });
@@ -207,6 +218,12 @@ try {
   await a.waitForFunction(() => document.title.startsWith("Dune"), null, { timeout: 60_000 });
   await b.waitForFunction(() => document.title.startsWith("Dune"), null, { timeout: 60_000 });
   check("both see the same title", (await title(a)) === (await title(b)), `${await title(a)} / ${await title(b)}`);
+  // Both screens play it, from A's TorBox, and together: B's account plays A's stream.
+  const playing = (page: Page) => page.waitForFunction(() => { const v = document.querySelector("video"); return !!v && !v.paused && v.currentTime > 3; }, null, { timeout: 180_000 });
+  await Promise.all([playing(a), playing(b)]);
+  const at = (page: Page) => page.evaluate(() => document.querySelector("video")!.currentTime);
+  const [ta, tb] = [await at(a), await at(b)];
+  check("both play the stream, in step", Math.abs(ta - tb) < 2, `A ${ta.toFixed(1)} s, B ${tb.toFixed(1)} s`);
 
   // Chat, both ways.
   await openPanel(a);

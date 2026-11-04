@@ -170,9 +170,14 @@ export function namesEpisode(filename: string, ctx: RankContext): boolean {
   return named?.episode === ctx.episode && !mismatchOf(filename, ctx);
 }
 
+/**
+ * Whether a release has a language. A bare "Dual Audio" is anime's English and Japanese; one that names its languages
+ * (Torrentio's flags) has those and no others.
+ */
 function hasLanguage(languages: string[], name: string) {
   if (languages.includes(name)) return true;
-  return languages.includes("Dual Audio") && (name === "English" || name === "Japanese");
+  const named = languages.some((l) => !LANGUAGE_GROUPS.includes(l));
+  return !named && languages.includes("Dual Audio") && (name === "English" || name === "Japanese");
 }
 
 const RES_POINTS: Record<string, number> = { "2160p": 30, "1440p": 27, "1080p": 24, "720p": 14, SD: 4 };
@@ -215,8 +220,9 @@ function scoreOf(o: Omit<SourceOption, "score">, position: number, total: number
   const audio = languageFor(ctx.audioLang);
   if (audio && o.languages.length) {
     if (hasLanguage(o.languages, audio)) score += 3;
-    // Outweighs every picture and sound bonus: a 4K remux is no use in a language you didn't ask for.
-    else if (!o.languages.some((l) => LANGUAGE_GROUPS.includes(l))) score -= 20;
+    // Outweighs every picture and sound bonus: a 4K remux is no use in a language you didn't ask for. "Multi" and
+    // "Dubbed" may hold yours; "Dual Audio" is two languages, so once they're named, it holds only those.
+    else if (!o.languages.some((l) => l === "Multi" || l === "Dubbed" || (l === "Dual Audio" && !o.languages.some((n) => !LANGUAGE_GROUPS.includes(n))))) score -= 20;
   }
   const subs = languageFor(ctx.subLang);
   if (subs && o.subtitles.includes(subs)) score += 2;

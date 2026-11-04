@@ -74,11 +74,13 @@ await page.getByRole("heading", { name: "Addons", level: 1 }).waitFor();
 await page.getByText("No addons yet").or(page.getByRole("switch").first()).waitFor({ timeout: 30_000 });
 await shot("01-addons-empty");
 
+// An installed addon has its own switch; its name alone is also in the Browse list.
+const installed = (name: string) => page.getByRole("switch", { name: `Use ${name}` });
 const install = async (url: string, name: string) => {
-  if (await page.getByText(name, { exact: true }).first().isVisible().catch(() => false)) return;
+  if (await installed(name).isVisible().catch(() => false)) return;
   await page.getByLabel("Install from a link").fill(url);
   await page.getByRole("button", { name: "Install", exact: true }).click();
-  await page.getByText(name, { exact: true }).first().waitFor({ timeout: 30_000 });
+  await installed(name).waitFor({ timeout: 30_000 });
 };
 
 // A link that isn't an addon says why.
@@ -241,7 +243,7 @@ check("another profile in the account starts with its own, empty, list", true);
 await shot("12-second-profile-empty", second);
 await second.getByRole("button", { name: "Copy addons" }).click();
 await second.getByText("Torrentio TB", { exact: true }).waitFor({ timeout: 30_000 });
-check("it can copy the first profile's addons", await second.getByText("Anime Kitsu", { exact: true }).isVisible());
+check("it can copy the first profile's addons", await second.getByRole("switch", { name: "Use Anime Kitsu" }).isVisible());
 await shot("13-second-profile-copied", second);
 
 check("no key went to the browser in a URL", !urls.some((u) => secrets.some((k) => u.includes(k))));

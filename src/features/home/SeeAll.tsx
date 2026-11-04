@@ -10,7 +10,7 @@ import { Button, EmptyState, Spinner } from "../../ui/ui";
 import { ResultsGrid, ResultsSkeleton } from "../search";
 import { Select } from "../../ui/select";
 import { rowTitle } from "./homeRows";
-import { addonRowsOf } from "./useHome";
+import { addonRowsOf, CINEMETA_ROWS, type AddonRow } from "./useHome";
 
 type Pages = { items: RecItem[]; done: boolean; error?: string };
 
@@ -20,7 +20,12 @@ export function SeeAllPage() {
   const { me } = useAuthed();
   const addons = useAddons();
   const row = useMemo(
-    () => (addons ? addonRowsOf(addons, true).find((r) => r.addonId === addonId && r.type === type && r.catalog.id === catalogId) : undefined),
+    // An installed addon's catalog first: Cinemeta's own carries its genres, which Home's stand-in rows for an account
+    // without a TMDB key don't.
+    () => {
+      const match = (r: AddonRow) => r.addonId === addonId && r.type === type && r.catalog.id === catalogId;
+      return addons ? (addonRowsOf(addons).find(match) ?? CINEMETA_ROWS.find(match)) : undefined;
+    },
     [addons, addonId, type, catalogId],
   );
   const genres = row ? genresOf(row.catalog) : [];

@@ -208,7 +208,8 @@ function SourceList({
       (res === "all" || resKey(o) === res) &&
       (audio === ANY ||
         o.languages.includes(audio) ||
-        (o.languages.includes("Dual Audio") && (audio === "English" || audio === "Japanese"))),
+        // A bare "Dual Audio" is anime's English and Japanese, as rank.ts's hasLanguage reads it.
+        (realLanguages(o).length === 0 && o.languages.includes("Dual Audio") && (audio === "English" || audio === "Japanese"))),
   );
   const sorted = [...matches].sort(compare(sort));
   const likely = sorted.filter((o) => !o.mismatch || isCurrent(o));

@@ -213,6 +213,9 @@ try {
     await here.waitFor({ timeout: 30_000 });
   }
   check("B joins A's party without TorBox", true);
+  // A party still picking opens its panel over Home; the join page, its button still spinning, mustn't stay behind it.
+  const left = await b.waitForURL((u) => u.pathname === "/", { timeout: 10_000 }).then(() => true, () => false);
+  check("B leaves the join page for Home, the panel open", left && (await b.getByRole("button", { name: "Join the party" }).count()) === 0, new URL(b.url()).pathname);
   await shot(b, "b-in-party");
 } catch (error) {
   check("the walk finished", false, error instanceof Error ? error.message.split("\n")[0] : String(error));

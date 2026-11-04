@@ -151,4 +151,14 @@ describe("Krida for Windows, which plays the original file", () => {
     const english = file("Movie.2021.2160p.WEB-DL.DDP5.1.HDR.x265.ENG.mkv", "🌎 English\n📦 16 GB (18 Mbps)");
     expect(rankSources([italian, english], { ...movie, screen: "app", audioLang: "eng" }).pick?.filename).toBe(english.filename);
   });
+
+  test("a Dual Audio release that names its languages isn't taken for English and Japanese", () => {
+    const named = file("Movie.2021.2160p.UHD.BluRay.REMUX.DV.HEVC.mkv", "Movie 2021\n🇷🇺 / 🇩🇪 Dual Audio\n📦 58 GB (55 Mbps)");
+    const english = { ...file("Movie.2021.1080p.WEB-DL.DDP5.1.x264.ENG.mkv", "🌎 English\n📦 6 GB (8 Mbps)"), name: "⚡Addon 1080p" };
+    const anime = file("Show.2021.1080p.WEB-DL.Dual.Audio.x264.mkv", "Show 2021 Dual Audio\n📦 6 GB (8 Mbps)");
+    const ranked = rankSources([named, english], { ...movie, screen: "app", audioLang: "eng" });
+    expect(ranked.options.map((o) => [o.resolution, o.languages]).sort()).toEqual([["1080p", ["English"]], ["2160p", ["Russian", "German", "Dual Audio"]]]);
+    expect(ranked.pick?.filename).toBe(english.filename);
+    expect(rankSources([anime], { ...movie, screen: "app", audioLang: "jpn" }).options[0]?.languages).toEqual(["Dual Audio"]);
+  });
 });

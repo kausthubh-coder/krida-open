@@ -133,13 +133,18 @@ export function useEnterParty() {
   const navigate = useNavigate();
   const join = useMutation(api.rooms.join);
   const { setPanelOpen } = usePartyUI();
+  // Says where it put you: the Party panel over this page (a party still picking), or the player.
   return useCallback(
-    async (roomId: Id<"rooms">) => {
+    async (roomId: Id<"rooms">): Promise<"panel" | "watch" | undefined> => {
       try {
         await join({ token, roomId });
         const room = await convex.query(api.rooms.get, { token, roomId });
-        if (room && room.kind === "party" && room.status === "idle") setPanelOpen(true);
-        else navigate(`/watch/${roomId}`);
+        if (room && room.kind === "party" && room.status === "idle") {
+          setPanelOpen(true);
+          return "panel";
+        }
+        navigate(`/watch/${roomId}`);
+        return "watch";
       } catch (error) {
         toast.error(errorMessage(error, "Couldn't join this party"));
       }

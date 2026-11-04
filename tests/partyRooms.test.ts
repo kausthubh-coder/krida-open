@@ -471,7 +471,7 @@ describe("a laptop that slept through being counted as gone", () => {
     await t.mutation(api.rooms.heartbeat, { token: "host", roomId, watching: true });
     expect(await member(roomId, host)).toMatchObject({ left: true, swept: false });
     // Out means out: the party's people and chat are no longer theirs to read.
-    await expect(t.query(api.rooms.get, { token: "host", roomId })).rejects.toThrow("You left this party");
+    expect(await t.query(api.rooms.get, { token: "host", roomId })).toBeNull();
     await expect(t.query(api.messages.list, { token: "host", roomId })).rejects.toThrow("You left this party");
     expect(await names(roomId, "friend")).toEqual(["Ravi"]);
   });

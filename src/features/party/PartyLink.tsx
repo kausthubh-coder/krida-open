@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useMutation } from "convex/react";
 import { useQuery } from "convex-helpers/react/cache/hooks";
 import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import { useAuthed } from "../../data/session";
 import { errorMessage } from "../play";
 import { Avatar, Button, ButtonLink, Spinner } from "../../ui/ui";
@@ -23,13 +24,21 @@ export function PartyLink() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // In the party, this page is done: a party still picking opens its panel over Home, one playing opens the player.
+  const go = useCallback(
+    async (roomId: Id<"rooms">) => {
+      if ((await enter(roomId)) === "panel") navigate("/", { replace: true });
+    },
+    [enter, navigate],
+  );
+
   // Already in it (a reload): straight back in.
   useEffect(() => {
     if (party?.inIt) {
       forget();
-      void enter(party.roomId);
+      void go(party.roomId);
     }
-  }, [party?.inIt, party?.roomId, enter]);
+  }, [party?.inIt, party?.roomId, go]);
 
   if (!code) return <Navigate to="/" replace />;
 
@@ -40,7 +49,7 @@ export function PartyLink() {
     try {
       await join({ token, roomId: party.roomId, code });
       forget();
-      await enter(party.roomId);
+      await go(party.roomId);
     } catch (e) {
       setError(errorMessage(e, "Couldn't join. Try again."));
       setBusy(false);

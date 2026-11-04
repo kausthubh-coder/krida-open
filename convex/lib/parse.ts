@@ -54,6 +54,32 @@ const list = (value: string | undefined) =>
  * Reads one AIOStreams result. The description carries labelled fields (🎥 quality, 🌎 languages, 📝 subtitles,
  * 📦 sizes…); the name and filename fill in whatever a formatter left out.
  */
+/** Flags Torrentio and Comet put on a release for its languages, by their two-letter country. */
+const FLAG_LANGUAGES: Record<string, string> = {
+  GB: "English", US: "English", ES: "Spanish", MX: "Spanish", FR: "French", DE: "German", IT: "Italian", PT: "Portuguese",
+  BR: "Portuguese", IN: "Hindi", JP: "Japanese", KR: "Korean", CN: "Chinese", TW: "Chinese", SA: "Arabic", RU: "Russian",
+  TR: "Turkish", PL: "Polish", NL: "Dutch", UA: "Ukrainian", CZ: "Czech", HU: "Hungarian", GR: "Greek", RO: "Romanian",
+  SE: "Swedish", DK: "Danish", NO: "Norwegian", FI: "Finnish", IL: "Hebrew", TH: "Thai", VN: "Vietnamese", ID: "Indonesian",
+};
+
+/**
+ * A release's languages: AIOStreams' 🌎 field, else the flags other addons draw (🇬🇧 / 🇮🇹), with their "Multi Audio" and
+ * "Dual Audio" as the groups the source sheet knows.
+ */
+function languagesOf(description: string): string[] {
+  const named = list(field(description, "🌎"));
+  if (named.length) return named;
+  const out = new Set<string>();
+  for (const [flag] of description.matchAll(/[\u{1F1E6}-\u{1F1FF}]{2}/gu)) {
+    const country = [...flag].map((c) => String.fromCharCode(c.codePointAt(0)! - 0x1f1e6 + 65)).join("");
+    const language = FLAG_LANGUAGES[country];
+    if (language) out.add(language);
+  }
+  if (/\bmulti[ .-]?audio\b/i.test(description)) out.add("Multi");
+  if (/\bdual[ .-]?audio\b/i.test(description)) out.add("Dual Audio");
+  return [...out];
+}
+
 export function parseSource(
   name: string,
   description: string,
@@ -169,7 +195,7 @@ export function parseSource(
     indexer: field(description, "🔍")?.split("|").pop()?.trim() || undefined,
     group: field(description, "🏷"),
     service: field(description, "📡"),
-    languages: list(field(description, "🌎")),
+    languages: languagesOf(description),
     subtitles: list(field(description, "📝")),
     size: fileSize,
     packSize,

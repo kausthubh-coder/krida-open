@@ -64,13 +64,19 @@ export const createParty = mutation({
   },
 });
 
-/** The room, for its members only: whoever isn't in it (or was removed) gets FORBIDDEN, not its people or its chat. */
+/**
+ * The room, for its members only: whoever isn't in it (or was removed) gets FORBIDDEN, not its people or its chat.
+ * Someone who pressed Leave gets null, as for a room that's gone: their own screens still read it for a moment as the
+ * player closes, and a thrown error there would break the page they're leaving to.
+ */
 export const get = query({
   args: { token: v.string(), roomId: v.id("rooms") },
   handler: async (ctx, { token, roomId }) => {
     const me = await requireProfile(ctx, token);
     const room = await ctx.db.get(roomId);
     if (!room) return null;
+    const row = await memberRow(ctx, roomId, me._id);
+    if (row?.left && !row.swept && !row.kicked) return null;
     await requireMember(ctx, roomId, me._id);
     const memberRows = await ctx.db
       .query("roomMembers")

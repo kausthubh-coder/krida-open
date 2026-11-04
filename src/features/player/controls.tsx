@@ -482,7 +482,7 @@ export function SubtitleMenu({
       {localSubs.map((s) => <MenuRow key={s.id} selected={current === s.id} onClick={() => onPick(s.id)}>{s.name}</MenuRow>)}
       {!filePlayable && fileTracks.length > 0 && (
         <p className="px-3 py-2 text-caption text-fg-faint">
-          This file’s own {listLanguages(fileTracks)} subtitles show only in Krida for Windows.
+          This file’s own {listLanguages(fileTracks)} subtitles show only in the Krida app for Windows and Mac.
         </p>
       )}
       {filePlayable && fileTracks.length > 0 && (

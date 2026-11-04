@@ -452,7 +452,7 @@ function BrowseAddons() {
         <div key={addon.url} className="flex min-h-12 items-center gap-3">
           <span className="min-w-0 flex-1 text-body">{addon.name}</span>
           {addon.configurationRequired ? (
-            <a href={`${addonBase(addon.url)}/configure`} target="_blank" rel="noreferrer" className={link}>Set up</a>
+            <a href={`${addonBase(addon.url)}/configure`} target="_blank" rel="noreferrer" className={link}>Set up {addon.name}</a>
           ) : (
             <Button loading={busy === addon.url} disabled={busy !== null} onClick={async () => {
               setBusy(addon.url);
@@ -465,7 +465,7 @@ function BrowseAddons() {
               } finally {
                 setBusy(null);
               }
-            }}>Install</Button>
+            }}>Install {addon.name}</Button>
           )}
         </div>
       ))}

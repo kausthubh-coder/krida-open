@@ -1,8 +1,9 @@
-// Krida for Mac on a real TorBox account: the QA account gets the TorBox key from .env.test.local (never printed), the
+// Krida for Mac on a real TorBox account: the QA account gets the keys from .env.test.local (never printed), the
 // first QA profile installs Torrentio from the suggestions (set up with that key), and the app opens a room for The
 // Shawshank Redemption picked for the app. mpv must play the original file from TorBox's CDN (not its HLS), 4K, with
 // sound, and keep playing. The file's link carries the key, so only its host is printed.
-// Needs the QA app with no stand-ins (npm run qa -- up --real), TORBOX_API_KEY in .env.test.local, and a debug build
+// Needs the QA app with no stand-ins (npm run qa -- up --real), TMDB_API_KEY, MDBLIST_API_KEY and TORBOX_API_KEY in
+// .env.test.local, and a debug build
 // (cd desktop && npx tauri build --debug --bundles app). The key stays on the QA app's throwaway backend.
 // Usage: node scripts/e2e-desktop-real.ts [outDir]
 import { spawn } from "node:child_process";
@@ -20,8 +21,8 @@ mkdirSync(out, { recursive: true });
 const repo = join(import.meta.dirname, "..");
 const app = join(repo, "desktop/src-tauri/target/debug/bundle/macos/Krida.app/Contents/MacOS/krida");
 if (!existsSync(app)) throw new Error(`No ${app}: build it with cd desktop && npx tauri build --debug --bundles app`);
-const torbox = parseEnv(readFileSync(join(repo, ".env.test.local"), "utf8")).TORBOX_API_KEY;
-if (!torbox) throw new Error("TORBOX_API_KEY is missing from .env.test.local");
+const env = parseEnv(readFileSync(join(repo, ".env.test.local"), "utf8"));
+for (const name of ["TMDB_API_KEY", "MDBLIST_API_KEY", "TORBOX_API_KEY"]) if (!env[name]) throw new Error(`${name} is missing from .env.test.local`);
 const s = qaSession();
 assertLocal(s.url);
 assertLocal(s.convexUrl);
@@ -57,7 +58,10 @@ function mpv(socket: string, name: string) {
   });
 }
 
-await admin.mutation(ref("mutation", "accounts:setKeysFor"), { account: "QA", keys: { debrid: { service: "torbox", key: torbox } } });
+// All three keys, so the account is past onboarding and the app opens on the room, not a setup step.
+await admin.mutation(ref("mutation", "accounts:setKeysFor"), {
+  account: "QA", keys: { tmdb: env.TMDB_API_KEY, mdblist: env.MDBLIST_API_KEY, debrid: { service: "torbox", key: env.TORBOX_API_KEY! } },
+});
 const me = await convexSignIn(client, s.profiles[0]!);
 let pid: number | undefined;
 try {
